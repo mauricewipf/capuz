@@ -187,4 +187,4 @@ export const openApiDocument = {
       },
     },
   },
-} as const;
+};

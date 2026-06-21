@@ -1,17 +1,16 @@
 import SftpClient from "ssh2-sftp-client";
 import { readFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { normalizePagePath, PathError } from "../paths.ts";
-import type { Storage } from "./types.ts";
+import { normalizePagePath, PathError } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 
-function isAllowedPage(name: string): boolean {
+function isAllowedPage(name) {
   const lower = name.toLowerCase();
   return ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
-function requireEnv(name: string): string {
+function requireEnv(name) {
   const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(`${name} is required when STORAGE_BACKEND=sftp`);
@@ -19,21 +18,21 @@ function requireEnv(name: string): string {
   return value;
 }
 
-export class SftpStorage implements Storage {
-  private client: SftpClient | null = null;
-  private connecting: Promise<void> | null = null;
-  private readonly host = requireEnv("SFTP_HOST");
-  private readonly port = Number(process.env.SFTP_PORT || 22);
-  private readonly username = requireEnv("SFTP_USER");
-  private readonly keyPath = requireEnv("SFTP_KEY_PATH");
-  private readonly remoteRoot = requireEnv("SFTP_REMOTE_ROOT").replace(/\/+$/, "");
+export class SftpStorage {
+  client = null;
+  connecting = null;
+  host = requireEnv("SFTP_HOST");
+  port = Number(process.env.SFTP_PORT || 22);
+  username = requireEnv("SFTP_USER");
+  keyPath = requireEnv("SFTP_KEY_PATH");
+  remoteRoot = requireEnv("SFTP_REMOTE_ROOT").replace(/\/+$/, "");
 
-  private remotePath(relativePath: string): string {
+  remotePath(relativePath) {
     const normalized = normalizePagePath(relativePath);
     return `${this.remoteRoot}/${normalized}`;
   }
 
-  private async connect(): Promise<void> {
+  async connect() {
     if (this.client) return;
     if (this.connecting) {
       await this.connecting;
@@ -60,7 +59,7 @@ export class SftpStorage implements Storage {
     }
   }
 
-  private async withClient<T>(fn: (client: SftpClient) => Promise<T>): Promise<T> {
+  async withClient(fn) {
     try {
       await this.connect();
       if (!this.client) {
@@ -80,8 +79,8 @@ export class SftpStorage implements Storage {
     }
   }
 
-  private async walk(client: SftpClient, dir: string, pages: string[]): Promise<void> {
-    let entries: Array<{ name: string; type: string }>;
+  async walk(client, dir, pages) {
+    let entries;
     try {
       entries = await client.list(dir);
     } catch {
@@ -102,8 +101,8 @@ export class SftpStorage implements Storage {
     }
   }
 
-  async listPages(): Promise<string[]> {
-    const pages: string[] = [];
+  async listPages() {
+    const pages = [];
     await this.withClient(async (client) => {
       await this.walk(client, this.remoteRoot, pages);
     });
@@ -111,7 +110,7 @@ export class SftpStorage implements Storage {
     return pages;
   }
 
-  async readPage(relativePath: string): Promise<string> {
+  async readPage(relativePath) {
     const remote = this.remotePath(relativePath);
     return await this.withClient(async (client) => {
       const exists = await client.exists(remote);
@@ -129,7 +128,7 @@ export class SftpStorage implements Storage {
     });
   }
 
-  async writePage(relativePath: string, html: string): Promise<string> {
+  async writePage(relativePath, html) {
     const normalized = normalizePagePath(relativePath);
     const remote = this.remotePath(normalized);
     await this.withClient(async (client) => {
@@ -139,7 +138,7 @@ export class SftpStorage implements Storage {
     return normalized;
   }
 
-  async deletePage(relativePath: string): Promise<void> {
+  async deletePage(relativePath) {
     const remote = this.remotePath(relativePath);
     await this.withClient(async (client) => {
       const exists = await client.exists(remote);

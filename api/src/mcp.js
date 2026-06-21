@@ -1,10 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
-import { handlePathError } from "./pages.ts";
-import { getStorage } from "./storage/index.ts";
+import { handlePathError } from "./pages.js";
+import { getStorage } from "./storage/index.js";
 
-export function createMcpServer(): McpServer {
+export function createMcpServer() {
   const storage = getStorage();
   const server = new McpServer({
     name: "cms-pages",
@@ -76,7 +76,7 @@ export function createMcpServer(): McpServer {
   return server;
 }
 
-export async function handleMcpRequest(request: Request): Promise<Response> {
+export async function handleMcpRequest(request) {
   const server = createMcpServer();
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,

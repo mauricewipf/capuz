@@ -3,11 +3,11 @@ import { normalize, relative, resolve } from "node:path";
 const DATA_ROOT = resolve(process.env.DATA_ROOT || "/app/data");
 const ALLOWED_EXTENSIONS = new Set([".html", ".xml"]);
 
-export function getDataRoot(): string {
+export function getDataRoot() {
   return DATA_ROOT;
 }
 
-export function normalizePagePath(relativePath: string): string {
+export function normalizePagePath(relativePath) {
   const cleaned = relativePath.replace(/^\/+/, "").trim();
   if (!cleaned) {
     throw new PathError("Path is required", 400);
@@ -29,7 +29,7 @@ export function normalizePagePath(relativePath: string): string {
   return normalized.split(sep()).join("/");
 }
 
-export function resolvePagePath(relativePath: string): string {
+export function resolvePagePath(relativePath) {
   const normalized = normalizePagePath(relativePath);
   const absolute = resolve(DATA_ROOT, normalized);
   const rel = relative(DATA_ROOT, absolute);
@@ -40,25 +40,23 @@ export function resolvePagePath(relativePath: string): string {
   return absolute;
 }
 
-export function toPublicPath(absolutePath: string): string {
+export function toPublicPath(absolutePath) {
   return relative(DATA_ROOT, absolutePath).split(sep()).join("/");
 }
 
 export class PathError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
+  constructor(message, status) {
     super(message);
     this.name = "PathError";
+    this.status = status;
   }
 }
 
-function sep(): string {
+function sep() {
   return process.platform === "win32" ? "\\" : "/";
 }
 
-function extname(filePath: string): string {
+function extname(filePath) {
   const idx = filePath.lastIndexOf(".");
   return idx === -1 ? "" : filePath.slice(idx);
 }

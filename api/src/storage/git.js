@@ -3,12 +3,11 @@ import http from "isomorphic-git/http/node";
 import fs from "node:fs";
 import { readFile, writeFile, unlink, mkdir } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
-import { normalizePagePath, PathError } from "../paths.ts";
-import type { Storage } from "./types.ts";
+import { normalizePagePath, PathError } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 
-function requireEnv(name: string): string {
+function requireEnv(name) {
   const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(`${name} is required when STORAGE_BACKEND=git`);
@@ -16,7 +15,7 @@ function requireEnv(name: string): string {
   return value;
 }
 
-async function pathExists(path: string): Promise<boolean> {
+async function pathExists(path) {
   try {
     await fs.promises.stat(path);
     return true;
@@ -25,7 +24,7 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-async function walk(dir: string, pages: string[], root: string): Promise<void> {
+async function walk(dir, pages, root) {
   let entries;
   try {
     entries = await fs.promises.readdir(dir, { withFileTypes: true });
@@ -47,34 +46,33 @@ async function walk(dir: string, pages: string[], root: string): Promise<void> {
   }
 }
 
-function isEnoent(err: unknown): boolean {
+function isEnoent(err) {
   return (
     typeof err === "object" &&
     err !== null &&
     "code" in err &&
-    (err as NodeJS.ErrnoException).code === "ENOENT"
+    err.code === "ENOENT"
   );
 }
 
-export class GitStorage implements Storage {
-  private readonly remote = requireEnv("GIT_REMOTE");
-  private readonly branch = process.env.GIT_BRANCH?.trim() || "main";
-  private readonly cloneDir = process.env.GIT_CLONE_DIR?.trim() || "/app/repo";
-  private readonly authorName = process.env.GIT_AUTHOR_NAME?.trim() || "Capuzzella CMS";
-  private readonly authorEmail =
-    process.env.GIT_AUTHOR_EMAIL?.trim() || "cms@capuzzella.local";
-  private readonly keyPath = requireEnv("GIT_KEY_PATH");
-  private initPromise: Promise<void> | null = null;
-  private privateKey: string | null = null;
+export class GitStorage {
+  remote = requireEnv("GIT_REMOTE");
+  branch = process.env.GIT_BRANCH?.trim() || "main";
+  cloneDir = process.env.GIT_CLONE_DIR?.trim() || "/app/repo";
+  authorName = process.env.GIT_AUTHOR_NAME?.trim() || "Capuzzella CMS";
+  authorEmail = process.env.GIT_AUTHOR_EMAIL?.trim() || "cms@capuzzella.local";
+  keyPath = requireEnv("GIT_KEY_PATH");
+  initPromise = null;
+  privateKey = null;
 
-  private async getPrivateKey(): Promise<string> {
+  async getPrivateKey() {
     if (!this.privateKey) {
       this.privateKey = await readFile(this.keyPath, "utf8");
     }
     return this.privateKey;
   }
 
-  private async ensureRepo(): Promise<void> {
+  async ensureRepo() {
     if (this.initPromise) {
       await this.initPromise;
       return;
@@ -119,25 +117,25 @@ export class GitStorage implements Storage {
     await this.initPromise;
   }
 
-  private absolutePath(relativePath: string): string {
+  absolutePath(relativePath) {
     const normalized = normalizePagePath(relativePath);
     return join(this.cloneDir, normalized);
   }
 
-  async listPages(): Promise<string[]> {
+  async listPages() {
     await this.ensureRepo();
-    const pages: string[] = [];
+    const pages = [];
     await walk(this.cloneDir, pages, this.cloneDir);
     pages.sort();
     return pages;
   }
 
-  async readPage(relativePath: string): Promise<string> {
+  async readPage(relativePath) {
     await this.ensureRepo();
     const absolute = this.absolutePath(relativePath);
     try {
       return await readFile(absolute, "utf8");
-    } catch (err: unknown) {
+    } catch (err) {
       if (isEnoent(err)) {
         throw new PathError("Page not found", 404);
       }
@@ -145,7 +143,7 @@ export class GitStorage implements Storage {
     }
   }
 
-  async writePage(relativePath: string, html: string): Promise<string> {
+  async writePage(relativePath, html) {
     await this.ensureRepo();
     const normalized = normalizePagePath(relativePath);
     const absolute = join(this.cloneDir, normalized);
@@ -199,13 +197,13 @@ export class GitStorage implements Storage {
     return `${normalized} (commit ${sha.slice(0, 7)}; deploy typically live in ~30s)`;
   }
 
-  async deletePage(relativePath: string): Promise<void> {
+  async deletePage(relativePath) {
     await this.ensureRepo();
     const normalized = normalizePagePath(relativePath);
     const absolute = join(this.cloneDir, normalized);
     try {
       await unlink(absolute);
-    } catch (err: unknown) {
+    } catch (err) {
       if (isEnoent(err)) {
         throw new PathError("Page not found", 404);
       }

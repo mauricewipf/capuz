@@ -5,21 +5,20 @@ import {
   PathError,
   resolvePagePath,
   toPublicPath,
-} from "../paths.ts";
-import type { Storage } from "./types.ts";
+} from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 
-function isEnoent(err: unknown): boolean {
+function isEnoent(err) {
   return (
     typeof err === "object" &&
     err !== null &&
     "code" in err &&
-    (err as NodeJS.ErrnoException).code === "ENOENT"
+    err.code === "ENOENT"
   );
 }
 
-async function walk(dir: string, pages: string[]): Promise<void> {
+async function walk(dir, pages) {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -41,19 +40,19 @@ async function walk(dir: string, pages: string[]): Promise<void> {
   }
 }
 
-export class FsStorage implements Storage {
-  async listPages(): Promise<string[]> {
-    const pages: string[] = [];
+export class FsStorage {
+  async listPages() {
+    const pages = [];
     await walk(getDataRoot(), pages);
     pages.sort();
     return pages;
   }
 
-  async readPage(relativePath: string): Promise<string> {
+  async readPage(relativePath) {
     const absolute = resolvePagePath(relativePath);
     try {
       return await readFile(absolute, "utf8");
-    } catch (err: unknown) {
+    } catch (err) {
       if (isEnoent(err)) {
         throw new PathError("Page not found", 404);
       }
@@ -61,18 +60,18 @@ export class FsStorage implements Storage {
     }
   }
 
-  async writePage(relativePath: string, html: string): Promise<string> {
+  async writePage(relativePath, html) {
     const absolute = resolvePagePath(relativePath);
     await mkdir(dirname(absolute), { recursive: true });
     await writeFile(absolute, html, "utf8");
     return toPublicPath(absolute);
   }
 
-  async deletePage(relativePath: string): Promise<void> {
+  async deletePage(relativePath) {
     const absolute = resolvePagePath(relativePath);
     try {
       await unlink(absolute);
-    } catch (err: unknown) {
+    } catch (err) {
       if (isEnoent(err)) {
         throw new PathError("Page not found", 404);
       }

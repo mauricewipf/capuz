@@ -1,12 +1,11 @@
-import { FsStorage } from "./fs.ts";
-import { GitStorage } from "./git.ts";
-import { S3Storage } from "./s3.ts";
-import { SftpStorage } from "./sftp.ts";
-import type { Storage } from "./types.ts";
+import { FsStorage } from "./fs.js";
+import { GitStorage } from "./git.js";
+import { S3Storage } from "./s3.js";
+import { SftpStorage } from "./sftp.js";
 
-let storageInstance: Storage | null = null;
+let storageInstance = null;
 
-export function createStorage(): Storage {
+export function createStorage() {
   const backend = (process.env.STORAGE_BACKEND || "fs").trim().toLowerCase();
 
   switch (backend) {
@@ -25,11 +24,9 @@ export function createStorage(): Storage {
   }
 }
 
-export function getStorage(): Storage {
+export function getStorage() {
   if (!storageInstance) {
     storageInstance = createStorage();
   }
   return storageInstance;
 }
-
-export type { Storage } from "./types.ts";

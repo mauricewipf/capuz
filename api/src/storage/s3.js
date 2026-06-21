@@ -5,12 +5,11 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { normalizePagePath, PathError } from "../paths.ts";
-import type { Storage } from "./types.ts";
+import { normalizePagePath, PathError } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 
-function requireEnv(name: string): string {
+function requireEnv(name) {
   const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(`${name} is required when STORAGE_BACKEND=s3`);
@@ -18,27 +17,27 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function isAllowedPage(key: string): boolean {
+function isAllowedPage(key) {
   const lower = key.toLowerCase();
   return ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
-function contentTypeForPath(path: string): string {
+function contentTypeForPath(path) {
   return path.toLowerCase().endsWith(".xml")
     ? "application/xml; charset=utf-8"
     : "text/html; charset=utf-8";
 }
 
-async function streamToString(body: unknown): Promise<string> {
+async function streamToString(body) {
   if (!body) return "";
   if (typeof body === "string") return body;
   if (body instanceof Uint8Array) return new TextDecoder().decode(body);
-  if (typeof (body as { transformToString?: () => Promise<string> }).transformToString === "function") {
-    return await (body as { transformToString: () => Promise<string> }).transformToString();
+  if (typeof body.transformToString === "function") {
+    return await body.transformToString();
   }
 
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of body as AsyncIterable<Uint8Array>) {
+  const chunks = [];
+  for await (const chunk of body) {
     chunks.push(chunk);
   }
   const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
@@ -51,15 +50,13 @@ async function streamToString(body: unknown): Promise<string> {
   return new TextDecoder().decode(merged);
 }
 
-export class S3Storage implements Storage {
-  private readonly bucket = requireEnv("S3_BUCKET");
-  private readonly prefix = (process.env.S3_KEY_PREFIX || "")
+export class S3Storage {
+  bucket = requireEnv("S3_BUCKET");
+  prefix = (process.env.S3_KEY_PREFIX || "")
     .replace(/^\/+/, "")
     .replace(/\/+$/, "");
-  private readonly publicUrl = (process.env.S3_PUBLIC_URL || "").replace(/\/+$/, "");
-  private readonly cacheControl =
-    process.env.S3_CACHE_CONTROL?.trim() || "public, max-age=60";
-  private readonly client: S3Client;
+  publicUrl = (process.env.S3_PUBLIC_URL || "").replace(/\/+$/, "");
+  cacheControl = process.env.S3_CACHE_CONTROL?.trim() || "public, max-age=60";
 
   constructor() {
     const endpoint = process.env.S3_ENDPOINT?.trim();
@@ -74,20 +71,20 @@ export class S3Storage implements Storage {
     });
   }
 
-  private objectKey(relativePath: string): string {
+  objectKey(relativePath) {
     const normalized = normalizePagePath(relativePath);
     return this.prefix ? `${this.prefix}/${normalized}` : normalized;
   }
 
-  private publicPath(relativePath: string): string {
+  publicPath(relativePath) {
     const normalized = normalizePagePath(relativePath);
     if (!this.publicUrl) return normalized;
     return `${this.publicUrl}/${normalized}`;
   }
 
-  async listPages(): Promise<string[]> {
-    const pages: string[] = [];
-    let continuationToken: string | undefined;
+  async listPages() {
+    const pages = [];
+    let continuationToken;
 
     do {
       const response = await this.client.send(
@@ -113,7 +110,7 @@ export class S3Storage implements Storage {
     return pages;
   }
 
-  async readPage(relativePath: string): Promise<string> {
+  async readPage(relativePath) {
     const key = this.objectKey(relativePath);
     try {
       const response = await this.client.send(
@@ -123,10 +120,10 @@ export class S3Storage implements Storage {
         }),
       );
       return await streamToString(response.Body);
-    } catch (error: unknown) {
+    } catch (error) {
       const name =
         typeof error === "object" && error !== null && "name" in error
-          ? String((error as { name?: string }).name)
+          ? String(error.name)
           : "";
       if (name === "NoSuchKey" || name === "NotFound") {
         throw new PathError("Page not found", 404);
@@ -135,7 +132,7 @@ export class S3Storage implements Storage {
     }
   }
 
-  async writePage(relativePath: string, html: string): Promise<string> {
+  async writePage(relativePath, html) {
     const normalized = normalizePagePath(relativePath);
     const key = this.objectKey(normalized);
     await this.client.send(
@@ -150,7 +147,7 @@ export class S3Storage implements Storage {
     return this.publicUrl ? this.publicPath(normalized) : normalized;
   }
 
-  async deletePage(relativePath: string): Promise<void> {
+  async deletePage(relativePath) {
     const key = this.objectKey(relativePath);
     try {
       await this.client.send(
@@ -159,10 +156,10 @@ export class S3Storage implements Storage {
           Key: key,
         }),
       );
-    } catch (error: unknown) {
+    } catch (error) {
       const name =
         typeof error === "object" && error !== null && "name" in error
-          ? String((error as { name?: string }).name)
+          ? String(error.name)
           : "";
       if (name === "NoSuchKey" || name === "NotFound") {
         throw new PathError("Page not found", 404);

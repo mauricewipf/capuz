@@ -132,11 +132,13 @@ curl -H "Authorization: Bearer dev-local-key" \
 
 ```
 capuzzella-simple/
-├── api/                    # API source code
+├── api/                    # API source code (JavaScript / Bun)
 │   ├── src/
-│   │   ├── server.ts      # Main API server
-│   │   ├── mcp.ts         # MCP server implementation
-│   │   ├── pages.ts       # File operations
+│   │   ├── server.js      # Main API server
+│   │   ├── mcp.js         # MCP server implementation
+│   │   ├── paths.js       # Path validation
+│   │   ├── auth.js        # API key auth
+│   │   ├── storage/       # Storage backends (fs, sftp, git, s3)
 │   │   └── ...
 │   └── package.json
 ├── pages/                  # Seed HTML files

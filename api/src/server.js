@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { requireAuth, warnIfInsecureApiKey } from "./auth.ts";
-import { handleMcpRequest } from "./mcp.ts";
-import { openApiDocument } from "./openapi.ts";
-import { handlePathError } from "./pages.ts";
-import { getStorage } from "./storage/index.ts";
+import { requireAuth, warnIfInsecureApiKey } from "./auth.js";
+import { handleMcpRequest } from "./mcp.js";
+import { openApiDocument } from "./openapi.js";
+import { handlePathError } from "./pages.js";
+import { getStorage } from "./storage/index.js";
 
 const app = new Hono();
 const storage = getStorage();
@@ -21,7 +21,7 @@ app.get("/api/pages", async (c) => {
     return c.json({ pages });
   } catch (error) {
     const { message, status } = handlePathError(error);
-    return c.json({ error: message }, status as 400);
+    return c.json({ error: message }, status);
   }
 });
 
@@ -32,7 +32,7 @@ app.get("/api/pages/*", async (c) => {
     return c.text(html, 200, { "Content-Type": "text/html; charset=utf-8" });
   } catch (error) {
     const { message, status } = handlePathError(error);
-    return c.json({ error: message }, status as 400);
+    return c.json({ error: message }, status);
   }
 });
 
@@ -44,7 +44,7 @@ app.put("/api/pages/*", requireAuth, async (c) => {
     return c.json({ ok: true, path: saved });
   } catch (error) {
     const { message, status } = handlePathError(error);
-    return c.json({ error: message }, status as 400);
+    return c.json({ error: message }, status);
   }
 });
 
@@ -55,7 +55,7 @@ app.delete("/api/pages/*", requireAuth, async (c) => {
     return c.json({ ok: true, path });
   } catch (error) {
     const { message, status } = handlePathError(error);
-    return c.json({ error: message }, status as 400);
+    return c.json({ error: message }, status);
   }
 });
 

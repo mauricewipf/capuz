@@ -1,44 +1,23 @@
 import { Hono } from "hono";
-import { requireAuth } from "./auth.ts";
-import {
-  deletePage,
-  handlePathError,
-  listPages,
-  readPage,
-  writePage,
-} from "./pages.ts";
+import { requireAuth, warnIfInsecureApiKey } from "./auth.ts";
 import { handleMcpRequest } from "./mcp.ts";
+import { openApiDocument } from "./openapi.ts";
+import { handlePathError } from "./pages.ts";
+import { getStorage } from "./storage/index.ts";
 
 const app = new Hono();
+const storage = getStorage();
 
 app.get("/health", (c) => c.json({ ok: true }));
 
-app.get("/openapi.json", (c) =>
-  c.json({
-    openapi: "3.0.0",
-    info: {
-      title: "Capuzzella CMS API",
-      version: "1.0.0",
-    },
-    paths: {
-      "/api/pages": {
-        get: { summary: "List pages", operationId: "listPages" },
-      },
-      "/api/pages/{path}": {
-        get: { summary: "Read page", operationId: "readPage" },
-        put: { summary: "Write page", operationId: "writePage" },
-        delete: { summary: "Delete page", operationId: "deletePage" },
-      },
-    },
-  }),
-);
+app.get("/openapi.json", (c) => c.json(openApiDocument));
 
-app.all("/mcp", async (c) => handleMcpRequest(c.req.raw));
-app.all("/mcp/*", async (c) => handleMcpRequest(c.req.raw));
+app.all("/mcp", requireAuth, async (c) => handleMcpRequest(c.req.raw));
+app.all("/mcp/*", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 
 app.get("/api/pages", async (c) => {
   try {
-    const pages = await listPages();
+    const pages = await storage.listPages();
     return c.json({ pages });
   } catch (error) {
     const { message, status } = handlePathError(error);
@@ -49,7 +28,7 @@ app.get("/api/pages", async (c) => {
 app.get("/api/pages/*", async (c) => {
   const path = c.req.path.replace(/^\/api\/pages\/?/, "");
   try {
-    const html = await readPage(path);
+    const html = await storage.readPage(path);
     return c.text(html, 200, { "Content-Type": "text/html; charset=utf-8" });
   } catch (error) {
     const { message, status } = handlePathError(error);
@@ -61,7 +40,7 @@ app.put("/api/pages/*", requireAuth, async (c) => {
   const path = c.req.path.replace(/^\/api\/pages\/?/, "");
   const html = await c.req.text();
   try {
-    const saved = await writePage(path, html);
+    const saved = await storage.writePage(path, html);
     return c.json({ ok: true, path: saved });
   } catch (error) {
     const { message, status } = handlePathError(error);
@@ -72,7 +51,7 @@ app.put("/api/pages/*", requireAuth, async (c) => {
 app.delete("/api/pages/*", requireAuth, async (c) => {
   const path = c.req.path.replace(/^\/api\/pages\/?/, "");
   try {
-    await deletePage(path);
+    await storage.deletePage(path);
     return c.json({ ok: true, path });
   } catch (error) {
     const { message, status } = handlePathError(error);
@@ -81,8 +60,10 @@ app.delete("/api/pages/*", requireAuth, async (c) => {
 });
 
 const port = Number(process.env.API_PORT || 3000);
+const backend = process.env.STORAGE_BACKEND || "fs";
 
-console.log(`CMS API listening on :${port}`);
+warnIfInsecureApiKey();
+console.log(`CMS API listening on :${port} (STORAGE_BACKEND=${backend})`);
 
 export default {
   port,

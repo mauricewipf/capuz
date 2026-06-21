@@ -7,7 +7,7 @@ export function getDataRoot(): string {
   return DATA_ROOT;
 }
 
-export function resolvePagePath(relativePath: string): string {
+export function normalizePagePath(relativePath: string): string {
   const cleaned = relativePath.replace(/^\/+/, "").trim();
   if (!cleaned) {
     throw new PathError("Path is required", 400);
@@ -26,6 +26,11 @@ export function resolvePagePath(relativePath: string): string {
     throw new PathError("Only .html and .xml files are allowed", 400);
   }
 
+  return normalized.split(sep()).join("/");
+}
+
+export function resolvePagePath(relativePath: string): string {
+  const normalized = normalizePagePath(relativePath);
   const absolute = resolve(DATA_ROOT, normalized);
   const rel = relative(DATA_ROOT, absolute);
   if (rel.startsWith("..") || rel.includes(`..${sep()}`)) {

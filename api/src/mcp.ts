@@ -1,15 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
-import {
-  deletePage,
-  handlePathError,
-  listPages,
-  readPage,
-  writePage,
-} from "./pages.ts";
+import { handlePathError } from "./pages.ts";
+import { getStorage } from "./storage/index.ts";
 
 export function createMcpServer(): McpServer {
+  const storage = getStorage();
   const server = new McpServer({
     name: "cms-pages",
     version: "1.0.0",
@@ -20,7 +16,7 @@ export function createMcpServer(): McpServer {
     "List all HTML and XML page paths on the site",
     {},
     async () => {
-      const pages = await listPages();
+      const pages = await storage.listPages();
       return {
         content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
       };
@@ -33,7 +29,7 @@ export function createMcpServer(): McpServer {
     { path: z.string().describe("Relative page path such as index.html") },
     async ({ path }) => {
       try {
-        const html = await readPage(path);
+        const html = await storage.readPage(path);
         return { content: [{ type: "text", text: html }] };
       } catch (error) {
         const { message } = handlePathError(error);
@@ -51,7 +47,7 @@ export function createMcpServer(): McpServer {
     },
     async ({ path, html }) => {
       try {
-        const saved = await writePage(path, html);
+        const saved = await storage.writePage(path, html);
         return {
           content: [{ type: "text", text: `Saved ${saved}` }],
         };
@@ -68,7 +64,7 @@ export function createMcpServer(): McpServer {
     { path: z.string().describe("Relative page path to delete") },
     async ({ path }) => {
       try {
-        await deletePage(path);
+        await storage.deletePage(path);
         return { content: [{ type: "text", text: `Deleted ${path}` }] };
       } catch (error) {
         const { message } = handlePathError(error);

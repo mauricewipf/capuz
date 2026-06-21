@@ -27,6 +27,7 @@ services:
       API_PORT: 3000
       DATA_ROOT: /app/data
       CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
+      STORAGE_BACKEND: fs
     volumes:
       - site-data:/app/data
     healthcheck:
@@ -51,7 +52,7 @@ services:
       DEFAULT_MODEL_PARAMS: '{"function_calling":"native"}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
       WEBUI_URL: http://localhost:8081
-      TOOL_SERVER_CONNECTIONS: '[{"type":"mcp","url":"http://cms-api:3000/mcp","path":"/mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
+      TOOL_SERVER_CONNECTIONS: '[{"type":"mcp","url":"http://cms-api:3000/mcp","path":"/mcp","auth_type":"bearer","key":"${CMS_API_KEY}","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
     volumes:
       - openwebui-data:/app/backend/data
     depends_on:

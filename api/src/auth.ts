@@ -1,5 +1,7 @@
 import type { Context, Next } from "hono";
 
+const DEV_DEFAULT_KEY = "dev-local-key";
+
 export function requireAuth(c: Context, next: Next) {
   const expected = process.env.CMS_API_KEY;
   if (!expected) {
@@ -17,4 +19,17 @@ export function requireAuth(c: Context, next: Next) {
   }
 
   return next();
+}
+
+export function warnIfInsecureApiKey(): void {
+  const key = process.env.CMS_API_KEY?.trim();
+  if (!key) {
+    console.warn("WARNING: CMS_API_KEY is not set. MCP and write endpoints will reject requests.");
+    return;
+  }
+  if (key === DEV_DEFAULT_KEY) {
+    console.warn(
+      "WARNING: CMS_API_KEY is set to the development default. Generate a secure key before publishing.",
+    );
+  }
 }

@@ -1,0 +1,44 @@
+services:
+  cms-api:
+    image: capuzzella/cms-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "3000:3000"
+    environment:
+      API_PORT: 3000
+      CMS_API_KEY: ${CMS_API_KEY:?CMS_API_KEY is required}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
+      DATA_ROOT: ${DATA_ROOT:-/app/data}
+      SFTP_HOST: ${SFTP_HOST:-}
+      SFTP_PORT: ${SFTP_PORT:-22}
+      SFTP_USER: ${SFTP_USER:-}
+      SFTP_KEY_PATH: ${SFTP_KEY_PATH:-/keys/id_ed25519}
+      SFTP_REMOTE_ROOT: ${SFTP_REMOTE_ROOT:-}
+      GIT_REMOTE: ${GIT_REMOTE:-}
+      GIT_BRANCH: ${GIT_BRANCH:-main}
+      GIT_KEY_PATH: ${GIT_KEY_PATH:-/keys/id_ed25519}
+      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-Capuzzella CMS}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-cms@capuzzella.local}
+      GIT_CLONE_DIR: ${GIT_CLONE_DIR:-/app/repo}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_KEY_PREFIX: ${S3_KEY_PREFIX:-}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-}
+      S3_CACHE_CONTROL: ${S3_CACHE_CONTROL:-public, max-age=60}
+    volumes:
+      - site-data:/app/data
+      - git-repo:/app/repo
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  site-data:
+  git-repo:

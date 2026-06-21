@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Release June 18, 2026: Site Themes for Your Website - Blog</title>
+  <meta name="category" content="Release" />
+  <meta name="keywords" content="release, site themes, design system, theme picker" />
+  <meta property="article:section" content="Release" />
+  <meta property="article:tag" content="release" />
+  <meta property="article:tag" content="themes" />
+  <meta property="article:tag" content="design system" />
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <header class="bg-primary text-white py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/index.html" class="text-white opacity-75">Home</a></li>
+          <li class="breadcrumb-item"><a href="/blog/index.html" class="text-white opacity-75">Blog</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Release June 18, 2026</li>
+        </ol>
+      </nav>
+      <h1 class="display-4 fw-bold mb-3">Release June 18, 2026: Site Themes for Your Website</h1>
+      <p class="lead opacity-75 mb-0">Maurice Wipf · June 18, 2026</p>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <p class="lead mb-4">
+            Until now, Capuzzella sites all shared the same default look. This release
+            lets you pick a different style for your entire website from the Design System,
+            preview it on real components first, and apply it site-wide with one click.
+          </p>
+
+          <figure class="my-4">
+            <div class="d-flex align-items-center gap-3">
+              <button class="btn btn-link p-2 flex-shrink-0 border-0" type="button" data-bs-target="#carouselSiteThemes" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" style="filter:invert(1) grayscale(100)" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+              </button>
+              <div id="carouselSiteThemes" class="carousel slide flex-grow-1" data-bs-ride="false">
+                <div class="carousel-inner">
+                  <div class="carousel-item active">
+                    <img src="/images/2026-06-18_feature-themes-1.png" class="d-block w-100 rounded shadow-sm border" alt="Design System preview with the Capuz theme applied to buttons and cards" />
+                  </div>
+                  <div class="carousel-item">
+                    <img src="/images/2026-06-18_feature-themes-2.png" class="d-block w-100 rounded shadow-sm border" alt="Preview theme dropdown listing Alberto, Capuz, Cerulean, Darkly, Flatly, Lux, Morph, Pulse, Sandstone, and Vapor" />
+                  </div>
+                  <div class="carousel-item">
+                    <img src="/images/2026-06-18_feature-themes-3.png" class="d-block w-100 rounded shadow-sm border" alt="Design System preview with the Alberto theme showing pastel blue and yellow buttons" />
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-link p-2 flex-shrink-0 border-0" type="button" data-bs-target="#carouselSiteThemes" data-bs-slide="next">
+                <span class="carousel-control-next-icon" style="filter:invert(1) grayscale(100)" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+              </button>
+            </div>
+            <figcaption class="mt-2 small text-center text-muted">
+              Preview themes on live components, browse options, then apply one site-wide.
+            </figcaption>
+          </figure>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Preview First, Apply When Ready</h2>
+
+          <p>
+            Open <strong>Design System</strong> in the admin console. At the top of each
+            component section you will see a <strong>Preview theme</strong> dropdown and a
+            <strong>Save &amp; apply</strong> button. Changing the dropdown updates the iframe
+            preview immediately — buttons, cards, navbars, and every other component
+            re-render in the theme you selected.
+          </p>
+
+          <p>
+            That preview is session-only. Your live site and draft pages keep the saved theme
+            until you click <strong>Save &amp; apply</strong>. The current theme is marked
+            <strong>(current)</strong> in the dropdown so you always know what visitors see
+            today.
+          </p>
+
+          <p>
+            Only users with the <strong>admin</strong> or <strong>designer</strong> role see
+            the <strong>Save &amp; apply</strong> button and can change the site-wide theme.
+            Everyone else can still open Design System and use the <strong>Preview theme</strong>
+            dropdown to browse how components look in each style — useful when an editor
+            wants to compare options before asking a designer to apply one.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Built-in Themes to Start With</h2>
+
+          <p>
+            The picker ships with several ready-made themes, including
+            <strong>Capuz</strong> (the Capuzzella default),
+            <strong>Alberto</strong> (a pastel blue-and-yellow palette),
+            <strong>Cerulean</strong>, <strong>Darkly</strong>, <strong>Flatly</strong>,
+            <strong>Lux</strong>, <strong>Morph</strong>, <strong>Pulse</strong>,
+            <strong>Sandstone</strong>, and <strong>Vapor</strong>.
+            Each one overrides Bootstrap colors, typography, and component styling while your
+            page HTML stays the same.
+          </p>
+
+          <p>
+            Want something moody for a portfolio? Try <strong>Darkly</strong> or
+            <strong>Vapor</strong>. Need a clean business look? <strong>Lux</strong> or
+            <strong>Flatly</strong> are good starting points. The point is you can switch
+            without rewriting markup or hunting through CSS files.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Already Live</h2>
+
+          <p>
+            Site themes ship with every Capuzzella instance. Log in, open Design System, and
+            preview themes from the dropdown. Admins and designers can click
+            <strong>Save &amp; apply</strong> to set the site-wide look. No CLI step, no file
+            edits, no redeploy.
+          </p>
+
+          <p>
+            If you are not a customer yet and want to try it, subscribe and spin up an instance.
+            Your theme picker is waiting in the console.
+          </p>
+
+          <p class="text-center mt-5 mb-2">
+            Not a customer yet? Subscribe now to get started.
+          </p>
+
+          <p class="text-center mb-4">
+            <a href="/subscription/checkout.html" class="btn btn-primary btn-lg px-5">
+              Subscribe to Capuzzella →
+            </a>
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">Capuzzella CMS</p>
+    </div>
+  </footer>
+
+</body>
+
+</html>

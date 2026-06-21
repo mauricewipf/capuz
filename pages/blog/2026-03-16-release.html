@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Release March 16, 2026: SaaS Infrastructure, Automated Provisioning, and Encrypted Settings - Blog</title>
+  <meta name="category" content="Release" />
+  <meta name="keywords" content="release, SaaS, Stripe, subscription, provisioning, onboarding, encrypted settings, custom domain, Capuzzella" />
+  <meta property="article:section" content="Release" />
+  <meta property="article:tag" content="release" />
+  <meta property="article:tag" content="SaaS" />
+  <meta property="article:tag" content="subscription" />
+  <meta property="article:tag" content="onboarding" />
+  <meta property="article:tag" content="custom domain" />
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <header class="bg-primary text-white py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/index.html" class="text-white opacity-75">Home</a></li>
+          <li class="breadcrumb-item"><a href="/blog/index.html" class="text-white opacity-75">Blog</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Release March 16, 2026</li>
+        </ol>
+      </nav>
+      <h1 class="display-4 fw-bold mb-3">Release March 16, 2026: Your Own Capuzzella Instance in Under Two Minutes</h1>
+      <p class="lead opacity-75 mb-0">Maurice Wipf &middot; March 16, 2026</p>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <p class="lead mb-4">
+            This release turns Capuzzella from a self-hosted tool into a fully managed
+            service. Subscribe, enter your AI API key, and a dedicated instance is
+            provisioned for you automatically &mdash; complete with hosting, storage,
+            and a guided onboarding that walks you through every step. Behind the
+            scenes, a new encrypted settings system keeps your credentials safe, and
+            custom domain support lets you put your own brand front and center.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Automated Provisioning: Subscribe and Go</h2>
+
+          <p>
+            Getting started with Capuzzella is now as simple as completing a checkout.
+            When you subscribe, a dedicated Capuzzella instance is created for you
+            automatically on Render &mdash; no server setup, no configuration files,
+            no command line. Within moments you receive your personal URL and can
+            start building your website right away.
+          </p>
+
+          <p>
+            The entire provisioning pipeline is powered by Stripe webhooks. As soon as
+            your payment is confirmed, Capuzzella calls the Render API, spins up a new
+            service with your unique environment, and redirects you to a success page
+            with a direct link to your fresh instance. It's hands-off by design: you
+            focus on your content, we handle the infrastructure.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Guided Onboarding: From Zero to First Edit</h2>
+
+          <p>
+            A new instance is only useful if you know what to do with it. That's why
+            every fresh Capuzzella account now opens with a dedicated
+            <strong>Instructions</strong> page that walks you through the essentials:
+            logging in, opening the Editor Panel, making your first AI-assisted edit,
+            and publishing the result. No external docs to hunt down &mdash; everything
+            you need is right inside your instance.
+          </p>
+
+          <p>
+            The onboarding also guides you through entering your AI API key. Capuzzella
+            uses <strong>your own OpenAI or Anthropic key</strong> for all AI-powered
+            editing, so you stay in full control of usage and costs. Simply paste your
+            key into the Settings page and you're ready to chat with the editor.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Bring Your Own AI Key</h2>
+
+          <p>
+            Capuzzella deliberately doesn't bundle AI costs into the subscription.
+            Instead, you connect your own <strong>OpenAI</strong> or
+            <strong>Anthropic</strong> API key. This means you choose the provider and
+            model that fits your workflow, you see exactly what you spend on AI, and
+            you're never locked into a single vendor.
+          </p>
+
+          <p>
+            Configuring your provider takes seconds. Head to <strong>Settings &rarr;
+            AI Providers</strong>, select OpenAI or Anthropic, paste your key, and
+            save. The key is encrypted at rest and never leaves your instance.
+          </p>
+
+          <figure class="my-4">
+            <img src="/images/2026-03-16_settings-ai-providers.png"
+              alt="Screenshot of the Capuzzella Settings page showing the AI Providers section with fields for selecting OpenAI or Anthropic and entering an API key"
+              class="img-fluid rounded shadow-sm border">
+            <figcaption class="mt-2 small text-center">
+              Choose your AI provider and paste your API key &mdash; encrypted and stored securely in your instance.
+            </figcaption>
+          </figure>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Encrypted Settings: Your Keys Stay Safe</h2>
+
+          <p>
+            With API keys, email credentials, and other sensitive values now managed
+            through the UI, security had to be airtight. Every secret you enter on the
+            Settings page is <strong>AES-256-GCM encrypted</strong> before it touches
+            the database. Keys are derived from a per-instance secret, so even if
+            someone accessed the raw database file, the values would be unreadable.
+          </p>
+
+          <p>
+            This also means you no longer need to set environment variables for things
+            like your Resend API key or AI provider credentials. Configure everything
+            from the browser, and Capuzzella handles the rest.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Transactional Emails via Resend</h2>
+
+          <p>
+            Capuzzella now supports transactional emails through <strong>Resend</strong>.
+            User invitations, contact form submissions, and other system emails are
+            sent reliably through your own Resend account. Like the AI key, your Resend
+            API key is configured in the Settings page and stored encrypted.
+          </p>
+
+          <figure class="my-4">
+            <img src="/images/2026-03-16_settings-transactional-emails.png"
+              alt="Screenshot of the Capuzzella Settings page showing the Transactional Emails section with Resend API key and sender configuration"
+              class="img-fluid rounded shadow-sm border">
+            <figcaption class="mt-2 small text-center">
+              Configure Resend for transactional emails directly from the Settings page.
+            </figcaption>
+          </figure>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Custom Domain Support</h2>
+
+          <p>
+            Your Capuzzella instance starts with a Render subdomain, but you'll
+            probably want your own. The new <strong>Custom Domain</strong> section in
+            Settings lets you add a domain, see the required DNS records at a glance,
+            and verify the configuration &mdash; all without leaving the admin panel.
+            Once DNS propagates, your site is live on your own domain with automatic
+            HTTPS.
+          </p>
+
+          <figure class="my-4">
+            <img src="/images/2026-03-16_settings-custom-domain.png"
+              alt="Screenshot of the Capuzzella Settings page showing the Custom Domain section with a domain input field and DNS verification instructions"
+              class="img-fluid rounded shadow-sm border">
+            <figcaption class="mt-2 small text-center">
+              Add your own domain and follow the DNS instructions to go live on your brand.
+            </figcaption>
+          </figure>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Simple, Competitive Pricing</h2>
+
+          <p>
+            Capuzzella is available at <strong>19.99&nbsp;&euro;/month</strong>,
+            which includes fully managed hosting on Render and 1&nbsp;GB of storage
+            for your pages, images, and uploaded files. There are no tiers, no hidden
+            fees, and no per-seat charges. You bring your own AI API key, so AI costs
+            scale with your actual usage instead of a flat markup.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Get Started Today</h2>
+
+          <p>
+            If you've been waiting for the easiest way to launch a modern,
+            AI-assisted website, this is it. Subscribe, connect your API key, and
+            start editing &mdash; your instance will be ready before you finish
+            your coffee.
+          </p>
+
+          <p class="text-center mt-5 mb-4">
+            <a href="/subscription/checkout" class="btn btn-primary btn-lg px-5">
+              Start your Capuzzella subscription &rarr;
+            </a>
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">
+        Capuzzella CMS
+      </p>
+    </div>
+  </footer>
+
+</body>
+
+</html>

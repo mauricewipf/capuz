@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started - Capuzzella</title>
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <section class="py-5 bg-primary text-white">
+    <div class="container py-4 text-center">
+      <h1 class="display-4 fw-bold mb-3">Getting Started</h1>
+      <p class="lead opacity-75 col-lg-7 mx-auto">
+        Welcome! Follow these steps to set up your Capuzzella site and start building.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-5">
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <div class="d-flex mb-5">
+            <div class="flex-shrink-0 me-4">
+              <div
+                class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
+                style="width:48px;height:48px">1</div>
+            </div>
+            <div>
+              <h2 class="h4 fw-bold mb-2">Change Your Password</h2>
+              <p class="mb-2">
+                Your account was created with an initial password. For security, please change it right away in
+                <a href="/console/settings" class="fw-semibold">Settings &rarr; Account</a>. Choose a strong, unique password that you don't use on other sites.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex mb-5">
+            <div class="flex-shrink-0 me-4">
+              <div
+                class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
+                style="width:48px;height:48px">2</div>
+            </div>
+            <div>
+              <h2 class="h4 fw-bold mb-2">Write Your First Prompt in the Editor Panel</h2>
+              <p class="mb-2">
+                Navigate to any page and append
+                <code class="bg-body-secondary px-2 py-1 rounded text-primary">?edit=true</code>
+                to the URL. The Editor Panel will appear on the right side of the screen.
+              </p>
+              <p>
+                Describe the changes you want in plain language, click <strong>Build page</strong>, and watch the AI
+                update your page in real time. Preview with
+                <code class="bg-body-secondary px-2 py-1 rounded text-primary">?draft=true</code>,
+                then publish when you're happy.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex mb-5">
+            <div class="flex-shrink-0 me-4">
+              <div
+                class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
+                style="width:48px;height:48px">3</div>
+            </div>
+            <div>
+              <h2 class="h4 fw-bold mb-2">Customize Components, Design System &amp; CSS Theme</h2>
+              <p class="mb-2">
+                Make the site yours by editing the design system, reusable components, and CSS theme variables.
+              </p>
+              <ul class="mb-0">
+                <li>
+                  <strong>Via the Capuzzella UI</strong> &mdash; open any page with
+                  <code class="bg-body-secondary px-2 py-1 rounded text-primary">?edit=true</code>
+                  and use the Editor Panel to update components and styles with AI prompts.
+                </li>
+                <li>
+                  <strong>Via the Design System</strong> &mdash; browse
+                  <a href="/design-system" class="fw-semibold">/design-system</a>
+                  to preview components. Admins and designers can edit component HTML in the browser from the Code
+                  button dropdown.
+                </li>
+                <li>
+                  <strong>Via CLI / Git</strong> &mdash; edit files directly in the
+                  <code class="bg-body-secondary px-2 py-1 rounded text-primary">data/</code>
+                  directory and push changes through your normal Git workflow.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="d-flex mb-5">
+            <div class="flex-shrink-0 me-4">
+              <div
+                class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
+                style="width:48px;height:48px">4</div>
+            </div>
+            <div>
+              <h2 class="h4 fw-bold mb-2">Add Your Own API Key</h2>
+              <p class="mb-2">
+                AI editing is already included in your subscription, but you can optionally connect your own API key
+                for full control over provider and model choice. Open <a href="/console/settings#ai-providers" class="fw-semibold">Settings &rarr; AI Providers</a>,
+                choose a provider such as OpenAI or Anthropic, and paste your key. Usage is billed directly by your
+                provider instead of Capuzzella&rsquo;s managed models.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex mb-5">
+            <div class="flex-shrink-0 me-4">
+              <div
+                class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
+                style="width:48px;height:48px">5</div>
+            </div>
+            <div>
+              <h2 class="h4 fw-bold mb-2">Transactional Emails</h2>
+              <p class="mb-2">
+                Managed transactional email is included in your subscription &mdash; sign-in with link, password resets,
+                user invitations, and contact forms work out of the box with no Resend setup required. Open
+                <a href="/console/settings#transactional-emails" class="fw-semibold">Settings &rarr; Transactional Emails</a>
+                to confirm the included sender is active.
+              </p>
+              <p class="mb-0">
+                Optionally switch to <strong>Custom Resend configuration</strong> in the same settings page if you
+                want emails sent from your own
+                <a href="https://resend.com" target="_blank" rel="noopener" class="fw-semibold">Resend</a>
+                account, API key, and verified domain.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex mb-5">
+            <div class="flex-shrink-0 me-4">
+              <div
+                class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
+                style="width:48px;height:48px">6</div>
+            </div>
+            <div>
+              <h2 class="h4 fw-bold mb-2">Invite Team Members</h2>
+              <p class="mb-2">
+                Collaborate with your team by inviting them to your Capuzzella instance.
+                Head to <a href="/console/settings#users" class="fw-semibold">Settings &rarr; Invite</a>
+                to send invitations. Invited members can edit pages and manage content alongside you.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">
+        Capuzzella CMS
+      </p>
+    </div>
+  </footer>
+
+</body>
+
+</html>

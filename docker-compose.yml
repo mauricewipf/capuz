@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      PORT: 80
+    volumes:
+      - ./pages:/app/data:ro
+      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: capuzzella-simple
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    numInstances: 1
+    region: frankfurt
+    plan: starter
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    branch: main
+    envVars:
+      - key: APP_NAME
+        value: Capuzzella CMS
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1

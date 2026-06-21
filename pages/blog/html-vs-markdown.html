@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Why HTML Beats Markdown for AI-Powered Content - Blog</title>
+  <meta name="category" content="Technology" />
+  <meta name="keywords" content="HTML, Markdown, AI, content, static files, Claude" />
+  <meta property="article:section" content="Technology" />
+  <meta property="article:tag" content="HTML" />
+  <meta property="article:tag" content="Markdown" />
+  <meta property="article:tag" content="AI" />
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <header class="bg-primary text-white py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/index.html" class="text-white opacity-75">Home</a></li>
+          <li class="breadcrumb-item"><a href="/blog/index.html" class="text-white opacity-75">Blog</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">HTML vs Markdown</li>
+        </ol>
+      </nav>
+      <h1 class="display-4 fw-bold mb-3">Why HTML Beats Markdown for AI-Powered Content</h1>
+      <p class="lead opacity-75 mb-0">Maurice Wipf &middot; May 10, 2026</p>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <p class="lead mb-4">
+            Markdown has become the default format for AI-generated content. It is simple, portable,
+            and easy to edit. But as AI agents become more powerful and capable, Markdown's limitations
+            are becoming apparent. HTML, the format that predates Markdown by decades, is emerging as
+            the superior choice for AI-powered content creation.
+          </p>
+
+          <p>
+            This shift is not just theoretical. Engineers at the forefront of AI development are
+            increasingly choosing HTML over Markdown for their work. Thariq Naseem, an engineer at
+            Anthropic who works on Claude Code, recently <a href="https://x.com/trq212/article/2052809885763747935" target="_blank" rel="noopener">wrote about his team's transition</a>
+            to HTML as their preferred output format. His observations align with what we have found
+            building Capuzzella: when AI is doing the editing, HTML wins.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">HTML Is the Source of Truth</h2>
+
+          <p>
+            One of the core principles behind Capuzzella is that every page should be stored as a
+            plain HTML file. This architectural decision was driven by the realization that when
+            an AI agent edits content, any translation layer introduces risk. Traditional CMS platforms
+            store content as serialized JSON or escaped HTML inside database columns. The AI has to
+            deserialize, edit, then re-serialize the content. Every step is a place where formatting
+            breaks, entities get double-escaped, or structure is lost.
+          </p>
+
+          <p>
+            With HTML files, what the AI writes is exactly what gets served. There is no proprietary
+            block format to learn, no rendering pipeline that can introduce surprises between what the
+            AI wrote and what the user sees. HTML is the source of truth, and AI models already
+            understand HTML extremely well.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Information Density</h2>
+
+          <p>
+            As Thariq points out, HTML can convey much richer information compared to Markdown. While
+            Markdown handles basic document structure well, HTML can represent:
+          </p>
+
+          <ul>
+            <li><strong>Tabular data</strong> using actual tables with styling</li>
+            <li><strong>Design concepts</strong> with CSS and responsive layouts</li>
+            <li><strong>Illustrations</strong> with SVG diagrams</li>
+            <li><strong>Code snippets</strong> with syntax highlighting</li>
+            <li><strong>Interactions</strong> using JavaScript and interactive elements</li>
+            <li><strong>Spatial data</strong> using absolute positions and canvases</li>
+            <li><strong>Images</strong> embedded directly in the document</li>
+          </ul>
+
+          <p>
+            There is almost no set of information that an AI model can read that cannot be efficiently
+            represented with HTML. In the absence of HTML, models resort to inefficient workarounds like
+            ASCII diagrams or estimating colors with Unicode characters. HTML eliminates these constraints.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Visual Clarity and Readability</h2>
+
+          <p>
+            As AI capabilities expand, the content it generates becomes more complex. Reading a
+            Markdown file of more than a hundred lines is difficult. Most people will not read long
+            Markdown documents, and getting colleagues to read them is even harder.
+          </p>
+
+          <p>
+            HTML documents, by contrast, are much easier to consume. An AI can organize the structure
+            visually with tabs, collapsible sections, color-coded annotations, and responsive layouts
+            that adapt to different screen sizes. The chance of someone actually reading your spec,
+            report, or analysis is significantly higher when it is presented as a well-structured HTML
+            page rather than a wall of Markdown text.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Ease of Sharing</h2>
+
+          <p>
+            Markdown files are cumbersome to share. Most browsers do not render them natively, so you
+            often have to attach them to emails or messages as files. Recipients must download and open
+            them in a separate application.
+          </p>
+
+          <p>
+            HTML files can be uploaded to any static host or file storage service and shared as a link.
+            Your colleagues can open them in any browser, on any device, without needing special software.
+            This frictionless sharing dramatically increases the likelihood that your content will actually
+            be viewed and understood.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Two-Way Interaction</h2>
+
+          <p>
+            Perhaps the most compelling advantage of HTML is the ability to create interactive documents.
+            You can ask an AI to add sliders, knobs, or input fields that let you adjust parameters and
+            see results in real time. You can build throwaway editors for specific tasks: reordering tickets,
+            adjusting feature flags, or tuning prompts with live preview.
+          </p>
+
+          <p>
+            These interactive artifacts can include an export mechanism, a "copy as JSON" or "copy as prompt"
+            button that transforms your adjustments back into something you can paste back into your AI
+            conversation. Markdown simply cannot do this.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">What About the Downsides?</h2>
+
+          <p>
+            Thariq acknowledges the trade-offs honestly. HTML generation takes 2-4x longer than Markdown.
+            HTML diffs in version control are noisier and harder to review. And yes, HTML uses more tokens.
+          </p>
+          
+          <p>
+            But as he notes, with modern context windows reaching one million tokens, the increased token
+            usage is not a practical constraint. The benefits, superior expressiveness, higher engagement,
+            and better communication, outweigh these costs. The goal is not to optimize for the AI's
+            processing time but to optimize for the human's understanding and decision-making.
+          </p>
+
+          <blockquote class="border-start border-primary border-4 ps-4 my-4 fst-italic">
+            "I have honestly stopped using markdown altogether for almost everything, but I'm probably
+            far on the HTML maximalist side of things."
+            <footer class="text-muted mt-2">— Thariq Naseem, Anthropic</footer>
+          </blockquote>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">From Prototypes to Production</h2>
+
+          <p>
+            You do not need a complex setup to start using HTML with AI. You can simply ask your AI
+            assistant to "make an HTML file" or "create an HTML artifact." The key is knowing what
+            you want the artifact to do and how you might use it.
+          </p>
+
+          <p>
+            But what happens when you want to move from one-off experiments to a production website?
+            Traditional CMS platforms like WordPress force you back into their database-driven world,
+            with templates, plugins, and content stored as blobs in MySQL. The HTML you crafted with
+            AI gets fragmented across custom fields, shortcodes, and theme files.
+          </p>
+
+          <p>
+            <a href="/subscription/checkout.html">Capuzzella</a> takes a different approach. It is a
+            website builder designed for the AI era: every page is a plain HTML file that you edit
+            directly with AI assistance. No databases for content. No templating languages. No
+            translation layers. Your AI assistant reads and writes complete HTML files, just as it
+            would in a local development environment, but with production hosting, custom domains,
+            and automatic publishing built in.
+          </p>
+
+          <p>
+            This means you get the full power of HTML for specs, diagrams, and interactive content,
+            combined with the simplicity of a modern CMS. Whether you are building a business site,
+            a portfolio, or a documentation hub, Capuzzella lets you leverage AI to create rich,
+            expressive HTML pages without the overhead of traditional platforms.
+          </p>
+
+          <p>
+            The future of web content is not more Markdown, and it is not database-driven CMS
+            platforms from the pre-AI era. It is production-ready HTML, edited by AI, served as
+            static files. <a href="/subscription/checkout.html">Get started with Capuzzella</a> and
+            see how HTML-first content management changes everything.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">
+        Capuzzella CMS
+      </p>
+    </div>
+  </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "capuzzella-cms-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "hono": "^4.7.10",
+    "zod": "^3.24.4"
+  }
+}

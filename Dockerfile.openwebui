@@ -1,0 +1,3 @@
+FROM openwebui/open-webui:latest
+
+EXPOSE 8080

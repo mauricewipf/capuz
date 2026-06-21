@@ -12,6 +12,32 @@ services:
     envVars:
       - key: APP_NAME
         value: Capuzzella CMS
+      - key: OPENAI_API_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: ENABLE_OPENAI_API
+        value: "true"
+      - key: DEFAULT_MODELS
+        value: openai/gpt-4o-mini
+      - key: CMS_API_KEY
+        generateValue: true
+      - key: WEBUI_SECRET_KEY
+        generateValue: true
+      - key: WEBUI_URL
+        value: https://editor.example.com
+      - key: PUBLIC_HOST
+        value: example.com
+      - key: EDITOR_HOST
+        value: editor.example.com
+      - key: ENABLE_SIGNUP
+        value: "false"
+      - key: DATA_DIR
+        value: /app/data/.open-webui
+      - key: DATA_ROOT
+        value: /app/data
+      - key: TOOL_SERVER_CONNECTIONS
+        value: '[{"type":"mcp","url":"http://127.0.0.1:3000","path":"/mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
     disk:
       name: data
       mountPath: /app/data

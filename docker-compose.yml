@@ -1,10 +1,62 @@
 services:
-  web:
-    build: .
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "8080:80"
     environment:
       PORT: 80
     volumes:
-      - ./pages:/app/data:ro
-      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - site-data:/app/data
+    depends_on:
+      - cms-api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  cms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "3000:3000"
+    environment:
+      API_PORT: 3000
+      DATA_ROOT: /app/data
+      CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
+    volumes:
+      - site-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  openwebui:
+    build:
+      context: .
+      dockerfile: Dockerfile.openwebui
+    ports:
+      - "8081:8080"
+    env_file: .env
+    environment:
+      OPENAI_API_BASE_URL: https://openrouter.ai/api/v1
+      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
+      ENABLE_OPENAI_API: "true"
+      ENABLE_SIGNUP: "true"
+      DEFAULT_MODELS: openai/gpt-4o-mini
+      DEFAULT_MODEL_PARAMS: '{"function_calling":"native"}'
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
+      WEBUI_URL: http://localhost:8081
+      TOOL_SERVER_CONNECTIONS: '[{"type":"mcp","url":"http://cms-api:3000/mcp","path":"/mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
+    volumes:
+      - openwebui-data:/app/backend/data
+    depends_on:
+      - cms-api
+
+volumes:
+  site-data:
+  openwebui-data:

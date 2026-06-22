@@ -47,7 +47,29 @@ docker run -d \
 
 ### sftp — remote nginx VPS
 
-On the VPS, create a deploy user with write access to the web root and add your public key.
+Use this when your site runs on a remote Linux VPS (nginx serving files from disk) and cms-api connects over SSH/SFTP to read and write pages.
+
+**Prepare the VPS** — create a deploy user with write access to the web root and add your public key (the SFTP backend uses key-based auth only):
+
+```bash
+# On the VPS
+sudo useradd -m -s /bin/bash capuz
+sudo mkdir -p /var/www/site
+sudo chown capuz:capuz /var/www/site
+```
+
+```bash
+# On the cms-api host — generate a deploy key if needed
+ssh-keygen -t ed25519 -f ~/.ssh/capuz_deploy_key -N ""
+
+# Copy the public key to the VPS
+ssh-copy-id -i ~/.ssh/capuz_deploy_key.pub capuz@vps.example.com
+
+# Verify access
+ssh -i ~/.ssh/capuz_deploy_key capuz@vps.example.com "ls /var/www/site"
+```
+
+Run cms-api on any host that can reach the VPS on port 22:
 
 ```bash
 docker run -d \
@@ -56,10 +78,10 @@ docker run -d \
   -e CMS_API_KEY="$CMS_API_KEY" \
   -e STORAGE_BACKEND=sftp \
   -e SFTP_HOST=vps.example.com \
-  -e SFTP_USER=capuzzella \
+  -e SFTP_USER=capuz \
   -e SFTP_REMOTE_ROOT=/var/www/site \
   -e SFTP_KEY_PATH=/keys/id_ed25519 \
-  -v ~/.ssh/capuzzella_deploy_key:/keys/id_ed25519:ro \
+  -v ~/.ssh/capuz_deploy_key:/keys/id_ed25519:ro \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
@@ -76,9 +98,9 @@ docker run -d \
   -e GIT_REMOTE=git@github.com:you/yoursite.git \
   -e GIT_BRANCH=main \
   -e GIT_KEY_PATH=/keys/id_ed25519 \
-  -e GIT_AUTHOR_NAME="Capuzzella AI" \
+  -e GIT_AUTHOR_NAME="Capuz AI" \
   -e GIT_AUTHOR_EMAIL=ai@example.com \
-  -v ~/.ssh/capuzzella_deploy_key:/keys/id_ed25519:ro \
+  -v ~/.ssh/capuz_deploy_key:/keys/id_ed25519:ro \
   -v cms-git-repo:/app/repo \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```

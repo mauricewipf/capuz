@@ -10,7 +10,7 @@ Use this document when submitting the plugin to [openwebui.com](https://openwebu
 | **Category** | Tool Server (MCP) |
 | **One-line description** | AI-editable HTML pages for static sites via MCP — fs, SFTP, Git, or S3/R2 backends |
 | **GitHub** | `https://github.com/mauricewipf/capuz` |
-| **Docker Hub** | `mauricewipf/capuz-cms-api:latest` |
+| **Container registry** | `ghcr.io/mauricewipf/capuz-cms-api:latest` |
 | **License** | MIT |
 
 ## Long description
@@ -47,7 +47,7 @@ docker run -d \
   -e STORAGE_BACKEND=fs \
   -e DATA_ROOT=/app/data \
   -v /var/www/site:/app/data \
-  mauricewipf/capuz-cms-api:latest
+  ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
 ## Open WebUI configuration
@@ -81,16 +81,13 @@ Add under **Admin → Settings → Integrations → Tool Servers**:
 
 ## Submission checklist
 
-1. **Create Docker Hub repository** — [hub.docker.com](https://hub.docker.com) → create `mauricewipf/capuz-cms-api`
-2. **Add GitHub Actions secrets** — repo **Settings → Secrets and variables → Actions**:
-   - `DOCKERHUB_USERNAME`
-   - `DOCKERHUB_TOKEN` (access token, not account password)
-3. **Tag and push release** — triggers [.github/workflows/publish.yml](../.github/workflows/publish.yml):
+1. **Tag and push release** — triggers [.github/workflows/publish.yml](../.github/workflows/publish.yml) (uses `GITHUB_TOKEN`; no registry secrets needed):
    ```bash
    git tag v0.1.0
    git push origin v0.1.0
    ```
-4. **Verify image** — `docker pull mauricewipf/capuz-cms-api:0.1.0`
-5. **Create GitHub Release** — `gh release create v0.1.0 --title "v0.1.0" --notes-file CHANGELOG.md`
-6. **Capture screenshots** — see list above
-7. **Submit listing** — [openwebui.com](https://openwebui.com) → Tools / Tool Servers; include GitHub and Docker Hub links
+2. **Make package public** — GitHub → **Packages** → `capuz-cms-api` → **Package settings** → **Change visibility** → Public
+3. **Verify image** — `docker pull ghcr.io/mauricewipf/capuz-cms-api:0.1.0`
+4. **Create GitHub Release** — `gh release create v0.1.0 --title "v0.1.0" --notes-file CHANGELOG.md`
+5. **Capture screenshots** — see list above
+6. **Submit listing** — [openwebui.com](https://openwebui.com) → Tools / Tool Servers; include GitHub and GHCR links

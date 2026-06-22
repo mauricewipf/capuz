@@ -42,7 +42,7 @@ docker run -d \
   -e STORAGE_BACKEND=fs \
   -e DATA_ROOT=/app/data \
   -v /var/www/site:/app/data \
-  mauricewipf/capuz-cms-api:latest
+  ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
 ### sftp — remote nginx VPS
@@ -60,7 +60,7 @@ docker run -d \
   -e SFTP_REMOTE_ROOT=/var/www/site \
   -e SFTP_KEY_PATH=/keys/id_ed25519 \
   -v ~/.ssh/capuzzella_deploy_key:/keys/id_ed25519:ro \
-  mauricewipf/capuz-cms-api:latest
+  ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
 ### git — static host auto-deploy
@@ -80,7 +80,7 @@ docker run -d \
   -e GIT_AUTHOR_EMAIL=ai@example.com \
   -v ~/.ssh/capuzzella_deploy_key:/keys/id_ed25519:ro \
   -v cms-git-repo:/app/repo \
-  mauricewipf/capuz-cms-api:latest
+  ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
 Each write creates a commit and pushes. Deploy latency is typically 20–90 seconds depending on your host.
@@ -99,7 +99,7 @@ docker run -d \
   -e S3_ACCESS_KEY_ID=... \
   -e S3_SECRET_ACCESS_KEY=... \
   -e S3_PUBLIC_URL=https://your-site.example.com \
-  mauricewipf/capuz-cms-api:latest
+  ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
 For extensionless URLs on R2, front the bucket with a small Cloudflare Worker (same role nginx plays in the fs backend).
@@ -197,17 +197,17 @@ See [.env.example](.env.example) for the full list.
 
 ## Publish / install
 
-- Docker Hub: `docker pull mauricewipf/capuz-cms-api:latest`
+- Container registry: `docker pull ghcr.io/mauricewipf/capuz-cms-api:latest`
 - Open WebUI community listing: see [docs/openwebui-listing.md](docs/openwebui-listing.md)
 
 ### First release
 
 Pushing a version tag triggers [.github/workflows/publish.yml](.github/workflows/publish.yml), which builds multi-arch images and pushes:
 
-- `mauricewipf/capuz-cms-api:latest`
-- `mauricewipf/capuz-cms-api:<version>` (e.g. `0.1.0`)
+- `ghcr.io/mauricewipf/capuz-cms-api:latest`
+- `ghcr.io/mauricewipf/capuz-cms-api:<version>` (e.g. `0.1.0`)
 
-Prerequisites: Docker Hub repo `mauricewipf/capuz-cms-api` and GitHub secrets `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`. Full steps are in [docs/openwebui-listing.md](docs/openwebui-listing.md).
+Prerequisites: public GHCR package `ghcr.io/mauricewipf/capuz-cms-api` (created automatically on first tag push). Full steps are in [docs/openwebui-listing.md](docs/openwebui-listing.md).
 
 ```bash
 git tag v0.1.0

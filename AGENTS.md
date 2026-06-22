@@ -8,7 +8,7 @@ Capuz CMS API is an **Open WebUI plugin** — a publishable MCP / OpenAPI tool s
 
 This repo contains two things:
 
-1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
+1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `ghcr.io/mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
 2. **A reference demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
 
 The site content lives in `pages/` (seed data) and is copied into a shared Docker volume at runtime. The API only manages HTML/XML; nginx serves everything else (CSS, JS, images).
@@ -38,7 +38,7 @@ Read `README.md` for plugin install, storage backends, and Open WebUI configurat
 
 Plugin-only deployment: `docker-compose.plugin.yml` (cms-api service only, no nginx/openwebui).
 
-Publishing: tag `v*.*.*` triggers `.github/workflows/publish.yml` → Docker Hub `mauricewipf/capuz-cms-api`. Listing notes in `docs/openwebui-listing.md`.
+Publishing: tag `v*.*.*` triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/capuz-cms-api`. Listing notes in `docs/openwebui-listing.md`.
 
 When changing plugin behavior, keep MCP tools, REST routes, and OpenAPI spec in sync.
 
@@ -109,7 +109,7 @@ Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`
 
 ### Publish cms-api plugin image
 
-Tag push triggers `.github/workflows/publish.yml` → Docker Hub `mauricewipf/capuz-cms-api` (multi-arch `linux/amd64`, `linux/arm64`).
+Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/capuz-cms-api` (multi-arch `linux/amd64`, `linux/arm64`).
 
 ## Coding conventions
 

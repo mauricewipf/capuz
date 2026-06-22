@@ -12,7 +12,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - `list_pages`, `read_page`, `write_page`, `delete_page` MCP tools
 - Startup warning when `CMS_API_KEY` is missing or uses dev default
 - Standalone `docker-compose.plugin.yml` for plugin-only deployment
-- GitHub Actions workflow for multi-arch Docker Hub publishing
+- GitHub Actions workflow for multi-arch GHCR publishing
 - Open WebUI community listing documentation
 
 ### Changed

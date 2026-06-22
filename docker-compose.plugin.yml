@@ -1,6 +1,6 @@
 services:
   cms-api:
-    image: mauricewipf/capuz-cms-api:latest
+    image: ghcr.io/mauricewipf/capuz-cms-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api

@@ -59,8 +59,8 @@ export class GitStorage {
   remote = requireEnv("GIT_REMOTE");
   branch = process.env.GIT_BRANCH?.trim() || "main";
   cloneDir = process.env.GIT_CLONE_DIR?.trim() || "/app/repo";
-  authorName = process.env.GIT_AUTHOR_NAME?.trim() || "Capuzzella CMS";
-  authorEmail = process.env.GIT_AUTHOR_EMAIL?.trim() || "cms@capuzzella.local";
+  authorName = requireEnv("GIT_AUTHOR_NAME");
+  authorEmail = requireEnv("GIT_AUTHOR_EMAIL");
   keyPath = requireEnv("GIT_KEY_PATH");
   initPromise = null;
   privateKey = null;

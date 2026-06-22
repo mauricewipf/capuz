@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: capuzzella-simple
+    name: capuz
     runtime: docker
     dockerfilePath: ./Dockerfile
     numInstances: 1

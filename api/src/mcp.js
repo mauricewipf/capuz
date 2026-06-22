@@ -3,12 +3,13 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { z } from "zod";
 import { handlePathError } from "./pages.js";
 import { getStorage } from "./storage/index.js";
+import { VERSION } from "./version.js";
 
 export function createMcpServer() {
   const storage = getStorage();
   const server = new McpServer({
     name: "cms-pages",
-    version: "1.0.0",
+    version: VERSION,
   });
 
   server.tool(

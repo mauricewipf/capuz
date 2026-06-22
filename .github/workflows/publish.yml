@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
 
 env:
-  IMAGE_NAME: capuzzella/cms-api
+  IMAGE_NAME: mauricewipf/capuz-cms-api
 
 jobs:
   build-and-push:

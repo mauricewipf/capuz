@@ -4,7 +4,7 @@
 
 ```bash
 # 1. Clone and enter directory
-cd capuzzella-simple
+cd capuz
 
 # 2. Configure environment
 cp .env.example .env
@@ -131,7 +131,7 @@ curl -H "Authorization: Bearer dev-local-key" \
 ## Directory Structure
 
 ```
-capuzzella-simple/
+capuz/
 ├── api/                    # API source code (JavaScript / Bun)
 │   ├── src/
 │   │   ├── server.js      # Main API server

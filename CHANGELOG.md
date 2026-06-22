@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Capuzzella CMS API plugin are documented here.
+All notable changes to the Capuz CMS API plugin are documented here.
 
 ## [0.1.0] - 2026-06-21
 

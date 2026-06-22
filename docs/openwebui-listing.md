@@ -1,4 +1,4 @@
-# Open WebUI Community Listing — Capuzzella CMS API
+# Open WebUI Community Listing — Capuz CMS API
 
 Use this document when submitting the plugin to [openwebui.com](https://openwebui.com).
 
@@ -6,16 +6,16 @@ Use this document when submitting the plugin to [openwebui.com](https://openwebu
 
 | Field | Value |
 |-------|-------|
-| **Name** | Capuzzella CMS Pages |
+| **Name** | Capuz CMS Pages |
 | **Category** | Tool Server (MCP) |
 | **One-line description** | AI-editable HTML pages for static sites via MCP — fs, SFTP, Git, or S3/R2 backends |
-| **GitHub** | `https://github.com/<your-org>/capuzzella-simple` |
-| **Docker Hub** | `capuzzella/cms-api:latest` |
-| **License** | (set your license) |
+| **GitHub** | `https://github.com/mauricewipf/capuz` |
+| **Docker Hub** | `mauricewipf/capuz-cms-api:latest` |
+| **License** | MIT |
 
 ## Long description
 
-Capuzzella CMS API is an Open WebUI tool server that lets AI models read, write, and delete HTML/XML pages on your static site.
+Capuz CMS API is an Open WebUI tool server that lets AI models read, write, and delete HTML/XML pages on your static site.
 
 Connect it once, then ask Open WebUI to edit your site in natural language:
 
@@ -47,7 +47,7 @@ docker run -d \
   -e STORAGE_BACKEND=fs \
   -e DATA_ROOT=/app/data \
   -v /var/www/site:/app/data \
-  capuzzella/cms-api:latest
+  mauricewipf/capuz-cms-api:latest
 ```
 
 ## Open WebUI configuration
@@ -81,31 +81,16 @@ Add under **Admin → Settings → Integrations → Tool Servers**:
 
 ## Submission checklist
 
-- [ ] Push `capuzzella/cms-api` image to Docker Hub
-- [ ] Tag release `v0.1.0` on GitHub
-- [ ] Capture 2–3 screenshots
-- [ ] Submit listing on openwebui.com (Tools / Tool Servers)
-- [ ] Include GitHub and Docker Hub links in the listing
-
-## Optional: Python Tool wrapper
-
-For users who prefer Open WebUI's in-UI tool installer, publish a thin Python Tool that calls the REST API. The user still self-hosts cms-api; the Python wrapper is just a client.
-
-```python
-# Requires: pip install requests
-# Valves: CMS_API_URL, CMS_API_KEY
-
-import requests
-
-class Tools:
-    def __init__(self):
-        self.api_url = ""
-        self.api_key = ""
-
-    def list_pages(self) -> str:
-        r = requests.get(f"{self.api_url}/api/pages", timeout=30)
-        r.raise_for_status()
-        return str(r.json()["pages"])
-```
-
-(Full wrapper can be expanded with read/write/delete methods mirroring the MCP tools.)
+1. **Create Docker Hub repository** — [hub.docker.com](https://hub.docker.com) → create `mauricewipf/capuz-cms-api`
+2. **Add GitHub Actions secrets** — repo **Settings → Secrets and variables → Actions**:
+   - `DOCKERHUB_USERNAME`
+   - `DOCKERHUB_TOKEN` (access token, not account password)
+3. **Tag and push release** — triggers [.github/workflows/publish.yml](../.github/workflows/publish.yml):
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+4. **Verify image** — `docker pull mauricewipf/capuz-cms-api:0.1.0`
+5. **Create GitHub Release** — `gh release create v0.1.0 --title "v0.1.0" --notes-file CHANGELOG.md`
+6. **Capture screenshots** — see list above
+7. **Submit listing** — [openwebui.com](https://openwebui.com) → Tools / Tool Servers; include GitHub and Docker Hub links

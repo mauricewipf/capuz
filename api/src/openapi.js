@@ -1,8 +1,10 @@
+import { VERSION } from "./version.js";
+
 export const openApiDocument = {
   openapi: "3.1.0",
   info: {
-    title: "Capuzzella CMS API",
-    version: "1.0.0",
+    title: "Capuz CMS API",
+    version: VERSION,
     description:
       "AI-editable HTML and XML pages for static sites. Use as an Open WebUI Tool Server or direct REST API.",
   },

@@ -4,15 +4,43 @@ Instructions for AI coding agents working in this repository.
 
 ## Project overview
 
-Capuzzella CMS API is an AI-editable static site stack. A Bun/Hono API exposes REST and MCP endpoints so LLM tools can read, write, and delete `.html` and `.xml` pages. This repo ships:
+Capuzzella CMS API is an **Open WebUI plugin** — a publishable MCP / OpenAPI tool server that lets LLMs read, write, and delete `.html` and `.xml` pages on a static site. A Bun/Hono API exposes REST and MCP endpoints; Open WebUI (or any MCP client) connects to it with bearer auth.
 
-- **cms-api** — file-management API + MCP server (`api/`)
-- **nginx** — static file server for the public site
-- **openwebui** — reference AI editor (demo stack only)
+This repo contains two things:
+
+1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `capuzzella/cms-api`. Users run it standalone and connect their own Open WebUI instance.
+2. **A reference demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
 
 The site content lives in `pages/` (seed data) and is copied into a shared Docker volume at runtime. The API only manages HTML/XML; nginx serves everything else (CSS, JS, images).
 
-Read `README.md` for deployment and storage backends. Read `ARCHITECTURE.md` for service topology and data flow.
+Read `README.md` for plugin install, storage backends, and Open WebUI configuration. Read `ARCHITECTURE.md` for service topology and data flow.
+
+## Open WebUI plugin
+
+`cms-api` is the plugin artifact. It is **not** tied to the demo stack — users can deploy it anywhere and point Open WebUI at it.
+
+| Integration | Endpoint | Auth |
+|-------------|----------|------|
+| MCP tool server | `POST /mcp` | `Authorization: Bearer <CMS_API_KEY>` |
+| OpenAPI tool server | `GET /openapi.json` | Bearer on write/delete |
+| REST API | `/api/pages/*` | Bearer on PUT/DELETE |
+
+**MCP tools:** `list_pages`, `read_page`, `write_page`, `delete_page`
+
+**Storage backends** (selected via `STORAGE_BACKEND` env var):
+
+| Backend | Use case |
+|---------|----------|
+| `fs` (default) | cms-api colocated with nginx via shared volume — local demo and VPS setups |
+| `sftp` | Remote nginx host over SSH |
+| `git` | Commit/push to a repo connected to Pages, Netlify, Vercel, GitHub Pages |
+| `s3` | Direct writes to Cloudflare R2, AWS S3, or any S3-compatible bucket |
+
+Plugin-only deployment: `docker-compose.plugin.yml` (cms-api service only, no nginx/openwebui).
+
+Publishing: tag `v*.*.*` triggers `.github/workflows/publish.yml` → Docker Hub `capuzzella/cms-api`. Listing notes in `docs/openwebui-listing.md`.
+
+When changing plugin behavior, keep MCP tools, REST routes, and OpenAPI spec in sync.
 
 ## Tech stack
 
@@ -41,18 +69,21 @@ api/src/
   storage/        # Backend implementations (fs, sftp, git, s3)
 pages/            # Seed HTML/XML for the demo site
 nginx.conf        # Static server config (extensionless URLs)
-docker-compose.yml
+docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui)
+docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
 Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui
 ```
 
 ## Commands
 
-### Local demo stack
+### Local demo stack (reference — uses `fs` backend, no extra config)
 
 ```bash
 cp .env.example .env   # set OPENROUTER_API_KEY
 docker compose up --build -d
 ```
+
+The demo uses `STORAGE_BACKEND=fs`, shared volume `site-data`, and `CMS_API_KEY=dev-local-key`. No sftp/git/s3 setup needed.
 
 | Service | URL |
 |---------|-----|
@@ -76,9 +107,9 @@ cd api && bun install && bun run start
 
 Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`).
 
-### Publish cms-api image
+### Publish cms-api plugin image
 
-Tag push triggers `.github/workflows/publish.yml` → Docker Hub `capuzzella/cms-api`.
+Tag push triggers `.github/workflows/publish.yml` → Docker Hub `capuzzella/cms-api` (multi-arch `linux/amd64`, `linux/arm64`).
 
 ## Coding conventions
 
@@ -138,7 +169,9 @@ After HTML changes in `pages/`, rebuild nginx or restart compose so seed/volume 
 
 ## MCP / integration context
 
-Open WebUI connects to `http://cms-api:3000/mcp` with bearer auth. Tool server config lives in `docker-compose.yml` (`TOOL_SERVER_CONNECTIONS`). The API is also consumable via OpenAPI at `/openapi.json`.
+Open WebUI connects to `http://cms-api:3000/mcp` with bearer auth (`CMS_API_KEY`). Tool server config is in `docker-compose.yml` (`TOOL_SERVER_CONNECTIONS`). External users configure the same JSON in their own Open WebUI instance, pointing at wherever they host cms-api.
+
+The API is also consumable as an OpenAPI tool server at `/openapi.json`.
 
 When editing MCP or OpenAPI surfaces, keep tool names, parameters, and REST routes in sync.
 

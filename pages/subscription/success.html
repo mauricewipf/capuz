@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Set Up Your Instance - Capuzzella</title>
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+</head>
+
+<body>
+
+  <section class="py-5 bg-success text-white">
+    <div class="container py-4 text-center">
+      <h1 class="display-4 fw-bold mb-3">Payment Successful</h1>
+      <p class="lead opacity-75 col-lg-7 mx-auto">
+        Your subscription is active. Set up your Capuzzella instance below.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-5">
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-lg-12 col-md-12">
+
+          <h2 class="h4 fw-bold mb-4">Set Up Your Instance</h2>
+
+          <form id="setup-form">
+            <div class="mb-3">
+              <label for="admin-email" class="form-label fw-semibold">Admin Email</label>
+              <input type="email" class="form-control" id="admin-email" required placeholder="you@example.com" />
+              <div class="form-text">This will be the first admin user for your instance.</div>
+            </div>
+            <div class="mb-3">
+              <label for="app-name" class="form-label fw-semibold">App Name</label>
+              <input type="text" class="form-control" id="app-name" required placeholder="My Website" />
+              <div class="form-text">The visible name shown on your website.</div>
+            </div>
+            <div class="mb-4">
+              <label for="subdomain" class="form-label fw-semibold">Domain</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="subdomain" required
+                  pattern="[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]" placeholder="my-website" />
+                <span class="input-group-text">.onrender.com</span>
+              </div>
+              <div class="form-text">Lowercase letters, numbers, and hyphens only (3–30 characters). You can connect a custom domain later from your instance settings.</div>
+            </div>
+
+            <div id="setup-error" class="alert alert-danger d-none" role="alert"></div>
+            <div id="setup-success" class="alert alert-success d-none" role="alert"></div>
+
+            <div id="setup-loading" class="d-none text-center py-4">
+              <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="text-muted mb-0">Creating your instance... This may take a few minutes.</p>
+              <p class="text-muted small mt-2 mb-0">Once your instance is ready, we will email your admin login credentials to the address you provided.</p>
+              <p class="text-warning small mt-2"><strong>Please do not refresh or close this window.</strong></p>
+            </div>
+
+            <button type="submit" id="setup-btn" class="btn btn-success btn-lg w-100 fw-semibold">
+              Create Instance
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">
+        Capuzzella CMS
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+
+      if (!sessionId) {
+        document.getElementById('setup-error').textContent = 'Missing session. Please complete checkout first.';
+        document.getElementById('setup-error').classList.remove('d-none');
+        document.getElementById('setup-btn').disabled = true;
+        return;
+      }
+
+      const emailInput = document.getElementById('admin-email');
+
+      let blockNavigation = false;
+
+      function onBeforeUnload(e) {
+        if (!blockNavigation) return;
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+
+      window.addEventListener('beforeunload', onBeforeUnload);
+
+      function setBlockNavigation(block) {
+        blockNavigation = block;
+      }
+
+      fetch(`/api/stripe/checkout-session?session_id=${encodeURIComponent(sessionId)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.customerEmail) {
+            emailInput.value = data.customerEmail;
+          }
+        })
+        .catch(e => console.error('Could not pre-fill email', e));
+
+      document.getElementById('setup-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('setup-btn');
+        const errorEl = document.getElementById('setup-error');
+        const successEl = document.getElementById('setup-success');
+        const loadingEl = document.getElementById('setup-loading');
+
+        errorEl.classList.add('d-none');
+        successEl.classList.add('d-none');
+        btn.classList.add('d-none');
+        loadingEl.classList.remove('d-none');
+        setBlockNavigation(true);
+
+        let setupRes;
+        let serviceId, serviceUrl, adminEmail, initialPassword;
+
+        try {
+          // Step 1: Create the service
+          setupRes = await fetch('/api/stripe/setup-instance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: sessionId,
+              adminEmail: emailInput.value.trim(),
+              appName: document.getElementById('app-name').value.trim(),
+              subdomain: document.getElementById('subdomain').value.trim(),
+            }),
+          });
+
+          const setupData = await setupRes.json();
+
+          if (!setupRes.ok) {
+            throw new Error(setupData.error || 'Failed to create instance');
+          }
+
+          serviceId = setupData.renderServiceId;
+          serviceUrl = setupData.serviceUrl;
+          adminEmail = setupData.adminEmail;
+          initialPassword = setupData.initialPassword;
+
+          // Step 2: Poll for deploy status
+          const deployStatus = await pollDeployStatus(serviceId);
+
+          loadingEl.classList.add('d-none');
+          setBlockNavigation(false);
+
+          if (deployStatus === 'live') {
+            // Show success with service URL
+            const baseUrl = serviceUrl || `https://${document.getElementById('subdomain').value.trim()}.onrender.com`;
+            const instanceUrl = `${baseUrl}/auth/login?email=${encodeURIComponent(adminEmail)}&returnTo=${encodeURIComponent('/instructions?edit=true')}`;
+            successEl.innerHTML = `Your instance is ready!<br><br>`
+              + `<a href="${instanceUrl}" target="_blank" class="fw-semibold">${instanceUrl}</a><br><br>`
+              + `<strong>Admin Login Credentials</strong><br>`
+              + `Email: <code>${adminEmail}</code><br>`
+              + `Password: <code>${initialPassword}</code><br>`
+              + `<small class="opacity-75">We also sent these details to your email. Please change your password after your first login.</small>`;
+            successEl.classList.remove('d-none');
+          } else {
+            // Deploy failed or timed out
+            throw new Error('Instance creation took too long or failed. Please contact support for assistance.');
+          }
+        } catch (err) {
+          loadingEl.classList.add('d-none');
+          setBlockNavigation(false);
+
+          // Show specific error for subdomain conflicts, generic message otherwise
+          const errorMessage = err.message || 'Failed to create instance. Please try again or contact support.';
+          errorEl.textContent = errorMessage;
+          errorEl.classList.remove('d-none');
+
+          // Keep button enabled for subdomain conflicts so user can try a different one
+          if (setupRes && setupRes.status === 409 || errorMessage.includes('already taken')) {
+            btn.classList.remove('d-none');
+            btn.disabled = false;
+            btn.textContent = 'Create Instance';
+          } else {
+            btn.classList.add('d-none');
+          }
+        }
+      });
+
+      // Poll deploy status with 10 second intervals
+      async function pollDeployStatus(serviceId) {
+        const POLL_INTERVAL = 10000; // 10 seconds
+        const MAX_ATTEMPTS = 300; // 50 minutes max
+        const FAILURE_THRESHOLD = 30; // 5 minutes (30 * 10s)
+
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          try {
+            const res = await fetch(`/api/stripe/deploy-status?serviceId=${encodeURIComponent(serviceId)}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+              console.error('Deploy status check failed:', data.error);
+              continue;
+            }
+
+            if (data.status === 'live') {
+              return 'live';
+            }
+
+            // If not live within 5 minutes, consider it failed
+            if (attempt >= FAILURE_THRESHOLD) {
+              return 'failed';
+            }
+
+            // Wait before next poll
+            await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+          } catch (err) {
+            console.error('Error polling deploy status:', err);
+            // Continue polling despite errors
+            await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+          }
+        }
+
+        return 'timeout';
+      }
+    })();
+  </script>
+</body>
+
+</html>

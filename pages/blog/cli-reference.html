@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Capuzzella CLI: A Complete Guide - Blog</title>
+  <meta name="category" content="Knowledge Base" />
+  <meta name="keywords"
+    content="CLI, command line, API, Capuzzella, developer tools, publishing, scheduled publishing, AI providers, custom domains, transactional emails" />
+  <meta property="article:section" content="Knowledge Base" />
+  <meta property="article:tag" content="CLI" />
+  <meta property="article:tag" content="developer tools" />
+  <meta property="article:tag" content="API" />
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <header class="bg-primary text-white py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/index.html" class="text-white opacity-75">Home</a></li>
+          <li class="breadcrumb-item"><a href="/blog/index.html" class="text-white opacity-75">Blog</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">CLI Reference</li>
+        </ol>
+      </nav>
+      <h1 class="display-4 fw-bold mb-3">The Capuzzella CLI: A Complete Guide</h1>
+      <p class="lead opacity-75 mb-0">Maurice Wipf &middot; March 12, 2026</p>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <p class="lead mb-4">
+            Capuzzella ships a CLI that wraps its HTTP API into shell commands. It's a thin
+            client &mdash; no local state, no config files, no database connections. Every
+            command is an authenticated HTTP request to a running Capuzzella server. This post
+            covers setup and every command group.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Setup</h2>
+
+          <p>The CLI is available as an npm package. Install it globally with:</p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>npm install -g capuzzella</code></pre>
+
+          <p>This makes the <code>capuzzella</code> command available system-wide. The package
+            is published at
+            <a href="https://www.npmjs.com/package/capuzzella" target="_blank"
+              rel="noopener">npmjs.com/package/capuzzella</a>.
+            You can also run it directly without installing:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>npx capuzzella &lt;command&gt;</code></pre>
+
+          <p>The CLI requires Node.js 18 or later (for native <code>fetch</code> support) and has
+            zero dependencies.</p>
+
+          <p>
+            Two environment variables control the CLI:
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Variable</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CAPUZZELLA_API_KEY</code></td>
+                <td>Yes</td>
+                <td>&mdash;</td>
+                <td>Bearer token for API authentication</td>
+              </tr>
+              <tr>
+                <td><code>CAPUZZELLA_URL</code></td>
+                <td>No</td>
+                <td><code>http://localhost:3000</code></td>
+                <td>Base URL of the Capuzzella server</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            If <code>CAPUZZELLA_API_KEY</code> is not set, the CLI exits immediately with a
+            helpful message. Trailing slashes on <code>CAPUZZELLA_URL</code> are stripped
+            automatically. There is no config file, no <code>.capuzzellarc</code>, no
+            <code>capuzzella.config.js</code>. Environment variables are the only input.
+          </p>
+
+          <p>
+            Start by pointing the CLI at your Capuzzella instance. Most deployments run on
+            Render, so the URL will look like
+            <code>https://your-instance.onrender.com</code>. Export it in your shell:
+          </p>
+
+          <pre
+            class="bg-dark text-light p-3 rounded"><code>export CAPUZZELLA_URL=https://your-instance.onrender.com</code></pre>
+
+          <p>
+            The default is <code>http://localhost:3000</code>, which is only useful during
+            local development. If you're running against a deployed instance, you
+            <strong>must</strong> set <code>CAPUZZELLA_URL</code> &mdash; otherwise every
+            command will fail with a connection error.
+          </p>
+
+          <p>
+            Next, get an API key. Open <strong>Settings &rarr; API Keys</strong> in the
+            Capuzzella admin UI and create a new key. The key starts with <code>cap_</code>
+            and is shown only once &mdash; copy it immediately. Then export it:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>export CAPUZZELLA_API_KEY=cap_your_key_here</code></pre>
+
+          <p>
+            To persist both variables across sessions, add the export lines to your shell
+            profile (<code>~/.zshrc</code>, <code>~/.bashrc</code>, or equivalent). In CI
+            environments, store them as secrets and inject them at runtime. You can also pass
+            both inline for a single command:
+          </p>
+
+          <pre
+            class="bg-dark text-light p-3 rounded"><code>CAPUZZELLA_URL=https://your-instance.onrender.com CAPUZZELLA_API_KEY=cap_your_key_here capuzzella whoami</code></pre>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Command Groups</h2>
+
+          <p>The CLI organizes its commands into eight groups: identity, pages, publishing,
+            scheduling, key management, AI provider configuration, transactional emails,
+            and custom domains. Each group maps directly to a section of the REST API.</p>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">Identity</h3>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella whoami</code></pre>
+
+          <p>
+            Calls <code>GET /api/me</code> and prints the role, key name, key ID, and
+            associated email for the current API key. Useful for verifying which key is active
+            in your shell session, especially when switching between environments.
+          </p>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">Pages</h3>
+
+          <p>
+            Page paths are always relative and end in <code>.html</code>. Nested paths use
+            forward slashes: <code>blog/post.html</code>, <code>services/consulting.html</code>.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>pages list</code></td>
+                <td><code>GET /api/pages</code></td>
+                <td>Lists all draft pages as JSON</td>
+              </tr>
+              <tr>
+                <td><code>pages get &lt;path&gt;</code></td>
+                <td><code>GET /api/pages/&lt;path&gt;</code></td>
+                <td>Prints the raw HTML of a page</td>
+              </tr>
+              <tr>
+                <td><code>pages save &lt;path&gt; --file &lt;file&gt;</code></td>
+                <td><code>PUT /api/pages/&lt;path&gt;</code></td>
+                <td>Reads a local file and uploads it as a page</td>
+              </tr>
+              <tr>
+                <td><code>pages delete &lt;path&gt;</code></td>
+                <td><code>DELETE /api/pages/&lt;path&gt;</code></td>
+                <td>Deletes both the draft and published copy</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            <code>pages get</code> detects whether the response contains an <code>html</code>
+            field and prints raw HTML if so, otherwise falls back to pretty-printed JSON. This
+            makes it easy to pipe page content into other tools:
+          </p>
+
+          <pre
+            class="bg-dark text-light p-3 rounded"><code>capuzzella pages get index.html &gt; backup.html</code></pre>
+
+          <p>
+            <code>pages save</code> requires the <code>--file</code> flag. It reads the file
+            from disk using Node's <code>fs</code> module, checks that the file exists,
+            and sends the contents as the <code>html</code> field in a JSON body. This is a
+            create-or-update operation &mdash; if the page path doesn't exist, it's created;
+            if it does, it's overwritten.
+          </p>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">Publishing</h3>
+
+          <p>
+            Capuzzella's content model is built on two directories: <code>drafts/</code> and
+            <code>public/</code>. Publishing copies a page from drafts to public. Unpublishing
+            removes the public copy while keeping the draft intact.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>publish all</code></td>
+                <td><code>POST /publish/</code></td>
+                <td>Publishes every draft at once</td>
+              </tr>
+              <tr>
+                <td><code>publish &lt;path&gt;</code></td>
+                <td><code>POST /publish/&lt;path&gt;</code></td>
+                <td>Publishes a single page</td>
+              </tr>
+              <tr>
+                <td><code>unpublish &lt;path&gt;</code></td>
+                <td><code>DELETE /publish/&lt;path&gt;</code></td>
+                <td>Removes the published copy</td>
+              </tr>
+              <tr>
+                <td><code>status &lt;path&gt;</code></td>
+                <td><code>GET /publish/status/&lt;path&gt;</code></td>
+                <td>Shows <code>isPublished</code> and <code>hasUnpublishedChanges</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            The <code>status</code> command is the one you'll reach for most often. It returns
+            two booleans: whether the page is currently published, and whether the draft has
+            diverged from the published version. A typical workflow looks like:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella pages save blog/post.html --file ./post.html
+capuzzella status blog/post.html
+capuzzella publish blog/post.html</code></pre>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">Scheduled Publishing</h3>
+
+          <p>
+            Scheduled publishing lets you queue a page to go live at a specific time. The
+            server stores schedules in SQLite and runs a background check to publish pages when
+            their scheduled time arrives.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>schedule list</code></td>
+                <td><code>GET /publish/schedule?status=pending</code></td>
+                <td>Lists pending schedules</td>
+              </tr>
+              <tr>
+                <td><code>schedule list all</code></td>
+                <td><code>GET /publish/schedule</code></td>
+                <td>Lists all schedules (including completed and cancelled)</td>
+              </tr>
+              <tr>
+                <td><code>schedule add &lt;path&gt; --at &lt;datetime&gt;</code></td>
+                <td><code>POST /publish/schedule</code></td>
+                <td>Schedules a page for future publish</td>
+              </tr>
+              <tr>
+                <td><code>schedule get &lt;id&gt;</code></td>
+                <td><code>GET /publish/schedule/&lt;id&gt;</code></td>
+                <td>Gets details of a scheduled publish</td>
+              </tr>
+              <tr>
+                <td><code>schedule cancel &lt;id&gt;</code></td>
+                <td><code>DELETE /publish/schedule/&lt;id&gt;</code></td>
+                <td>Cancels a pending schedule</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            The <code>--at</code> flag takes an ISO 8601 datetime string. Timestamps are stored
+            as Unix epoch seconds internally, but the CLI converts them back to ISO format for
+            display. The <code>schedule list</code> output shows each schedule on a single line:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella schedule add blog/launch.html --at 2026-04-01T09:00:00Z
+# Scheduled #3: blog/launch.html will publish at 2026-04-01T09:00:00.000Z
+
+capuzzella schedule list
+#   #3  blog/launch.html  →  2026-04-01T09:00:00.000Z  [pending]</code></pre>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">API Key Management</h3>
+
+          <p>
+            These commands require an admin-role API key. They let you manage access to the
+            Capuzzella API without touching the server's admin UI.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>keys list</code></td>
+                <td><code>GET /settings/api-keys</code></td>
+                <td>Lists all API keys (hashed, not plaintext)</td>
+              </tr>
+              <tr>
+                <td><code>keys create --name &lt;n&gt; --role &lt;r&gt; [--rate-limit &lt;n&gt;]</code></td>
+                <td><code>POST /settings/api-keys</code></td>
+                <td>Creates a key and prints it once</td>
+              </tr>
+              <tr>
+                <td><code>keys revoke &lt;id&gt;</code></td>
+                <td><code>POST /settings/api-keys/&lt;id&gt;/revoke</code></td>
+                <td>Revokes a key (disables without deleting)</td>
+              </tr>
+              <tr>
+                <td><code>keys delete &lt;id&gt;</code></td>
+                <td><code>POST /settings/api-keys/&lt;id&gt;/delete</code></td>
+                <td>Permanently deletes a key</td>
+              </tr>
+              <tr>
+                <td><code>keys audit &lt;id&gt;</code></td>
+                <td><code>GET /settings/api-keys/&lt;id&gt;/audit</code></td>
+                <td>Shows the request audit log for a key</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            When creating a key, the plaintext value (prefixed <code>cap_</code>) is printed
+            exactly once. The server stores only the hash. If you lose it, you create a new one.
+            The <code>--role</code> flag accepts <code>editor</code>, <code>admin</code>,
+            <code>viewer</code>, or <code>designer</code>. The <code>--rate-limit</code> flag
+            defaults to 60 requests per minute if omitted.
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella keys create --name "CI pipeline" --role editor --rate-limit 120
+# API key created. Copy it now — it will not be shown again:
+#   cap_abc123...</code></pre>
+
+          <p>
+            Revoking a key is a soft disable &mdash; the key record stays but stops
+            authenticating. Deleting is permanent. Both are useful in different situations:
+            revoke when you suspect a leak and want to investigate, delete when cleaning up
+            old integrations.
+          </p>
+
+          <p>
+            The <code>keys audit</code> command shows the request log for a specific key &mdash;
+            every API call it has made, with timestamp, HTTP method, and path. This is useful
+            for debugging integrations and reviewing what an agent or script has been doing:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella keys audit 3
+#   2026-03-16T10:23:45.000Z  GET     /api/pages
+#   2026-03-16T10:23:46.000Z  PUT     /api/pages/index.html
+#   2026-03-16T10:23:47.000Z  POST    /publish/index.html</code></pre>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">AI Provider Configuration</h3>
+
+          <p>
+            These commands let you view and change the AI provider settings (which model powers
+            the built-in AI editor) from the command line. Admin-role API key required.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ai-provider get</code></td>
+                <td><code>GET /settings/ai-provider</code></td>
+                <td>Shows the active provider, available models, and configuration status</td>
+              </tr>
+              <tr>
+                <td><code>ai-provider set --provider &lt;id&gt; [--model &lt;m&gt;] [--api-key &lt;k&gt;]</code></td>
+                <td><code>POST /settings/ai-provider</code></td>
+                <td>Sets the active provider, model, and/or API key</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            The supported providers are <code>openai</code> and <code>anthropic</code>. Each
+            provider has its own list of models (e.g. <code>gpt-5.4</code>,
+            <code>claude-sonnet-4-6</code>). You can switch providers and models without
+            touching the server's admin UI:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella ai-provider get
+# Active provider: openai
+#   openai (OpenAI) [active, configured]
+#     Model: gpt-5.4
+#     Available: gpt-5.4, gpt-5-mini, gpt-4.1, gpt-4.1-mini, ...
+#   anthropic (Anthropic)
+#     Model: claude-sonnet-4-6
+#     Available: claude-opus-4-6, claude-sonnet-4-6, ...
+
+capuzzella ai-provider set --provider anthropic --model claude-sonnet-4-6 --api-key sk-ant-...
+# AI provider set to anthropic, model: claude-sonnet-4-6</code></pre>
+
+          <p>
+            The <code>--api-key</code> flag is only needed when configuring a provider for the
+            first time or rotating a key. If the provider already has a key saved, you can omit
+            it and just switch the model.
+          </p>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">Transactional Emails</h3>
+
+          <p>
+            Capuzzella uses <a href="https://resend.com" target="_blank" rel="noopener">Resend</a>
+            for sending invitation emails, magic-link logins, password resets, and contact form
+            notifications. These commands manage the Resend configuration.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>email get</code></td>
+                <td><code>GET /settings/resend</code></td>
+                <td>Shows the current email configuration</td>
+              </tr>
+              <tr>
+                <td><code>email set --domain &lt;d&gt; --contact-email &lt;e&gt; [--api-key &lt;k&gt;]</code></td>
+                <td><code>POST /settings/resend</code></td>
+                <td>Configures Resend for transactional emails</td>
+              </tr>
+              <tr>
+                <td><code>email remove</code></td>
+                <td><code>POST /settings/resend</code></td>
+                <td>Removes the Resend configuration entirely</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella email set --domain mail.example.com --contact-email admin@example.com --api-key re_xxxxx
+# Email configured: domain=mail.example.com, contact=admin@example.com
+
+capuzzella email get
+# Transactional email configuration:
+#   Domain:        mail.example.com
+#   Contact Email: admin@example.com</code></pre>
+
+          <p>
+            The <code>--domain</code> is the verified sending domain in your Resend account
+            (used as the <code>From</code> address). The <code>--contact-email</code> is where
+            contact form submissions are forwarded. Removing the configuration disables all
+            email features &mdash; invitations, magic links, and password resets will stop
+            working.
+          </p>
+
+          <h3 class="h4 fw-bold mt-4 mb-3">Custom Domains</h3>
+
+          <p>
+            If your Capuzzella instance runs on Render, you can manage custom domains from the
+            CLI. These commands interact with the Render API to add, list, and remove domains.
+          </p>
+
+          <table class="table table-bordered mb-4">
+            <thead class="table-light">
+              <tr>
+                <th>Command</th>
+                <th>API Call</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>domains list</code></td>
+                <td><code>GET /settings/custom-domains</code></td>
+                <td>Lists all custom domains with verification status</td>
+              </tr>
+              <tr>
+                <td><code>domains add &lt;domain&gt;</code></td>
+                <td><code>POST /settings/custom-domains</code></td>
+                <td>Adds a custom domain</td>
+              </tr>
+              <tr>
+                <td><code>domains delete &lt;domain-id&gt;</code></td>
+                <td><code>DELETE /settings/custom-domains/&lt;id&gt;</code></td>
+                <td>Removes a custom domain</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>capuzzella domains add example.com
+# Custom domain added: example.com
+# Configure a CNAME or A record at your DNS provider to complete setup.
+
+capuzzella domains list
+#   example.com  [pending]  id: cdm-abc123
+#   www.example.com  [verified]  id: cdm-def456
+
+capuzzella domains delete cdm-abc123
+# Custom domain removed.</code></pre>
+
+          <p>
+            After adding a domain, you need to configure DNS at your domain provider. Subdomains
+            require a CNAME record pointing to your <code>.onrender.com</code> hostname. Apex
+            domains require an A record pointing to <code>216.24.57.1</code>. TLS certificates
+            are provisioned automatically once DNS verification passes.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Scripting and CI Integration</h2>
+
+          <p>
+            Because every command returns structured JSON and exits with code 0 on success or
+            1 on failure, the CLI slots into shell scripts and CI pipelines naturally:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>#!/bin/bash
+set -e
+
+# Deploy all HTML files from a build directory
+for file in dist/*.html; do
+  page=$(basename "$file")
+  capuzzella pages save "$page" --file "$file"
+  capuzzella publish "$page"
+  echo "Published $page"
+done</code></pre>
+
+          <p>
+            In a GitHub Actions workflow, you'd set <code>CAPUZZELLA_API_KEY</code> and
+            <code>CAPUZZELLA_URL</code> as repository secrets, install the CLI with
+            <code>npm install -g capuzzella</code>, and run your deployment script. The CLI's
+            stateless design means there's no setup step beyond exporting two environment
+            variables.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Full Command Reference</h2>
+
+          <p>
+            Run <code>capuzzella --help</code> (or <code>capuzzella</code> with no arguments)
+            to print the built-in reference:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>Capuzzella CLI
+
+Usage: capuzzella &lt;command&gt; [options]
+
+Commands:
+  whoami                                  Show current key role and identity
+
+  pages list                              List all pages
+  pages get &lt;path&gt;                        Get page HTML
+  pages save &lt;path&gt; --file &lt;file&gt;         Save page from local file
+  pages delete &lt;path&gt;                     Delete a page
+
+  publish all                             Publish all drafts
+  publish &lt;path&gt;                          Publish a single page
+  unpublish &lt;path&gt;                        Unpublish a page
+  status &lt;path&gt;                           Check publish status
+
+  schedule list                           List pending scheduled publishes
+  schedule list all                       List all scheduled publishes
+  schedule add &lt;path&gt; --at &lt;datetime&gt;     Schedule a page for future publish
+  schedule get &lt;id&gt;                       Get details of a scheduled publish
+  schedule cancel &lt;id&gt;                    Cancel a pending scheduled publish
+
+  keys list                               List API keys
+  keys create --name &lt;n&gt; --role &lt;r&gt;       Create a new API key
+  keys revoke &lt;id&gt;                        Revoke an API key
+  keys delete &lt;id&gt;                        Delete an API key
+  keys audit &lt;id&gt;                         Show audit log for an API key
+
+  ai-provider get                         Show AI provider configuration
+  ai-provider set --provider &lt;id&gt;         Set active AI provider
+    [--model &lt;model&gt;] [--api-key &lt;key&gt;]
+
+  email get                               Show transactional email config
+  email set --domain &lt;d&gt;                  Configure transactional emails
+    --contact-email &lt;e&gt; [--api-key &lt;k&gt;]
+  email remove                            Remove transactional email config
+
+  domains list                            List custom domains
+  domains add &lt;domain&gt;                    Add a custom domain
+  domains delete &lt;domain-id&gt;              Remove a custom domain
+
+Environment:
+  CAPUZZELLA_API_KEY    API key (required)
+  CAPUZZELLA_URL        Server URL (default: http://localhost:3000)</code></pre>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">
+        Capuzzella CMS
+      </p>
+    </div>
+  </footer>
+
+</body>
+
+</html>

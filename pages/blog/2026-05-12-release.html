@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Release May 12, 2026: Download Your Pages and Assets - Blog</title>
+  <meta name="category" content="Release" />
+  <meta name="keywords" content="release, download, export, pages, assets, backup, CLI, Capuzzella" />
+  <meta property="article:section" content="Release" />
+  <meta property="article:tag" content="release" />
+  <meta property="article:tag" content="download" />
+  <meta property="article:tag" content="export" />
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <header class="bg-primary text-white py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/index.html" class="text-white opacity-75">Home</a></li>
+          <li class="breadcrumb-item"><a href="/blog/index.html" class="text-white opacity-75">Blog</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Release May 12, 2026</li>
+        </ol>
+      </nav>
+      <h1 class="display-4 fw-bold mb-3">Release May 12, 2026: Download Your Pages and Assets</h1>
+      <p class="lead opacity-75 mb-0">Maurice Wipf &middot; May 12, 2026</p>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <p class="lead mb-4">
+            Your content, your control. Today's release adds a <strong>Download feature</strong> that
+            lets you export all your pages and assets with a single click. Whether you need a backup,
+            want to migrate to another platform, or simply prefer working with local files, your
+            data is now always just one click away.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Download All Pages</h2>
+
+          <p>
+            Navigate to the <strong>/pages</strong> table and scroll to the bottom. You'll find a
+            new "Download all pages and assets" link in the table caption. Click it, and Capuzzella bundles
+            all published HTML pages in your project into a single TAR archive and sends it to your browser.
+          </p>
+
+          <p>
+            The downloaded archive preserves your folder structure, so files in <code>/blog/</code>
+            stay in <code>/blog/</code> and top-level pages remain at the root. Each file is
+            delivered exactly as it exists on the server, complete with all your edits, metadata,
+            and formatting intact.
+          </p>
+
+          <figure class="my-4">
+            <img src="/images/2026-05-12_feature-demo-screenshot.png" alt="Download all pages feature" class="w-100 rounded shadow-sm border" />
+            <figcaption class="mt-2 small text-center text-muted">
+              The new "Download all pages and assets" link at the bottom of the Pages table.
+            </figcaption>
+          </figure>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Download All Assets</h2>
+
+          <p>
+            The same functionality extends to your media library. Head to <strong>/assets</strong>,
+            scroll to the end of the table, and click "Download all assets." Every image, video,
+            document, and file you've uploaded gets packaged into a TAR archive and downloaded to your machine.
+          </p>
+
+          <p>
+            Assets maintain their original filenames and directory hierarchy, making it easy to
+            re-import them elsewhere or keep a local backup of your entire media collection.
+          </p>
+
+          <figure class="my-4">
+            <img src="/images/2026-05-12_feature-demo-screenshot-assets.png" alt="Download all assets feature" class="w-100 rounded shadow-sm border" />
+            <figcaption class="mt-2 small text-center text-muted">
+              The new "Download all assets" link at the bottom of the Assets table.
+            </figcaption>
+          </figure>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">CLI Commands</h2>
+
+          <p>
+            Power users can also trigger downloads from the command line. The Capuzzella CLI v1.4.0
+            now supports two new commands:
+          </p>
+
+          <ul class="mb-4">
+            <li><code>capuzzella pages download</code> &mdash; Exports all pages as a TAR archive</li>
+            <li><code>capuzzella assets download</code> &mdash; Exports all assets as a TAR archive</li>
+          </ul>
+
+          <p>
+            Install or upgrade the CLI via npm:
+          </p>
+
+          <pre class="bg-light p-3 rounded border mb-4"><code>npm install -g capuzzella</code></pre>
+
+          <p>
+            Both commands authenticate using your existing CLI credentials and stream the TAR
+            directly to your working directory. This makes automated backups, CI/CD pipelines,
+            and local mirroring trivial to set up. Visit the
+            <a href="https://www.npmjs.com/package/capuzzella">npm package page</a> for
+            full documentation.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Try It Out</h2>
+
+          <p>
+            The download feature is live now on every Capuzzella instance. Visit your
+            <a href="/pages">/pages</a> or <a href="/assets">/assets</a> section, scroll to the
+            bottom of the table, and click the download link to grab your first archive.
+          </p>
+
+          <p class="text-center mt-5 mb-2">
+            Not a customer yet? Subscribe now to get started.
+          </p>
+
+          <p class="text-center mb-4">
+            <a href="/subscription/checkout.html" class="btn btn-primary btn-lg px-5">
+              Subscribe to Capuzzella &rarr;
+            </a>
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">Capuzzella CMS</p>
+    </div>
+  </footer>
+
+</body>
+</html>

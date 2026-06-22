@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How the Design System Works in Capuzzella - Blog</title>
+  <meta name="category" content="Knowledge Base" />
+  <meta name="keywords" content="design system, components, corporate design, AI, consistency, Capuzzella" />
+  <meta property="article:section" content="Knowledge Base" />
+  <meta property="article:tag" content="design system" />
+  <meta property="article:tag" content="components" />
+  <meta property="article:tag" content="corporate design" />
+  <meta property="article:tag" content="AI" />
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/assets/css/theme.css" />
+  <script src="/assets/js/bootstrap.bundle.min.js" defer></script>
+</head>
+
+<body>
+
+  <header class="bg-primary text-white py-5">
+    <div class="container py-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/index.html" class="text-white opacity-75">Home</a></li>
+          <li class="breadcrumb-item"><a href="/blog/index.html" class="text-white opacity-75">Blog</a></li>
+          <li class="breadcrumb-item active text-white" aria-current="page">Design System</li>
+        </ol>
+      </nav>
+      <h1 class="display-4 fw-bold mb-3">How the Design System Works in Capuzzella</h1>
+      <p class="lead opacity-75 mb-0">Maurice Wipf &middot; June 16, 2026</p>
+    </div>
+  </header>
+
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <p class="lead mb-4">
+            AI can generate beautiful web pages. But when you're managing a company website,
+            beauty alone isn't enough &mdash; you need consistency. Every page needs to look
+            like it belongs to the same brand. Capuzzella solves this with a built-in design
+            system that gives the AI a blueprint for your corporate design.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">The Problem: AI Without Guardrails</h2>
+
+          <p>
+            Ask an AI to "create a pricing page" and it will produce something that looks
+            good in isolation. Ask it again to "create a team page" and you'll get a different
+            layout, different button styles, different spacing, different colors. Each page
+            works on its own, but side by side they look like they belong to different websites.
+          </p>
+
+          <p>
+            For a personal blog this might be fine. For an enterprise website with dozens of
+            pages maintained by multiple editors, it's a problem. Corporate design exists for
+            a reason: customers expect a consistent visual experience across every page they
+            visit. Inconsistency erodes trust.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">The Solution: Components as AI Context</h2>
+
+          <p>
+            Capuzzella's design system is built on a simple idea: give the AI a library of
+            pre-approved HTML components, and let it use those as building blocks when creating
+            or editing pages. Instead of inventing markup from scratch, the AI references your
+            existing component templates and produces output that matches your established design.
+          </p>
+
+          <p>
+            The system has three parts:
+          </p>
+
+          <ol>
+            <li>A <strong>components directory</strong> where your design team stores HTML templates</li>
+            <li>A <strong>/design-system</strong> page where the team browses, previews, and (for admins and designers) edits components in the browser</li>
+            <li>An <strong>@ mention system</strong> in the Editor Panel that lets editors attach specific components to
+              their AI requests</li>
+          </ol>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">The Components Directory</h2>
+
+          <p>
+            At the root of every Capuzzella project is a <code>components/</code> directory.
+            Each file is a self-contained HTML template named after the component it represents:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>components/
+  button.html
+  card.html
+  navbar.html
+  modal.html
+  dropdown.html
+  collapse.html
+  carousel.html
+  breadcrumb.html
+  list-group.html
+  nav-tabs.html</code></pre>
+
+          <p>
+            Each file contains variant labels and example markup. The design-system page derives the component title
+            from the filename, so the file itself does not need a wrapper <code>&lt;section&gt;</code> or
+            <code>&lt;h2&gt;</code> heading. Here's a simplified example of what
+            <code>button.html</code> looks like:
+          </p>
+
+          <pre class="bg-dark text-light p-3 rounded"><code>&lt;h3 class="h6 text-muted mt-4"&gt;Variants&lt;/h3&gt;
+&lt;div class="d-flex flex-wrap gap-2 mb-3"&gt;
+  &lt;button type="button" class="btn btn-primary"&gt;Primary&lt;/button&gt;
+  &lt;button type="button" class="btn btn-secondary"&gt;Secondary&lt;/button&gt;
+  &lt;button type="button" class="btn btn-success"&gt;Success&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;h3 class="h6 text-muted mt-4"&gt;Outline&lt;/h3&gt;
+&lt;div class="d-flex flex-wrap gap-2 mb-3"&gt;
+  &lt;button type="button" class="btn btn-outline-primary"&gt;Outline Primary&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;h3 class="h6 text-muted mt-4"&gt;With icon&lt;/h3&gt;
+&lt;div class="d-flex flex-wrap gap-2 mb-3"&gt;
+  &lt;button type="button" class="btn btn-primary"&gt;&amp;#9733; With Icon&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+          <p>
+            The format is intentionally simple: plain HTML with your project's CSS classes
+            applied. No JavaScript framework, no build step, no proprietary syntax. Designers
+            can author components in any text editor, and the AI can read them without needing
+            to parse anything beyond standard HTML.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">The /design-system Page</h2>
+
+          <p>
+            Capuzzella renders every component on a dedicated <strong>/design-system</strong> page.
+            Navigate to <code>https://your-website.com/design-system</code> (login required) and
+            the system reads each <code>.html</code> file from the <code>components/</code> directory.
+            The sidebar lists <strong>All components</strong> plus a link for each component. Click a
+            component name to open its own page at <code>/design-system/&lt;name&gt;/</code>.
+          </p>
+
+          <figure class="my-4">
+            <img src="/images/2026-06-15_feature-design-system-editing-1.png"
+              alt="Design system page with sidebar navigation, Preview and Code toggles, and iframe previews of Button and Card components"
+              class="img-fluid rounded shadow-sm border">
+            <figcaption class="mt-2 small text-center text-body-secondary">
+              The design-system page lists all components. Each block has a Preview/Code toggle and renders the
+              component inside an isolated iframe with your site theme.
+            </figcaption>
+          </figure>
+
+          <p>
+            Every component block shows the title (from the filename), a <strong>Preview</strong> /
+            <strong>Code</strong> toggle, and the rendered output. Preview loads your project's Bootstrap
+            stylesheets and <code>theme.css</code> inside an iframe so the component looks exactly as it
+            will on the live site. Code shows the raw HTML stored in <code>data/components/</code>.
+          </p>
+
+          <p>
+            This page is a living reference for the whole team. Designers verify how components render.
+            Editors see which building blocks exist. Because it reads directly from the components directory,
+            changes appear as soon as the underlying file is updated.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">In-Browser Editing</h2>
+
+          <p>
+            Admins and designers can edit component HTML directly in the browser — no separate editor or deploy step.
+            Open the split dropdown on the <strong>Code</strong> button and choose <strong>Edit</strong>.
+            That opens a dedicated edit page with the full component source in a textarea.
+          </p>
+
+          <figure class="my-4">
+            <div id="carouselDesignSystemEditing" class="carousel slide" data-bs-ride="false">
+              <div class="carousel-indicators">
+                <button type="button" data-bs-target="#carouselDesignSystemEditing" data-bs-slide-to="0" class="active"
+                  aria-current="true" aria-label="Code view"></button>
+                <button type="button" data-bs-target="#carouselDesignSystemEditing" data-bs-slide-to="1"
+                  aria-label="Edit dropdown"></button>
+                <button type="button" data-bs-target="#carouselDesignSystemEditing" data-bs-slide-to="2"
+                  aria-label="Edit page"></button>
+              </div>
+              <div class="carousel-inner">
+                <div class="carousel-item active">
+                  <img src="/images/2026-06-15_feature-design-system-editing-2.png"
+                    class="d-block w-100 rounded shadow-sm border"
+                    alt="Design system Code view showing the raw HTML source for the Button component">
+                </div>
+                <div class="carousel-item">
+                  <img src="/images/2026-06-15_feature-design-system-editing-3.png"
+                    class="d-block w-100 rounded shadow-sm border"
+                    alt="Code button split dropdown open with an Edit option for the Button component">
+                </div>
+                <div class="carousel-item">
+                  <img src="/images/2026-06-15_feature-design-system-editing-4.png"
+                    class="d-block w-100 rounded shadow-sm border"
+                    alt="Component edit page with a textarea of button.html source and Save Changes and Cancel buttons">
+                </div>
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#carouselDesignSystemEditing"
+                data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#carouselDesignSystemEditing"
+                data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+              </button>
+            </div>
+            <figcaption class="mt-2 small text-center text-body-secondary">
+              Switch to Code, open the Edit option in the dropdown, then save changes on the edit page.
+            </figcaption>
+          </figure>
+
+          <p>
+            On a single-component page (<code>/design-system/&lt;name&gt;/</code>), the same dropdown also
+            offers <strong>Delete</strong> with a confirmation prompt. Editors and viewers can browse
+            components but cannot use the edit UI.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">How the AI Uses Components</h2>
+
+          <p>
+            The design system isn't just a visual reference for humans &mdash; it's the AI's
+            blueprint. When the AI creates or edits a page, it has access to your component
+            library and uses those templates as the basis for its output.
+          </p>
+
+          <p>
+            This happens in two ways:
+          </p>
+
+          <h3 class="h5 fw-semibold mt-4 mb-2">Automatic: The AI Loads What It Needs</h3>
+
+          <p>
+            The AI's system prompt includes a list of all available component names. When
+            the AI decides it needs to add a card section, a navigation bar, or a set of
+            buttons, it calls a <code>get_components</code> tool to load the relevant
+            templates before generating any markup. The loaded HTML is injected into the
+            conversation, giving the AI exact reference material for your design.
+          </p>
+
+          <p>
+            The system prompt instructs the AI explicitly:
+          </p>
+
+          <blockquote class="border-start border-4 border-primary ps-3 my-4">
+            <em>"A component library is available with HTML templates designed for this project.
+              When adding or editing components on a page, use get_components to load the
+              relevant templates and base your HTML on them. This ensures visual consistency
+              across the site."</em>
+          </blockquote>
+
+          <h3 class="h5 fw-semibold mt-4 mb-2">Manual: Editors Use @ Mentions</h3>
+
+          <p>
+            Sometimes you know exactly which component the AI should use. The Editor Panel
+            supports an <strong>@ mention</strong> system: type <code>@</code> in the chat
+            input to open a context menu listing all available components (and pages). Select
+            a component and its HTML is pre-loaded and attached to your message as context.
+          </p>
+
+          <figure class="my-4">
+            <div id="carouselAtMention" class="carousel slide" data-bs-ride="false">
+              <div class="carousel-indicators">
+                <button type="button" data-bs-target="#carouselAtMention" data-bs-slide-to="0" class="active"
+                  aria-current="true" aria-label="Slide 1"></button>
+                <button type="button" data-bs-target="#carouselAtMention" data-bs-slide-to="1"
+                  aria-label="Slide 2"></button>
+              </div>
+              <div class="carousel-inner">
+                <div class="carousel-item active">
+                  <img src="/images/2026-03-13_feature-editor-panel-context-menu-components-1.png"
+                    class="d-block w-100 rounded shadow-sm border"
+                    alt="Context menu showing available components like carousel, collapse, list-group, and modal, along with pages below">
+                </div>
+                <div class="carousel-item">
+                  <img src="/images/2026-03-13_feature-editor-panel-context-menu-components-2.png"
+                    class="d-block w-100 rounded shadow-sm border"
+                    alt="The selected @list-group component appears as a badge in the chat input">
+                </div>
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#carouselAtMention"
+                data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#carouselAtMention"
+                data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+              </button>
+            </div>
+            <figcaption class="mt-2 small text-center">
+              Typing @ opens the context menu. Select a component and it appears as a badge in the input.
+            </figcaption>
+          </figure>
+
+          <p>
+            For example, if you want the AI to add a blog listing to your page, you can type:
+          </p>
+
+          <div class="card bg-light border-0 mb-4">
+            <div class="card-body p-4">
+              <p class="fw-semibold mb-2">Chat input:</p>
+              <p class="mb-0"><em>"Below Features section, add another section with headline 'Read our blog'.
+                  List the 3 latest blog posts in a
+                  <span class="badge bg-primary-subtle text-primary-emphasis">@list-group</span>"</em>
+              </p>
+            </div>
+          </div>
+
+          <p>
+            The <code>@list-group</code> mention tells the system to load the <code>list-group.html</code>
+            component template and attach it to the AI request. The AI then sees the exact
+            list-group markup your design team created and uses it as the basis for the new section.
+            No guessing, no improvising &mdash; the output matches your design system.
+          </p>
+
+          <p>
+            You can attach multiple components in a single message. Mention
+            <code>@navbar</code> and <code>@button</code> together if you need the AI to
+            reference both when building a page header, for example. The editor also supports
+            <code>@</code> mentions for other pages on your site, which is useful when you
+            want the AI to match the style or layout of an existing page.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Why This Approach Works for Enterprises</h2>
+
+          <h3 class="h5 fw-semibold mt-4 mb-2">Consistent Corporate Design at Scale</h3>
+
+          <p>
+            AI is powerful, but without constraints it produces inconsistent results. The
+            design system gives the AI the right constraints: here are the approved button
+            styles, here is how cards look, here is the navigation pattern. Every page the
+            AI creates or edits aligns with the same visual language, because it's working
+            from the same set of templates.
+          </p>
+
+          <p>
+            This matters most when multiple editors are working on the same site. Editor A
+            can ask the AI to create a services page while Editor B works on a blog post,
+            and both pages will share the same component patterns. The design system is the
+            single source of truth.
+          </p>
+
+          <h3 class="h5 fw-semibold mt-4 mb-2">Designers Stay in Control</h3>
+
+          <p>
+            The components directory is just a folder of HTML files. Designers don't need to
+            learn a CMS-specific component format or a proprietary template language. They
+            write HTML with whatever CSS framework the project uses, save the file, and it's
+            immediately available to both the AI and every editor on the team.
+          </p>
+
+          <p>
+            Designers and admins can edit components in the browser on <strong>/design-system</strong>
+            without touching the filesystem directly. Need a new variant? Update the file in the
+            edit page. Need a new component type &mdash; say, a testimonial block or a pricing
+            table? Create a new <code>.html</code> file (via API/CLI or by duplicating an existing
+            one). It shows up on the design-system page, in the AI's component list, and in the
+            @ mention menu. No deploy, no build step, no cache to clear.
+          </p>
+
+          <h3 class="h5 fw-semibold mt-4 mb-2">Low Friction Between Design and Content</h3>
+
+          <p>
+            In many CMS platforms, the design system lives in a separate tool &mdash; Figma,
+            Storybook, a custom style guide. There's always a translation step between what
+            the designer specifies and what the editor (or developer) implements. Components
+            get interpreted differently, shortcuts get taken, and the gap between design and
+            reality grows over time.
+          </p>
+
+          <p>
+            In Capuzzella, the design system <em>is</em> the implementation. The same HTML
+            that designers create is the same HTML the AI uses is the same HTML that ends up
+            on the published page. There's no translation layer, no interpretation, no drift.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">The Workflow in Practice</h2>
+
+          <p>
+            Here's what a typical workflow looks like:
+          </p>
+
+          <ol>
+            <li class="mb-3">
+              <strong>Designer</strong> creates or updates component templates in the browser
+              on <strong>/design-system</strong> or by editing files in the
+              <code>components/</code> directory.
+            </li>
+            <li class="mb-3">
+              <strong>Designer</strong> reviews the result on <strong>/design-system</strong>,
+              using Preview and Code to verify markup and rendering with the project theme.
+            </li>
+            <li class="mb-3">
+              <strong>Editor</strong> opens a page in the Editor Panel and asks the AI to
+              make changes. The AI automatically loads relevant components from the design
+              system, or the editor uses <code>@</code> mentions to specify exactly which
+              components to use.
+            </li>
+            <li class="mb-3">
+              <strong>AI</strong> generates or modifies the page HTML using the component
+              templates as blueprints, producing output that's consistent with the rest of
+              the site.
+            </li>
+            <li class="mb-3">
+              <strong>Editor</strong> reviews the changes, makes adjustments if needed,
+              and publishes.
+            </li>
+          </ol>
+
+          <p>
+            The designer controls the system. The editor uses the system. The AI follows
+            the system. Everyone works from the same source of truth.
+          </p>
+
+          <h2 class="h3 fw-bold mt-5 mb-3">Getting Started</h2>
+
+          <p>
+            Every Capuzzella project ships with a set of default components (button, card,
+            navbar, modal, dropdown, and more). You can use them as-is, customize them to
+            match your brand, or replace them entirely. Each component is a <code>.html</code>
+            file in the <code>components/</code> directory with variant labels and example markup.
+          </p>
+
+          <p>
+            To customize a component, open it on <strong>/design-system</strong> and use
+            <strong>Edit</strong> (admin or designer), edit the file directly, or ask the AI to update it.
+            To add a new one, create a new file. The design-system page, the AI, and @ mentions
+            pick up changes immediately &mdash; no restart required.
+          </p>
+
+          <p>
+            If you're building a company website with Capuzzella, the design system is where
+            you start. Define your components once, and let the AI handle the rest &mdash;
+            consistently, every time.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-0">
+        Capuzzella CMS
+      </p>
+    </div>
+  </footer>
+
+</body>
+
+</html>

@@ -2,6 +2,23 @@
 
 All notable changes to the Capuz CMS API plugin are documented here.
 
+## [0.2.0] - 2026-06-23
+
+### Added
+
+- Draft workflow: `write_page` / `PUT /api/pages/*` save drafts only; explicit publish required
+- Draft REST routes: `/api/drafts/*`, `POST /api/pages/{path}/publish`
+- MCP tools: `read_draft`, `list_drafts`, `publish_page`, `discard_draft`
+- `GET /api/pages?detail=status` and `list_pages(detail: "status")` for merged page listing
+- Preview vhost in cms-api (`PREVIEW_HOST`, `PREVIEW_BASE_URL`, `DRAFTS_DIR`)
+- Draft-or-fallback preview browsing with extensionless URL resolution
+- Caddy `editor-router` on port 8081 for `preview.localhost` + Open WebUI in reference stack
+
+### Changed
+
+- **Breaking:** `PUT /api/pages/{path}` and MCP `write_page` no longer publish directly; use publish endpoints
+- Draft storage on all backends (`fs`, `git`, `sftp`, `s3`)
+
 ## [0.1.0] - 2026-06-21
 
 ### Added

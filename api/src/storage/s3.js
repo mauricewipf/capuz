@@ -1,13 +1,16 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { normalizePagePath, PathError } from "../paths.js";
+import { getDraftsDirName, normalizeAssetPath, normalizePagePath, PathError } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
+const DRAFTS_SEGMENT = getDraftsDirName();
 
 function requireEnv(name) {
   const value = process.env[name]?.trim();
@@ -22,32 +25,47 @@ function isAllowedPage(key) {
   return ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
-function contentTypeForPath(path) {
-  return path.toLowerCase().endsWith(".xml")
-    ? "application/xml; charset=utf-8"
-    : "text/html; charset=utf-8";
+function isDraftKey(key) {
+  const segment = `/${DRAFTS_SEGMENT}/`;
+  return key.includes(segment) || key.startsWith(`${DRAFTS_SEGMENT}/`);
 }
 
-async function streamToString(body) {
-  if (!body) return "";
-  if (typeof body === "string") return body;
-  if (body instanceof Uint8Array) return new TextDecoder().decode(body);
-  if (typeof body.transformToString === "function") {
-    return await body.transformToString();
+function contentTypeForPath(path) {
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".xml")) return "application/xml; charset=utf-8";
+  if (lower.endsWith(".html")) return "text/html; charset=utf-8";
+  if (lower.endsWith(".css")) return "text/css; charset=utf-8";
+  if (lower.endsWith(".js")) return "application/javascript; charset=utf-8";
+  if (lower.endsWith(".json")) return "application/json; charset=utf-8";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".ico")) return "image/x-icon";
+  if (lower.endsWith(".woff2")) return "font/woff2";
+  if (lower.endsWith(".woff")) return "font/woff";
+  return "application/octet-stream";
+}
+
+async function streamToBuffer(body) {
+  if (!body) return Buffer.alloc(0);
+  if (Buffer.isBuffer(body)) return body;
+  if (body instanceof Uint8Array) return Buffer.from(body);
+  if (typeof body.transformToByteArray === "function") {
+    return Buffer.from(await body.transformToByteArray());
   }
 
   const chunks = [];
   for await (const chunk of body) {
     chunks.push(chunk);
   }
-  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return new TextDecoder().decode(merged);
+  return Buffer.concat(chunks);
+}
+
+async function streamToString(body) {
+  const buffer = await streamToBuffer(body);
+  return buffer.toString("utf8");
 }
 
 export class S3Storage {
@@ -76,6 +94,21 @@ export class S3Storage {
     return this.prefix ? `${this.prefix}/${normalized}` : normalized;
   }
 
+  draftObjectKey(relativePath) {
+    const normalized = normalizePagePath(relativePath);
+    const draftPath = `${DRAFTS_SEGMENT}/${normalized}`;
+    return this.prefix ? `${this.prefix}/${draftPath}` : draftPath;
+  }
+
+  assetObjectKey(relativePath) {
+    const normalized = normalizeAssetPath(relativePath);
+    return this.prefix ? `${this.prefix}/${normalized}` : normalized;
+  }
+
+  relativeFromKey(key) {
+    return this.prefix ? key.slice(this.prefix.length + 1) : key;
+  }
+
   publicPath(relativePath) {
     const normalized = normalizePagePath(relativePath);
     if (!this.publicUrl) return normalized;
@@ -97,8 +130,9 @@ export class S3Storage {
 
       for (const item of response.Contents || []) {
         if (!item.Key) continue;
-        const key = this.prefix ? item.Key.slice(this.prefix.length + 1) : item.Key;
-        if (key && isAllowedPage(key)) {
+        const key = this.relativeFromKey(item.Key);
+        if (!key || isDraftKey(key)) continue;
+        if (isAllowedPage(key)) {
           pages.push(key);
         }
       }
@@ -108,6 +142,60 @@ export class S3Storage {
 
     pages.sort();
     return pages;
+  }
+
+  async listDrafts() {
+    const pages = [];
+    const draftPrefix = this.prefix
+      ? `${this.prefix}/${DRAFTS_SEGMENT}/`
+      : `${DRAFTS_SEGMENT}/`;
+    let continuationToken;
+
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: draftPrefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      for (const item of response.Contents || []) {
+        if (!item.Key) continue;
+        const key = this.relativeFromKey(item.Key);
+        const pagePath = key.startsWith(`${DRAFTS_SEGMENT}/`)
+          ? key.slice(DRAFTS_SEGMENT.length + 1)
+          : key;
+        if (pagePath && isAllowedPage(pagePath)) {
+          pages.push(pagePath);
+        }
+      }
+
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    pages.sort();
+    return pages;
+  }
+
+  async hasDraft(relativePath) {
+    const key = this.draftObjectKey(relativePath);
+    try {
+      await this.client.send(
+        new HeadObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+      return true;
+    } catch (error) {
+      const name =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (name === "NotFound" || name === "NoSuchKey") return false;
+      throw error;
+    }
   }
 
   async readPage(relativePath) {
@@ -132,6 +220,65 @@ export class S3Storage {
     }
   }
 
+  async readDraft(relativePath) {
+    const key = this.draftObjectKey(relativePath);
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+      return await streamToString(response.Body);
+    } catch (error) {
+      const name =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (name === "NoSuchKey" || name === "NotFound") {
+        throw new PathError("Draft not found", 404);
+      }
+      throw error;
+    }
+  }
+
+  async readAsset(relativePath) {
+    const key = this.assetObjectKey(relativePath);
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+      return await streamToBuffer(response.Body);
+    } catch (error) {
+      const name =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (name === "NoSuchKey" || name === "NotFound") {
+        throw new PathError("Asset not found", 404);
+      }
+      throw error;
+    }
+  }
+
+  async writeDraft(relativePath, html) {
+    const normalized = normalizePagePath(relativePath);
+    const key = this.draftObjectKey(normalized);
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: html,
+        ContentType: contentTypeForPath(normalized),
+        CacheControl: "private, no-store",
+      }),
+    );
+    return normalized;
+  }
+
   async writePage(relativePath, html) {
     const normalized = normalizePagePath(relativePath);
     const key = this.objectKey(normalized);
@@ -145,6 +292,47 @@ export class S3Storage {
       }),
     );
     return this.publicUrl ? this.publicPath(normalized) : normalized;
+  }
+
+  async publishDraft(relativePath) {
+    const normalized = normalizePagePath(relativePath);
+    const draftKey = this.draftObjectKey(normalized);
+    const liveKey = this.objectKey(normalized);
+
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${draftKey}`,
+        Key: liveKey,
+        ContentType: contentTypeForPath(normalized),
+        CacheControl: this.cacheControl,
+        MetadataDirective: "REPLACE",
+      }),
+    );
+
+    await this.discardDraft(normalized);
+    return this.publicUrl ? this.publicPath(normalized) : normalized;
+  }
+
+  async discardDraft(relativePath) {
+    const key = this.draftObjectKey(relativePath);
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+    } catch (error) {
+      const name =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (name === "NoSuchKey" || name === "NotFound") {
+        throw new PathError("Draft not found", 404);
+      }
+      throw error;
+    }
   }
 
   async deletePage(relativePath) {

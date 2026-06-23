@@ -30,3 +30,29 @@ export function getStorage() {
   }
   return storageInstance;
 }
+
+export async function listPagesWithStatus(storage) {
+  const [published, drafts] = await Promise.all([
+    storage.listPages(),
+    storage.listDrafts(),
+  ]);
+  const publishedSet = new Set(published);
+  const draftSet = new Set(drafts);
+  const allPaths = new Set([...published, ...drafts]);
+
+  const pages = [...allPaths]
+    .sort()
+    .map((path) => {
+      const hasPublished = publishedSet.has(path);
+      const hasDraft = draftSet.has(path);
+      let status = "published";
+      if (hasDraft && hasPublished) {
+        status = "modified";
+      } else if (hasDraft) {
+        status = "draft";
+      }
+      return { path, status };
+    });
+
+  return pages;
+}

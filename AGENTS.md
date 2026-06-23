@@ -25,7 +25,9 @@ Read `README.md` for plugin install, storage backends, and Open WebUI configurat
 | OpenAPI tool server | `GET /openapi.json` | Bearer on write/delete |
 | REST API | `/api/pages/*` | Bearer on PUT/DELETE |
 
-**MCP tools:** `list_pages`, `read_page`, `write_page`, `delete_page`
+**MCP tools:** `list_pages`, `list_drafts`, `read_page`, `read_draft`, `write_page`, `publish_page`, `discard_draft`, `delete_page`
+
+Writes save **drafts** only; call `publish_page` to go live. Preview is served by cms-api when `Host` matches `PREVIEW_HOST`.
 
 **Storage backends** (selected via `STORAGE_BACKEND` env var):
 
@@ -62,6 +64,8 @@ There is no frontend build step, no TypeScript, and no test runner configured.
 api/src/
   server.js       # Hono routes
   mcp.js          # MCP tool definitions
+  preview.js      # Preview vhost (draft-or-fallback + assets)
+  preview-paths.js
   pages.js        # Shared path error handling
   paths.js        # Path normalization and traversal guards
   auth.js         # Bearer token middleware
@@ -69,7 +73,8 @@ api/src/
   storage/        # Backend implementations (fs, sftp, git, s3)
 pages/            # Seed HTML/XML for the demo site
 nginx.conf        # Static server config (extensionless URLs)
-docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui)
+Caddyfile         # Host router for Open WebUI + preview on :8081
+docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui + editor-router)
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
 Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui
 ```
@@ -89,6 +94,7 @@ The demo uses `STORAGE_BACKEND=fs`, shared volume `site-data`, and `CMS_API_KEY=
 |---------|-----|
 | Public site | http://localhost:8080 |
 | Open WebUI | http://localhost:8081 |
+| Preview | http://preview.localhost:8081 |
 | CMS API | http://localhost:3000 |
 
 ```bash
@@ -120,7 +126,8 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 - New storage backends: implement the same interface as `storage/fs.js`, register in `storage/index.js`.
 - Path handling must go through `paths.js` — never resolve user paths outside `DATA_ROOT`.
 - Only `.html` and `.xml` extensions are allowed for page operations.
-- MCP tools mirror REST: `list_pages`, `read_page`, `write_page`, `delete_page`.
+- MCP tools mirror REST; keep OpenAPI in sync.
+- Drafts live under `DRAFTS_DIR` (default `.drafts`); publish promotes to live storage.
 - Keep dependencies minimal; prefer Bun-compatible packages.
 
 ### Site pages (`pages/`)
@@ -159,11 +166,13 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 
 There are no automated tests. After API changes:
 
-1. Rebuild: `docker compose build cms-api && docker compose up -d cms-api`
+1. Rebuild: `docker compose build cms-api editor-router && docker compose up -d`
 2. `curl http://localhost:3000/health` → `{"ok":true}`
-3. `curl http://localhost:3000/api/pages` → lists pages
-4. Write test: `curl -H "Authorization: Bearer dev-local-key" -X PUT -H "Content-Type: text/html" -d '<!DOCTYPE html><html><body>ok</body></html>' http://localhost:3000/api/pages/agent-test.html`
-5. Confirm at http://localhost:8080/agent-test.html, then delete the test page.
+3. `curl http://localhost:3000/api/pages` → lists published pages
+4. Save draft: `curl -H "Authorization: Bearer dev-local-key" -X PUT -H "Content-Type: text/html" -d '<!DOCTYPE html><html><body>ok</body></html>' http://localhost:3000/api/pages/agent-test.html`
+5. Preview at http://preview.localhost:8081/agent-test (draft only until publish)
+6. Publish: `curl -H "Authorization: Bearer dev-local-key" -X POST http://localhost:3000/api/pages/agent-test.html/publish`
+7. Confirm live at http://localhost:8080/agent-test.html, then delete the test page.
 
 After HTML changes in `pages/`, rebuild nginx or restart compose so seed/volume reflects updates.
 

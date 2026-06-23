@@ -2,7 +2,7 @@
 
 ## Multi-Service Design
 
-This application has been refactored from a monolithic single-container design to a microservices architecture with 3 separate Docker services.
+This application uses a microservices architecture with separate Docker services (nginx, cms-api, openwebui, and a Caddy editor router).
 
 ### Services
 
@@ -27,23 +27,35 @@ This application has been refactored from a monolithic single-container design t
 - **Dockerfile**: `Dockerfile.api`
 
 **Responsibilities**:
-- REST API for page CRUD operations (`/api/pages`)
+- REST API for draft and publish operations (`/api/pages`, `/api/drafts`)
 - MCP server for Open WebUI integration (`/mcp`)
+- Preview vhost when `Host` matches `PREVIEW_HOST` (draft-or-fallback HTML + published assets)
 - Health check endpoint (`/health`)
-- File system operations on HTML/XML files
+- File system operations on HTML/XML files; drafts under `.drafts/`
 
 **Key Endpoints**:
-- `GET /api/pages` - List all pages
-- `GET /api/pages/{path}` - Read page content
-- `PUT /api/pages/{path}` - Write/update page
-- `DELETE /api/pages/{path}` - Delete page
+- `GET /api/pages` - List published pages (`?detail=status` for draft state)
+- `GET /api/drafts` - List draft paths
+- `PUT /api/pages/{path}` - Save draft
+- `POST /api/pages/{path}/publish` - Publish draft
+- `GET /api/pages/{path}` - Read published page
+- `DELETE /api/pages/{path}` - Delete published page
 - `POST /mcp` - MCP protocol handler
 
-#### 3. openwebui (AI Editor)
-- **Image**: `python:3.11-slim` + Open WebUI
-- **Port**: 8081 (maps to internal 8080)
+#### 3. editor-router (Caddy)
+- **Image**: `caddy:2-alpine`
+- **Port**: 8081
+- **Purpose**: Routes by hostname on the editor port
+- **Config**: `Caddyfile`
+
+**Routing**:
+- `preview.localhost:8081` → cms-api:3000 (preview vhost)
+- `:8081` → openwebui:8080 (AI editor)
+
+#### 4. openwebui (AI Editor)
+- **Image**: `openwebui/open-webui`
+- **Internal port**: 8080 (exposed via editor-router on 8081)
 - **Purpose**: AI-powered content editor
-- **Volume**: Reads/writes shared `site-data:/app/data`
 - **Dockerfile**: `Dockerfile.openwebui`
 
 **Responsibilities**:
@@ -64,9 +76,16 @@ User Browser → nginx:80 → /app/data/index.html → Response
 
 ### Editing Content via AI
 ```
-User → openwebui:8080 → MCP → cms-api:3000 → /app/data/page.html
-                                                    ↓
-nginx:80 serves updated file ←─────────────────────┘
+User → openwebui → MCP → cms-api:3000 → /app/data/.drafts/page.html (draft)
+User → preview.localhost:8081 → cms-api preview vhost → draft or published HTML
+User publishes → cms-api → /app/data/page.html → nginx:80 serves live file
+```
+
+### Preview Browsing
+```
+User Browser → preview.localhost:8081 → Caddy → cms-api:3000 (PREVIEW_HOST)
+  → read .drafts/page.html if present, else published page
+  → assets from /app/data/assets/ (published)
 ```
 
 ### Direct API Access
@@ -81,7 +100,8 @@ All three services mount the same Docker volume:
 - **Mount Point**: `/app/data`
 - **Contents**:
   - HTML pages (root level and subdirectories)
-  - `.open-webui/` - Open WebUI data (SQLite, uploads, etc.)
+  - `.drafts/` - unpublished page drafts (cms-api only; hidden from published listings)
+  - CSS, JS, images under `assets/`, etc.
 
 ## Network Communication
 
@@ -93,7 +113,8 @@ Services communicate via Docker's internal bridge network:
 
 External access:
 - `localhost:8080` → nginx (public site)
-- `localhost:8081` → openwebui (editor)
+- `localhost:8081` → editor-router → Open WebUI
+- `preview.localhost:8081` → editor-router → cms-api preview
 - `localhost:3000` → cms-api (optional, for direct API access)
 
 ## Advantages of This Architecture

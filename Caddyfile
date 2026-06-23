@@ -1,0 +1,7 @@
+http://preview.localhost:8081 {
+	reverse_proxy cms-api:3000
+}
+
+http://:8081 {
+	reverse_proxy openwebui:8080
+}

@@ -6,7 +6,7 @@ export const openApiDocument = {
     title: "Capuz CMS API",
     version: VERSION,
     description:
-      "AI-editable HTML and XML pages for static sites. Use as an Open WebUI Tool Server or direct REST API.",
+      "AI-editable HTML and XML pages for static sites. Writes save drafts; publish explicitly to go live. Use as an Open WebUI Tool Server or direct REST API.",
   },
   servers: [{ url: "/" }],
   components: {
@@ -28,7 +28,36 @@ export const openApiDocument = {
         },
         required: ["pages"],
       },
-      WriteResponse: {
+      PageStatusList: {
+        type: "object",
+        properties: {
+          pages: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                path: { type: "string" },
+                status: {
+                  type: "string",
+                  enum: ["published", "draft", "modified"],
+                },
+              },
+              required: ["path", "status"],
+            },
+          },
+        },
+        required: ["pages"],
+      },
+      DraftWriteResponse: {
+        type: "object",
+        properties: {
+          ok: { type: "boolean" },
+          path: { type: "string" },
+          previewUrl: { type: "string" },
+        },
+        required: ["ok", "path", "previewUrl"],
+      },
+      PublishResponse: {
         type: "object",
         properties: {
           ok: { type: "boolean" },
@@ -75,22 +104,137 @@ export const openApiDocument = {
     },
     "/api/pages": {
       get: {
-        summary: "List pages",
+        summary: "List published pages",
         operationId: "listPages",
+        parameters: [
+          {
+            name: "detail",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["status"] },
+            description:
+              'When "status", returns all pages with draft state (published, draft, modified)',
+          },
+        ],
         responses: {
           "200": {
             description: "List of page paths",
+            content: {
+              "application/json": {
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/PageList" },
+                    { $ref: "#/components/schemas/PageStatusList" },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/drafts": {
+      get: {
+        summary: "List draft pages",
+        operationId: "listDrafts",
+        responses: {
+          "200": {
+            description: "List of draft page paths",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/PageList" },
               },
             },
           },
-          "400": {
-            description: "Invalid request",
+        },
+      },
+    },
+    "/api/drafts/{path}": {
+      parameters: [
+        {
+          name: "path",
+          in: "path",
+          required: true,
+          description: "Relative page path such as index.html",
+          schema: { type: "string" },
+        },
+      ],
+      get: {
+        summary: "Read draft",
+        operationId: "readDraft",
+        responses: {
+          "200": {
+            description: "Draft HTML content",
+            content: {
+              "text/html": { schema: { type: "string" } },
+            },
+          },
+          "404": {
+            description: "Draft not found",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+      put: {
+        summary: "Write draft",
+        operationId: "writeDraft",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "text/html": { schema: { type: "string" } },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Draft saved",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/DraftWriteResponse" },
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        summary: "Discard draft",
+        operationId: "discardDraft",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Draft discarded",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/DeleteResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/drafts/{path}/publish": {
+      parameters: [
+        {
+          name: "path",
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      post: {
+        summary: "Publish draft",
+        operationId: "publishDraft",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Draft published",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/PublishResponse" },
               },
             },
           },
@@ -108,11 +252,11 @@ export const openApiDocument = {
         },
       ],
       get: {
-        summary: "Read page",
+        summary: "Read published page",
         operationId: "readPage",
         responses: {
           "200": {
-            description: "Page HTML content",
+            description: "Published page HTML content",
             content: {
               "text/html": { schema: { type: "string" } },
             },
@@ -128,7 +272,7 @@ export const openApiDocument = {
         },
       },
       put: {
-        summary: "Write page",
+        summary: "Write draft (alias of PUT /api/drafts/{path})",
         operationId: "writePage",
         security: [{ bearerAuth: [] }],
         requestBody: {
@@ -139,25 +283,17 @@ export const openApiDocument = {
         },
         responses: {
           "200": {
-            description: "Page saved",
+            description: "Draft saved",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/WriteResponse" },
-              },
-            },
-          },
-          "401": {
-            description: "Unauthorized",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorResponse" },
+                schema: { $ref: "#/components/schemas/DraftWriteResponse" },
               },
             },
           },
         },
       },
       delete: {
-        summary: "Delete page",
+        summary: "Delete published page",
         operationId: "deletePage",
         security: [{ bearerAuth: [] }],
         responses: {
@@ -169,19 +305,28 @@ export const openApiDocument = {
               },
             },
           },
-          "401": {
-            description: "Unauthorized",
+        },
+      },
+    },
+    "/api/pages/{path}/publish": {
+      parameters: [
+        {
+          name: "path",
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      post: {
+        summary: "Publish draft (shortcut)",
+        operationId: "publishPage",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Draft published",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorResponse" },
-              },
-            },
-          },
-          "404": {
-            description: "Page not found",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorResponse" },
+                schema: { $ref: "#/components/schemas/PublishResponse" },
               },
             },
           },

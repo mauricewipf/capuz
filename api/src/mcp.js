@@ -1,8 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
+import { buildPreviewUrl } from "./paths.js";
 import { handlePathError } from "./pages.js";
-import { getStorage } from "./storage/index.js";
+import { getStorage, listPagesWithStatus } from "./storage/index.js";
 import { VERSION } from "./version.js";
 
 export function createMcpServer() {
@@ -14,9 +15,20 @@ export function createMcpServer() {
 
   server.tool(
     "list_pages",
-    "List all HTML and XML page paths on the site",
-    {},
-    async () => {
+    "List HTML and XML page paths. Use detail=status for published, draft, and modified pages.",
+    {
+      detail: z
+        .enum(["status"])
+        .optional()
+        .describe('Set to "status" to include draft state per path'),
+    },
+    async ({ detail }) => {
+      if (detail === "status") {
+        const pages = await listPagesWithStatus(storage);
+        return {
+          content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
+        };
+      }
       const pages = await storage.listPages();
       return {
         content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
@@ -25,8 +37,20 @@ export function createMcpServer() {
   );
 
   server.tool(
+    "list_drafts",
+    "List page paths that have unpublished drafts",
+    {},
+    async () => {
+      const pages = await storage.listDrafts();
+      return {
+        content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
+      };
+    },
+  );
+
+  server.tool(
     "read_page",
-    "Read the HTML content of a page by path (e.g. index.html)",
+    "Read the published HTML content of a page by path (e.g. index.html)",
     { path: z.string().describe("Relative page path such as index.html") },
     async ({ path }) => {
       try {
@@ -40,17 +64,38 @@ export function createMcpServer() {
   );
 
   server.tool(
+    "read_draft",
+    "Read the draft HTML content of a page by path",
+    { path: z.string().describe("Relative page path such as index.html") },
+    async ({ path }) => {
+      try {
+        const html = await storage.readDraft(path);
+        return { content: [{ type: "text", text: html }] };
+      } catch (error) {
+        const { message } = handlePathError(error);
+        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+      }
+    },
+  );
+
+  server.tool(
     "write_page",
-    "Write HTML content to a page path. Creates parent directories if needed.",
+    "Save HTML content as a draft. Call publish_page to make it live.",
     {
       path: z.string().describe("Relative page path such as index.html"),
       html: z.string().describe("Full HTML content to save"),
     },
     async ({ path, html }) => {
       try {
-        const saved = await storage.writePage(path, html);
+        const saved = await storage.writeDraft(path, html);
+        const previewUrl = buildPreviewUrl(saved);
         return {
-          content: [{ type: "text", text: `Saved ${saved}` }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ path: saved, previewUrl }, null, 2),
+            },
+          ],
         };
       } catch (error) {
         const { message } = handlePathError(error);
@@ -60,8 +105,40 @@ export function createMcpServer() {
   );
 
   server.tool(
+    "publish_page",
+    "Publish a draft to the live site",
+    { path: z.string().describe("Relative page path such as index.html") },
+    async ({ path }) => {
+      try {
+        const saved = await storage.publishDraft(path);
+        return {
+          content: [{ type: "text", text: `Published ${saved}` }],
+        };
+      } catch (error) {
+        const { message } = handlePathError(error);
+        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+      }
+    },
+  );
+
+  server.tool(
+    "discard_draft",
+    "Discard an unpublished draft without publishing",
+    { path: z.string().describe("Relative page path such as index.html") },
+    async ({ path }) => {
+      try {
+        await storage.discardDraft(path);
+        return { content: [{ type: "text", text: `Discarded draft for ${path}` }] };
+      } catch (error) {
+        const { message } = handlePathError(error);
+        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+      }
+    },
+  );
+
+  server.tool(
     "delete_page",
-    "Delete a page by path",
+    "Delete a published page by path",
     { path: z.string().describe("Relative page path to delete") },
     async ({ path }) => {
       try {

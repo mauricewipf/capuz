@@ -30,6 +30,9 @@ services:
       S3_KEY_PREFIX: ${S3_KEY_PREFIX:-}
       S3_PUBLIC_URL: ${S3_PUBLIC_URL:-}
       S3_CACHE_CONTROL: ${S3_CACHE_CONTROL:-public, max-age=60}
+      PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
+      PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:3000}
+      DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
     volumes:
       - site-data:/app/data
       - git-repo:/app/repo

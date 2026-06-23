@@ -1,11 +1,18 @@
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import fs from "node:fs";
-import { readFile, writeFile, unlink, mkdir } from "node:fs/promises";
+import { readFile, writeFile, unlink, mkdir, access } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
-import { normalizePagePath, PathError } from "../paths.js";
+import {
+  getDraftsDirName,
+  isHiddenStorageSegment,
+  normalizeAssetPath,
+  normalizePagePath,
+  PathError,
+} from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
+const DRAFTS_SEGMENT = getDraftsDirName();
 
 function requireEnv(name) {
   const value = process.env[name]?.trim();
@@ -33,7 +40,7 @@ async function walk(dir, pages, root) {
   }
 
   for (const entry of entries) {
-    if (entry.name.startsWith(".")) continue;
+    if (isHiddenStorageSegment(entry.name)) continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
       await walk(fullPath, pages, root);
@@ -64,6 +71,10 @@ export class GitStorage {
   keyPath = requireEnv("GIT_KEY_PATH");
   initPromise = null;
   privateKey = null;
+
+  draftsRoot() {
+    return join(this.cloneDir, DRAFTS_SEGMENT);
+  }
 
   async getPrivateKey() {
     if (!this.privateKey) {
@@ -122,12 +133,41 @@ export class GitStorage {
     return join(this.cloneDir, normalized);
   }
 
+  draftAbsolutePath(relativePath) {
+    const normalized = normalizePagePath(relativePath);
+    return join(this.draftsRoot(), normalized);
+  }
+
+  assetAbsolutePath(relativePath) {
+    const normalized = normalizeAssetPath(relativePath);
+    return join(this.cloneDir, normalized);
+  }
+
   async listPages() {
     await this.ensureRepo();
     const pages = [];
     await walk(this.cloneDir, pages, this.cloneDir);
     pages.sort();
     return pages;
+  }
+
+  async listDrafts() {
+    await this.ensureRepo();
+    const pages = [];
+    await walk(this.draftsRoot(), pages, this.draftsRoot());
+    pages.sort();
+    return pages;
+  }
+
+  async hasDraft(relativePath) {
+    const absolute = this.draftAbsolutePath(relativePath);
+    try {
+      await access(absolute);
+      return true;
+    } catch (err) {
+      if (isEnoent(err)) return false;
+      throw err;
+    }
   }
 
   async readPage(relativePath) {
@@ -143,19 +183,48 @@ export class GitStorage {
     }
   }
 
-  async writePage(relativePath, html) {
+  async readDraft(relativePath) {
+    await this.ensureRepo();
+    const absolute = this.draftAbsolutePath(relativePath);
+    try {
+      return await readFile(absolute, "utf8");
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Draft not found", 404);
+      }
+      throw err;
+    }
+  }
+
+  async readAsset(relativePath) {
+    await this.ensureRepo();
+    const absolute = this.assetAbsolutePath(relativePath);
+    try {
+      return await readFile(absolute);
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Asset not found", 404);
+      }
+      throw err;
+    }
+  }
+
+  async writeDraft(relativePath, html) {
     await this.ensureRepo();
     const normalized = normalizePagePath(relativePath);
-    const absolute = join(this.cloneDir, normalized);
+    const absolute = this.draftAbsolutePath(normalized);
     await mkdir(dirname(absolute), { recursive: true });
     await writeFile(absolute, html, "utf8");
+    return normalized;
+  }
 
+  async commitAndPush(normalized, message) {
     const privateKey = await this.getPrivateKey();
     await git.add({ fs, dir: this.cloneDir, filepath: normalized });
     const sha = await git.commit({
       fs,
       dir: this.cloneDir,
-      message: `Update ${normalized}`,
+      message,
       author: {
         name: this.authorName,
         email: this.authorEmail,
@@ -194,7 +263,38 @@ export class GitStorage {
       });
     }
 
+    return sha;
+  }
+
+  async writePage(relativePath, html) {
+    await this.ensureRepo();
+    const normalized = normalizePagePath(relativePath);
+    const absolute = join(this.cloneDir, normalized);
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(absolute, html, "utf8");
+
+    const sha = await this.commitAndPush(normalized, `Update ${normalized}`);
     return `${normalized} (commit ${sha.slice(0, 7)}; deploy typically live in ~30s)`;
+  }
+
+  async publishDraft(relativePath) {
+    const normalized = normalizePagePath(relativePath);
+    const html = await this.readDraft(normalized);
+    const result = await this.writePage(normalized, html);
+    await this.discardDraft(normalized);
+    return result;
+  }
+
+  async discardDraft(relativePath) {
+    const absolute = this.draftAbsolutePath(relativePath);
+    try {
+      await unlink(absolute);
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Draft not found", 404);
+      }
+      throw err;
+    }
   }
 
   async deletePage(relativePath) {

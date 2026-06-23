@@ -156,10 +156,14 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 
 | Tool | Description |
 |------|-------------|
-| `list_pages` | List all `.html` and `.xml` paths |
-| `read_page` | Read page content by path |
-| `write_page` | Write HTML to a path (creates directories as needed) |
-| `delete_page` | Delete a page by path |
+| `list_pages` | List published `.html` and `.xml` paths; optional `detail: "status"` for draft state |
+| `list_drafts` | List paths with unpublished drafts |
+| `read_page` | Read **published** page content by path |
+| `read_draft` | Read pending draft content |
+| `write_page` | Save HTML as a **draft** (returns `previewUrl`); does not publish |
+| `publish_page` | Promote a draft to the live site |
+| `discard_draft` | Delete a draft without publishing |
+| `delete_page` | Delete a published page |
 
 ## REST API
 
@@ -167,18 +171,47 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 |--------|------|------|-------------|
 | GET | `/health` | — | Health check |
 | GET | `/openapi.json` | — | OpenAPI spec |
-| GET | `/api/pages` | — | List pages |
-| GET | `/api/pages/{path}` | — | Read page |
-| PUT | `/api/pages/{path}` | Bearer | Write page |
-| DELETE | `/api/pages/{path}` | Bearer | Delete page |
+| GET | `/api/pages` | — | List published pages |
+| GET | `/api/pages?detail=status` | — | List all pages with `published` / `draft` / `modified` status |
+| GET | `/api/pages/{path}` | — | Read published page |
+| PUT | `/api/pages/{path}` | Bearer | Save draft |
+| POST | `/api/pages/{path}/publish` | Bearer | Publish draft |
+| DELETE | `/api/pages/{path}` | Bearer | Delete published page |
+| GET | `/api/drafts` | — | List draft paths |
+| GET | `/api/drafts/{path}` | — | Read draft |
+| PUT | `/api/drafts/{path}` | Bearer | Save draft |
+| POST | `/api/drafts/{path}/publish` | Bearer | Publish draft |
+| DELETE | `/api/drafts/{path}` | Bearer | Discard draft |
 | POST | `/mcp` | Bearer | MCP protocol |
 
 ```bash
+# Save draft
 curl -H "Authorization: Bearer $CMS_API_KEY" \
   -X PUT http://localhost:3000/api/pages/test.html \
   -H "Content-Type: text/html" \
   -d '<!DOCTYPE html><html><body>Hello</body></html>'
+
+# Publish draft
+curl -H "Authorization: Bearer $CMS_API_KEY" \
+  -X POST http://localhost:3000/api/pages/test.html/publish
 ```
+
+## Preview
+
+Draft pages are previewed on a separate host (subdomain). cms-api serves preview HTML when the HTTP `Host` matches `PREVIEW_HOST`. Assets load from the published site tree.
+
+| Variable | Default (reference stack) | Description |
+|----------|---------------------------|-------------|
+| `PREVIEW_HOST` | `preview.localhost` | Hostname for preview vhost |
+| `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Base URL returned in draft write responses |
+| `DRAFTS_DIR` | `.drafts` | Draft storage directory name (under `DATA_ROOT` or backend equivalent) |
+
+Reference stack URLs:
+
+- Preview: http://preview.localhost:8081 (via Caddy on port 8081)
+- Live site: http://localhost:8080
+
+Plugin-only deployments: point `PREVIEW_BASE_URL` at wherever preview traffic reaches cms-api (e.g. `http://preview.localhost:3000` with `Host: preview.localhost`), or configure your own reverse proxy.
 
 ## Security
 
@@ -199,6 +232,7 @@ docker compose up --build
 
 - Public site: http://localhost:8080
 - Open WebUI: http://localhost:8081
+- Preview: http://preview.localhost:8081
 - CMS API: http://localhost:3000
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
@@ -211,6 +245,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `CMS_API_KEY` | — | Bearer token for MCP and write endpoints |
 | `API_PORT` | `3000` | HTTP port |
 | `DATA_ROOT` | `/app/data` | Site root (fs backend) |
+| `DRAFTS_DIR` | `.drafts` | Draft pages directory name |
+| `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
+| `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Preview links in API responses |
 | `SFTP_*` | — | SFTP connection settings |
 | `GIT_*` | — | Git remote and deploy key settings |
 | `S3_*` | — | S3-compatible bucket settings |

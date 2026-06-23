@@ -11,7 +11,7 @@ This repo contains two things:
 1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `ghcr.io/mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
 2. **A reference demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
 
-The site content lives in `pages/` (seed data) and is copied into a shared Docker volume at runtime. The API only manages HTML/XML; nginx serves everything else (CSS, JS, images).
+The site content lives in `public/pages/` (seed HTML/XML) and `public/assets/` (CSS, JS, images). nginx seeds both into a shared Docker volume at runtime (`pages/` flattened to `/app/data/`, assets to `/app/data/assets/`). The API only manages HTML/XML; nginx serves static assets.
 
 Read `README.md` for plugin install, storage backends, and Open WebUI configuration. Read `ARCHITECTURE.md` for service topology and data flow.
 
@@ -71,7 +71,9 @@ api/src/
   auth.js         # Bearer token middleware
   openapi.js      # OpenAPI spec
   storage/        # Backend implementations (fs, sftp, git, s3)
-pages/            # Seed HTML/XML for the demo site
+public/
+  pages/          # Seed HTML/XML for the demo site
+  assets/         # Bootstrap, theme CSS, JS, favicon
 nginx.conf        # Static server config (extensionless URLs)
 Caddyfile         # Host router for Open WebUI + preview on :8081
 docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui + editor-router)
@@ -130,9 +132,10 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 - Drafts live under `DRAFTS_DIR` (default `.drafts`); publish promotes to live storage.
 - Keep dependencies minimal; prefer Bun-compatible packages.
 
-### Site pages (`pages/`)
+### Site content (`public/`)
 
-- Static HTML files — what you write is what nginx serves.
+- HTML/XML lives in `public/pages/`; static assets in `public/assets/`.
+- Static HTML files — what you write is what nginx serves (after seed flattening).
 - Match existing patterns: Bootstrap 5, `/assets/css/theme.css`, semantic sections, mobile-friendly layout.
 - Use relative or root-absolute asset paths consistent with neighboring pages.
 - Extensionless URLs work via nginx rewrite (`/about` → `/about.html`); prefer `.html` in API/MCP paths.
@@ -140,7 +143,7 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 ### Docker / config
 
 - API image builds from `Dockerfile.api` (context: repo root, copies `api/`).
-- nginx image seeds `pages/` into the volume on first run (`seed-data.sh`).
+- nginx image seeds `public/` into the volume on first run (`seed-data.sh` flattens `pages/` and copies `assets/`).
 - Environment variables are documented in `.env.example` and `README.md`.
 
 ## Guardrails
@@ -174,7 +177,7 @@ There are no automated tests. After API changes:
 6. Publish: `curl -H "Authorization: Bearer dev-local-key" -X POST http://localhost:3000/api/pages/agent-test.html/publish`
 7. Confirm live at http://localhost:8080/agent-test.html, then delete the test page.
 
-After HTML changes in `pages/`, rebuild nginx or restart compose so seed/volume reflects updates.
+After HTML or asset changes in `public/`, rebuild nginx or restart compose so seed/volume reflects updates.
 
 ## MCP / integration context
 

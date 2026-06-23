@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
 COPY nginx.conf /etc/nginx/templates/default.conf.template
-COPY pages/ /app/seed/
+COPY public/ /app/seed/
 COPY seed-data.sh /docker-entrypoint.d/40-seed-data.sh
 
 RUN chmod +x /docker-entrypoint.d/40-seed-data.sh

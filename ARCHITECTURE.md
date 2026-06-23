@@ -102,6 +102,7 @@ All three services mount the same Docker volume:
   - HTML pages (root level and subdirectories)
   - `.drafts/` - unpublished page drafts (cms-api only; hidden from published listings)
   - CSS, JS, images under `assets/`, etc.
+- **Seed source** (repo): `public/pages/` → `/app/data/`, `public/assets/` → `/app/data/assets/` via `seed-data.sh` on first nginx start
 
 ## Network Communication
 

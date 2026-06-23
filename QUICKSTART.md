@@ -141,9 +141,9 @@ capuz/
 │   │   ├── storage/       # Storage backends (fs, sftp, git, s3)
 │   │   └── ...
 │   └── package.json
-├── pages/                  # Seed HTML files
-│   ├── index.html
-│   └── ...
+├── public/                 # Demo site seed data
+│   ├── pages/              # HTML/XML (flattened into /app/data at runtime)
+│   └── assets/             # CSS, JS, favicon
 ├── Dockerfile.nginx        # nginx image
 ├── Dockerfile.api          # API image
 ├── Dockerfile.openwebui    # Editor image

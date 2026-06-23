@@ -1,0 +1,41 @@
+# Bundled editor stack: Open WebUI + cms-api + preview routing (no nginx).
+# Plugin-only and multi-service demos remain in docker-compose.plugin.yml / docker-compose.yml.
+services:
+  stack:
+    build:
+      context: .
+      dockerfile: Dockerfile.stack
+    ports:
+      - "8081:8081"
+    env_file: .env
+    environment:
+      PORT: 8081
+      WEBUI_PORT: 8080
+      CMS_API_PORT: 3000
+      EDITOR_HOST: localhost
+      PREVIEW_HOST: preview.localhost
+      PREVIEW_BASE_URL: http://preview.localhost:8081
+      CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
+      STORAGE_BACKEND: fs
+      DATA_ROOT: /app/data
+      DATA_DIR: /app/data/.open-webui
+      DRAFTS_DIR: .drafts
+      OPENAI_API_BASE_URL: https://openrouter.ai/api/v1
+      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
+      ENABLE_OPENAI_API: "true"
+      ENABLE_SIGNUP: "true"
+      DEFAULT_MODELS: minimax/minimax-m3
+      DEFAULT_MODEL_PARAMS: '{"function_calling":"native"}'
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
+      WEBUI_URL: http://localhost:8081
+    volumes:
+      - stack-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  stack-data:

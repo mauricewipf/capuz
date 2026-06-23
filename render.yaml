@@ -2,7 +2,7 @@ services:
   - type: web
     name: capuz
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.stack
     numInstances: 1
     region: frankfurt
     plan: starter
@@ -19,25 +19,31 @@ services:
       - key: ENABLE_OPENAI_API
         value: "true"
       - key: DEFAULT_MODELS
-        value: openai/gpt-4o-mini
+        value: minimax/minimax-m3
+      - key: DEFAULT_MODEL_PARAMS
+        value: '{"function_calling":"native"}'
       - key: CMS_API_KEY
         generateValue: true
       - key: WEBUI_SECRET_KEY
         generateValue: true
       - key: WEBUI_URL
         value: https://editor.example.com
-      - key: PUBLIC_HOST
-        value: example.com
       - key: EDITOR_HOST
         value: editor.example.com
+      - key: PREVIEW_HOST
+        value: preview.example.com
+      - key: PREVIEW_BASE_URL
+        value: https://preview.example.com
       - key: ENABLE_SIGNUP
         value: "false"
       - key: DATA_DIR
         value: /app/data/.open-webui
       - key: DATA_ROOT
         value: /app/data
-      - key: TOOL_SERVER_CONNECTIONS
-        value: '[{"type":"mcp","url":"http://127.0.0.1:3000","path":"/mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
+      - key: STORAGE_BACKEND
+        value: fs
+      - key: DRAFTS_DIR
+        value: .drafts
     disk:
       name: data
       mountPath: /app/data

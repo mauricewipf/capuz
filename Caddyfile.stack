@@ -1,0 +1,18 @@
+# Single listener on $PORT with host-based routing (Render and local dev).
+# Env vars are exported by start-stack.sh before caddy run.
+
+:{$PORT} {
+	@preview host {$PREVIEW_HOST}
+	handle @preview {
+		reverse_proxy 127.0.0.1:{$CMS_API_PORT}
+	}
+
+	@editor host {$EDITOR_HOST}
+	handle @editor {
+		reverse_proxy 127.0.0.1:{$WEBUI_PORT}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:{$WEBUI_PORT}
+	}
+}

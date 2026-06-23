@@ -161,8 +161,8 @@ Each service can be deployed as a separate pod with:
 - openwebui Deployment + Service
 - Persistent Volume Claim for shared storage
 
-### Monolithic Alternative
-For platforms like Render that prefer single containers, use `Dockerfile.monolithic.old` which combines all three services into one container.
+### Bundled editor stack (no nginx)
+For platforms like Render that prefer a single web service, use `Dockerfile.stack` with `docker-compose.stack.yml`. It runs Open WebUI, cms-api, and Caddy host routing in one container. The public static site is **not** included (use nginx separately or an external host). Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.
 
 ## Development vs Production
 

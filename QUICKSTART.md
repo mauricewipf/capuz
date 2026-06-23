@@ -65,7 +65,7 @@ docker compose down -v
 2. Click "Sign Up" and create an admin account
 3. Go to **Settings** → **Integrations**
 4. Verify **CMS Pages** MCP server is connected
-5. Select a model (e.g., `openai/gpt-4o-mini`)
+5. Select a model (e.g., `minimax/minimax-m3`)
 6. Try a prompt:
    ```
    Read index.html, change the hero heading, and save it.
@@ -164,7 +164,7 @@ Optional (with defaults):
 - `WEBUI_SECRET_KEY` - Session secret (default: dev-secret-change-me)
 - `WEBUI_URL` - Editor URL (default: http://localhost:8081)
 - `ENABLE_SIGNUP` - Allow account creation (default: true)
-- `DEFAULT_MODELS` - Available models (default: openai/gpt-4o-mini)
+- `DEFAULT_MODELS` - Available models (default: minimax/minimax-m3)
 
 ## Troubleshooting
 

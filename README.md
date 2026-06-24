@@ -158,13 +158,19 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-**Bundled editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` and mount the private key:
+**Bundled editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and uncomment the private key mount:
 
 ```yaml
 # docker-compose.stack.yml — under stack.volumes
 volumes:
   - stack-data:/app/data
-  - ~/.ssh/capuz_deploy_key:/keys/id_ed25519:ro
+  - ${SFTP_KEY_HOST_PATH}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro
+```
+
+```env
+# .env
+SFTP_KEY_HOST_PATH=~/.ssh/capuz_deploy_key
+SFTP_KEY_PATH=/keys/id_ed25519
 ```
 
 ```bash
@@ -346,6 +352,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `SFTP_HOST` | — | SFTP server hostname |
 | `SFTP_PORT` | `22` | SFTP port |
 | `SFTP_USER` | — | SFTP username |
+| `SFTP_KEY_HOST_PATH` | — | Host path to private key file (Compose bind mount source) |
 | `SFTP_KEY_PATH` | — | Path to private key inside the container |
 | `SFTP_REMOTE_ROOT` | — | Absolute path to web document root on the server |
 | `GIT_*` | — | Git remote and deploy key settings |

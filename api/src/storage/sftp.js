@@ -56,7 +56,7 @@ export class SftpStorage {
     } catch (error) {
       if (error?.code === "ENOENT") {
         throw new PathError(
-          `SFTP private key not found at SFTP_KEY_PATH=${this.keyPath}. Mount your SSH private key file to this path (e.g. -v ~/.ssh/your_key:${this.keyPath}:ro).`,
+          `SFTP private key not found at SFTP_KEY_PATH=${this.keyPath}. Mount your SSH private key file to this path (e.g. set SFTP_KEY_HOST_PATH in .env and bind-mount it to ${this.keyPath}:ro).`,
           500,
         );
       }
@@ -64,7 +64,7 @@ export class SftpStorage {
     }
     if (info.isDirectory()) {
       throw new PathError(
-        `SFTP_KEY_PATH=${this.keyPath} is a directory, not a private key file. This usually means the host path in the volume mount does not exist, so Docker created an empty directory. Point the mount at an existing SSH private key file.`,
+        `SFTP_KEY_PATH=${this.keyPath} is a directory, not a private key file. This usually means SFTP_KEY_HOST_PATH points at a missing host path, so Docker created an empty directory. Set SFTP_KEY_HOST_PATH in .env to an existing SSH private key file.`,
         500,
       );
     }

@@ -33,6 +33,7 @@ services:
       PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:3000}
       DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
+      COMPONENTS_DIR: ${COMPONENTS_DIR:-.components}
     volumes:
       - site-data:/app/data
       - git-repo:/app/repo

@@ -1,18 +1,23 @@
 import { readdir, readFile, writeFile, unlink, mkdir, access } from "node:fs/promises";
 import { dirname, relative } from "node:path";
 import {
+  getComponentsDirName,
+  getComponentsRoot,
   getDataRoot,
   getDraftsRoot,
-  isHiddenStorageSegment,
+  isSkippedStorageSegment,
+  normalizeComponentName,
   normalizePagePath,
   PathError,
   resolveAssetPath,
+  resolveComponentPath,
   resolveDraftPath,
   resolvePagePath,
   toPublicPath,
 } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
+const COMPONENTS_SEGMENT = getComponentsDirName();
 
 function isEnoent(err) {
   return (
@@ -32,7 +37,7 @@ async function walk(dir, pages, root) {
   }
 
   for (const entry of entries) {
-    if (isHiddenStorageSegment(entry.name)) continue;
+    if (isSkippedStorageSegment(entry.name)) continue;
     const fullPath = `${dir}/${entry.name}`;
     if (entry.isDirectory()) {
       await walk(fullPath, pages, root);
@@ -41,6 +46,45 @@ async function walk(dir, pages, root) {
     const lower = entry.name.toLowerCase();
     if (ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
       pages.push(relative(root, fullPath).split(/[/\\]/).join("/"));
+    }
+  }
+}
+
+async function walkAssets(dir, assets, root) {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (isSkippedStorageSegment(entry.name)) continue;
+    const fullPath = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      await walkAssets(fullPath, assets, root);
+      continue;
+    }
+    assets.push(relative(root, fullPath).split(/[/\\]/).join("/"));
+  }
+}
+
+async function walkComponents(dir, components, root) {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      await walkComponents(`${dir}/${entry.name}`, components, root);
+      continue;
+    }
+    if (entry.name.toLowerCase().endsWith(".html")) {
+      const rel = relative(root, `${dir}/${entry.name}`).split(/[/\\]/).join("/");
+      components.push(rel.replace(/\.html$/i, ""));
     }
   }
 }
@@ -58,6 +102,20 @@ export class FsStorage {
     await walk(getDraftsRoot(), pages, getDraftsRoot());
     pages.sort();
     return pages;
+  }
+
+  async listAssets(prefix = "") {
+    const assets = [];
+    await walkAssets(getDataRoot(), assets, getDataRoot());
+    const cleaned = prefix.replace(/^\/+/, "");
+    return assets.filter((path) => !cleaned || path.startsWith(cleaned)).sort();
+  }
+
+  async listComponents() {
+    const components = [];
+    await walkComponents(getComponentsRoot(), components, getComponentsRoot());
+    components.sort();
+    return components;
   }
 
   async hasDraft(relativePath) {
@@ -95,6 +153,18 @@ export class FsStorage {
     }
   }
 
+  async readComponent(name) {
+    const absolute = resolveComponentPath(name);
+    try {
+      return await readFile(absolute, "utf8");
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Component not found", 404);
+      }
+      throw err;
+    }
+  }
+
   async readAsset(relativePath) {
     const absolute = resolveAssetPath(relativePath);
     try {
@@ -120,6 +190,21 @@ export class FsStorage {
     await mkdir(dirname(absolute), { recursive: true });
     await writeFile(absolute, html, "utf8");
     return toPublicPath(absolute);
+  }
+
+  async writeComponent(name, html) {
+    const normalized = normalizeComponentName(name);
+    const absolute = resolveComponentPath(normalized);
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(absolute, html, "utf8");
+    return normalized;
+  }
+
+  async writeAsset(relativePath, buffer) {
+    const absolute = resolveAssetPath(relativePath);
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(absolute, buffer);
+    return relativePath;
   }
 
   async publishDraft(relativePath) {
@@ -149,6 +234,30 @@ export class FsStorage {
     } catch (err) {
       if (isEnoent(err)) {
         throw new PathError("Page not found", 404);
+      }
+      throw err;
+    }
+  }
+
+  async deleteComponent(name) {
+    const absolute = resolveComponentPath(name);
+    try {
+      await unlink(absolute);
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Component not found", 404);
+      }
+      throw err;
+    }
+  }
+
+  async deleteAsset(relativePath) {
+    const absolute = resolveAssetPath(relativePath);
+    try {
+      await unlink(absolute);
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Asset not found", 404);
       }
       throw err;
     }

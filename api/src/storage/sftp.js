@@ -2,15 +2,18 @@ import SftpClient from "ssh2-sftp-client";
 import { readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
 import {
+  getComponentsDirName,
   getDraftsDirName,
-  isHiddenStorageSegment,
+  isSkippedStorageSegment,
   normalizeAssetPath,
+  normalizeComponentName,
   normalizePagePath,
   PathError,
 } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 const DRAFTS_SEGMENT = getDraftsDirName();
+const COMPONENTS_SEGMENT = getComponentsDirName();
 
 function isAllowedPage(name) {
   const lower = name.toLowerCase();
@@ -42,6 +45,15 @@ export class SftpStorage {
   draftRemotePath(relativePath) {
     const normalized = normalizePagePath(relativePath);
     return `${this.remoteRoot}/${DRAFTS_SEGMENT}/${normalized}`;
+  }
+
+  componentRemotePath(name) {
+    const normalized = normalizeComponentName(name);
+    return `${this.remoteRoot}/${COMPONENTS_SEGMENT}/${normalized}.html`;
+  }
+
+  componentsRoot() {
+    return `${this.remoteRoot}/${COMPONENTS_SEGMENT}`;
   }
 
   assetRemotePath(relativePath) {
@@ -134,7 +146,7 @@ export class SftpStorage {
     }
 
     for (const entry of entries) {
-      if (isHiddenStorageSegment(entry.name)) continue;
+      if (isSkippedStorageSegment(entry.name)) continue;
       const fullPath = `${dir}/${entry.name}`;
       if (entry.type === "d") {
         await this.walk(client, fullPath, pages, root);
@@ -143,6 +155,46 @@ export class SftpStorage {
       if (isAllowedPage(entry.name)) {
         const relativePath = fullPath.slice(root.length + 1);
         pages.push(relativePath.split("\\").join("/"));
+      }
+    }
+  }
+
+  async walkAssets(client, dir, assets, root) {
+    let entries;
+    try {
+      entries = await client.list(dir);
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (isSkippedStorageSegment(entry.name)) continue;
+      const fullPath = `${dir}/${entry.name}`;
+      if (entry.type === "d") {
+        await this.walkAssets(client, fullPath, assets, root);
+        continue;
+      }
+      assets.push(fullPath.slice(root.length + 1).split("\\").join("/"));
+    }
+  }
+
+  async walkComponents(client, dir, components, root) {
+    let entries;
+    try {
+      entries = await client.list(dir);
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      const fullPath = `${dir}/${entry.name}`;
+      if (entry.type === "d") {
+        await this.walkComponents(client, fullPath, components, root);
+        continue;
+      }
+      if (entry.name.toLowerCase().endsWith(".html")) {
+        const rel = fullPath.slice(root.length + 1).split("\\").join("/");
+        components.push(rel.replace(/\.html$/i, ""));
       }
     }
   }
@@ -164,6 +216,25 @@ export class SftpStorage {
     });
     pages.sort();
     return pages;
+  }
+
+  async listAssets(prefix = "") {
+    const assets = [];
+    await this.withClient(async (client) => {
+      await this.walkAssets(client, this.remoteRoot, assets, this.remoteRoot);
+    });
+    const cleaned = prefix.replace(/^\/+/, "");
+    return assets.filter((path) => !cleaned || path.startsWith(cleaned)).sort();
+  }
+
+  async listComponents() {
+    const components = [];
+    const root = this.componentsRoot();
+    await this.withClient(async (client) => {
+      await this.walkComponents(client, root, components, root);
+    });
+    components.sort();
+    return components;
   }
 
   async hasDraft(relativePath) {
@@ -197,6 +268,24 @@ export class SftpStorage {
       const exists = await client.exists(remote);
       if (!exists) {
         throw new PathError("Draft not found", 404);
+      }
+      const buffer = await client.get(remote);
+      if (Buffer.isBuffer(buffer)) {
+        return buffer.toString("utf8");
+      }
+      if (typeof buffer === "string") {
+        return buffer;
+      }
+      throw new Error("Unexpected SFTP response type");
+    });
+  }
+
+  async readComponent(name) {
+    const remote = this.componentRemotePath(name);
+    return await this.withClient(async (client) => {
+      const exists = await client.exists(remote);
+      if (!exists) {
+        throw new PathError("Component not found", 404);
       }
       const buffer = await client.get(remote);
       if (Buffer.isBuffer(buffer)) {
@@ -247,6 +336,26 @@ export class SftpStorage {
     return normalized;
   }
 
+  async writeComponent(name, html) {
+    const normalized = normalizeComponentName(name);
+    const remote = this.componentRemotePath(normalized);
+    await this.withClient(async (client) => {
+      await client.mkdir(dirname(remote), true);
+      await client.put(Buffer.from(html, "utf8"), remote);
+    });
+    return normalized;
+  }
+
+  async writeAsset(relativePath, buffer) {
+    const normalized = normalizeAssetPath(relativePath);
+    const remote = this.assetRemotePath(normalized);
+    await this.withClient(async (client) => {
+      await client.mkdir(dirname(remote), true);
+      await client.put(buffer, remote);
+    });
+    return normalized;
+  }
+
   async publishDraft(relativePath) {
     const normalized = normalizePagePath(relativePath);
     const html = await this.readDraft(normalized);
@@ -272,6 +381,28 @@ export class SftpStorage {
       const exists = await client.exists(remote);
       if (!exists) {
         throw new PathError("Page not found", 404);
+      }
+      await client.delete(remote);
+    });
+  }
+
+  async deleteComponent(name) {
+    const remote = this.componentRemotePath(name);
+    await this.withClient(async (client) => {
+      const exists = await client.exists(remote);
+      if (!exists) {
+        throw new PathError("Component not found", 404);
+      }
+      await client.delete(remote);
+    });
+  }
+
+  async deleteAsset(relativePath) {
+    const remote = this.assetRemotePath(relativePath);
+    await this.withClient(async (client) => {
+      const exists = await client.exists(remote);
+      if (!exists) {
+        throw new PathError("Asset not found", 404);
       }
       await client.delete(remote);
     });

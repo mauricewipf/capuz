@@ -262,9 +262,21 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `read_page` | Read **published** page content by path |
 | `read_draft` | Read pending draft content |
 | `write_page` | Save HTML as a **draft** (returns `previewUrl`); does not publish |
+| `edit_page` | Find/replace patch on a page draft without rewriting full HTML |
+| `move_page` / `rename_page` / `copy_page` | Restructure pages (with inbound link warnings on move/rename/delete) |
+| `search_pages` | Grep page HTML for a substring |
+| `diff_page` | Unified diff of draft vs published |
 | `publish_page` | Promote a draft to the live site |
 | `discard_draft` | Delete a draft without publishing |
 | `delete_page` | Delete a published page |
+| `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |
+| `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` |
+| `insert_component` | Embed a tagged component block into a page draft |
+| `sync_component` | Propagate updated component HTML to all tagged page drafts |
+| `suggest_components` / `reverse_engineer` | Read-only analysis: cluster recurring UI blocks from existing pages |
+| `audit_seo` / `apply_seo` / `regenerate_sitemap` | SEO audit, metadata updates, sitemap draft generation |
+| `check_links` | Scan for broken internal links and missing assets |
+| `render_preview` | Screenshot a draft via external renderer (`SCREENSHOT_RENDERER_URL`) |
 
 ## REST API
 
@@ -277,7 +289,24 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET | `/api/pages/{path}` | — | Read published page |
 | PUT | `/api/pages/{path}` | Bearer | Save draft |
 | POST | `/api/pages/{path}/publish` | Bearer | Publish draft |
+| POST | `/api/pages/{path}/edit` | Bearer | Find/replace patch on draft |
+| GET | `/api/pages/{path}/diff` | — | Diff draft vs published |
+| GET/POST | `/api/pages/{path}/seo` | POST: Bearer | SEO audit / apply metadata to draft |
+| POST | `/api/pages/{path}/preview-screenshot` | Bearer | Render preview screenshot |
+| POST | `/api/pages/move` | Bearer | Move page |
+| POST | `/api/pages/rename` | Bearer | Rename page |
+| POST | `/api/pages/copy` | Bearer | Copy page as draft |
 | DELETE | `/api/pages/{path}` | Bearer | Delete published page |
+| GET | `/api/search?q=` | — | Search page HTML |
+| GET | `/api/links/check` | — | Broken link report |
+| GET | `/api/assets` | — | List assets |
+| GET/PUT/DELETE | `/api/assets/{path}` | PUT/DELETE: Bearer | Read/upload/delete asset |
+| GET | `/api/components` | — | List components |
+| GET | `/api/components/suggest` | — | Suggest components from existing pages |
+| GET/PUT/DELETE | `/api/components/{name}` | PUT/DELETE: Bearer | Read/write/delete component |
+| POST | `/api/components/{name}/insert` | Bearer | Insert component into page draft |
+| POST | `/api/components/{name}/sync` | Bearer | Sync component into tagged page drafts |
+| POST | `/api/sitemap/regenerate` | Bearer | Regenerate `sitemap.xml` draft |
 | GET | `/api/drafts` | — | List draft paths |
 | GET | `/api/drafts/{path}` | — | Read draft |
 | PUT | `/api/drafts/{path}` | Bearer | Save draft |
@@ -306,6 +335,9 @@ Draft pages are previewed on a separate host (subdomain). cms-api serves preview
 | `PREVIEW_HOST` | `preview.localhost` | Hostname for preview vhost |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Base URL returned in draft write responses |
 | `DRAFTS_DIR` | `.drafts` | Draft storage directory name (under `DATA_ROOT` or backend equivalent) |
+| `COMPONENTS_DIR` | `.components` | Reusable HTML component library directory (hidden from page listings and nginx) |
+| `SITE_BASE_URL` | `https://example.com` | Base URL for sitemap generation |
+| `SCREENSHOT_RENDERER_URL` | — | Optional POST endpoint `{ url }` → PNG bytes for `render_preview` |
 
 Reference stack URLs:
 
@@ -347,6 +379,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `API_PORT` | `3000` | HTTP port |
 | `DATA_ROOT` | `/app/data` | Site root (fs backend) |
 | `DRAFTS_DIR` | `.drafts` | Draft pages directory name |
+| `COMPONENTS_DIR` | `.components` | Component library directory name |
+| `SITE_BASE_URL` | `https://example.com` | Base URL for sitemap generation |
+| `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Preview links in API responses |
 | `SFTP_HOST` | — | SFTP server hostname |
@@ -386,6 +421,8 @@ MIT — see [LICENSE](LICENSE).
 
 ## Limitations
 
-- HTML and XML files only
+- Page operations: HTML and XML files only
+- Assets: png, jpg, jpeg, gif, svg, webp, ico, css, js, woff, woff2, json
 - No build-step framework support (Next.js, Astro, Hugo, etc.)
 - Git backend: deploy latency depends on your host CI (typically 20–90s)
+- `render_preview` requires an external screenshot renderer service

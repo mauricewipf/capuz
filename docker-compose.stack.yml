@@ -20,6 +20,7 @@ services:
       DATA_ROOT: ${DATA_ROOT:-/app/data}
       DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
       DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
+      COMPONENTS_DIR: ${COMPONENTS_DIR:-.components}
       OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL:-https://openrouter.ai/api/v1}
       OPENAI_API_KEY: ${OPENROUTER_API_KEY:-}
       ENABLE_OPENAI_API: ${ENABLE_OPENAI_API:-true}

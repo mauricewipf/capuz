@@ -14,7 +14,8 @@ ENV PATH="/root/.bun/bin:${PATH}" \
   WEBUI_PORT=8080 \
   DATA_ROOT=/app/data \
   STORAGE_BACKEND=fs \
-  DRAFTS_DIR=.drafts
+  DRAFTS_DIR=.drafts \
+  COMPONENTS_DIR=.components
 
 WORKDIR /app/cms-api
 COPY api/package.json api/bun.lock ./

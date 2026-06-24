@@ -7,10 +7,18 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { getDraftsDirName, normalizeAssetPath, normalizePagePath, PathError } from "../paths.js";
+import {
+  getComponentsDirName,
+  getDraftsDirName,
+  normalizeAssetPath,
+  normalizeComponentName,
+  normalizePagePath,
+  PathError,
+} from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 const DRAFTS_SEGMENT = getDraftsDirName();
+const COMPONENTS_SEGMENT = getComponentsDirName();
 
 function requireEnv(name) {
   const value = process.env[name]?.trim();
@@ -28,6 +36,15 @@ function isAllowedPage(key) {
 function isDraftKey(key) {
   const segment = `/${DRAFTS_SEGMENT}/`;
   return key.includes(segment) || key.startsWith(`${DRAFTS_SEGMENT}/`);
+}
+
+function isComponentKey(key) {
+  const segment = `/${COMPONENTS_SEGMENT}/`;
+  return key.includes(segment) || key.startsWith(`${COMPONENTS_SEGMENT}/`);
+}
+
+function isPageKey(key) {
+  return isAllowedPage(key) && !isDraftKey(key) && !isComponentKey(key);
 }
 
 function contentTypeForPath(path) {
@@ -100,6 +117,12 @@ export class S3Storage {
     return this.prefix ? `${this.prefix}/${draftPath}` : draftPath;
   }
 
+  componentObjectKey(name) {
+    const normalized = normalizeComponentName(name);
+    const componentPath = `${COMPONENTS_SEGMENT}/${normalized}.html`;
+    return this.prefix ? `${this.prefix}/${componentPath}` : componentPath;
+  }
+
   assetObjectKey(relativePath) {
     const normalized = normalizeAssetPath(relativePath);
     return this.prefix ? `${this.prefix}/${normalized}` : normalized;
@@ -131,7 +154,7 @@ export class S3Storage {
       for (const item of response.Contents || []) {
         if (!item.Key) continue;
         const key = this.relativeFromKey(item.Key);
-        if (!key || isDraftKey(key)) continue;
+        if (!key || isDraftKey(key) || isComponentKey(key)) continue;
         if (isAllowedPage(key)) {
           pages.push(key);
         }
@@ -176,6 +199,70 @@ export class S3Storage {
 
     pages.sort();
     return pages;
+  }
+
+  async listAssets(prefix = "") {
+    const assets = [];
+    const searchPrefix = this.prefix
+      ? `${this.prefix}/${prefix.replace(/^\/+/, "")}`
+      : prefix.replace(/^\/+/, "");
+    let continuationToken;
+
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: searchPrefix || (this.prefix ? `${this.prefix}/` : undefined),
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      for (const item of response.Contents || []) {
+        if (!item.Key) continue;
+        const key = this.relativeFromKey(item.Key);
+        if (!key || isDraftKey(key) || isComponentKey(key) || isPageKey(key)) continue;
+        assets.push(key);
+      }
+
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    assets.sort();
+    return assets;
+  }
+
+  async listComponents() {
+    const components = [];
+    const componentPrefix = this.prefix
+      ? `${this.prefix}/${COMPONENTS_SEGMENT}/`
+      : `${COMPONENTS_SEGMENT}/`;
+    let continuationToken;
+
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: componentPrefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      for (const item of response.Contents || []) {
+        if (!item.Key) continue;
+        const key = this.relativeFromKey(item.Key);
+        const pagePath = key.startsWith(`${COMPONENTS_SEGMENT}/`)
+          ? key.slice(COMPONENTS_SEGMENT.length + 1)
+          : key;
+        if (pagePath.endsWith(".html")) {
+          components.push(pagePath.slice(0, -".html".length));
+        }
+      }
+
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    components.sort();
+    return components;
   }
 
   async hasDraft(relativePath) {
@@ -264,6 +351,28 @@ export class S3Storage {
     }
   }
 
+  async readComponent(name) {
+    const key = this.componentObjectKey(name);
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+      return await streamToString(response.Body);
+    } catch (error) {
+      const nameErr =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (nameErr === "NoSuchKey" || nameErr === "NotFound") {
+        throw new PathError("Component not found", 404);
+      }
+      throw error;
+    }
+  }
+
   async writeDraft(relativePath, html) {
     const normalized = normalizePagePath(relativePath);
     const key = this.draftObjectKey(normalized);
@@ -292,6 +401,36 @@ export class S3Storage {
       }),
     );
     return this.publicUrl ? this.publicPath(normalized) : normalized;
+  }
+
+  async writeComponent(name, html) {
+    const normalized = normalizeComponentName(name);
+    const key = this.componentObjectKey(normalized);
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: html,
+        ContentType: "text/html; charset=utf-8",
+        CacheControl: "private, no-store",
+      }),
+    );
+    return normalized;
+  }
+
+  async writeAsset(relativePath, buffer) {
+    const normalized = normalizeAssetPath(relativePath);
+    const key = this.assetObjectKey(normalized);
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: contentTypeForPath(normalized),
+        CacheControl: this.cacheControl,
+      }),
+    );
+    return normalized;
   }
 
   async publishDraft(relativePath) {
@@ -351,6 +490,48 @@ export class S3Storage {
           : "";
       if (name === "NoSuchKey" || name === "NotFound") {
         throw new PathError("Page not found", 404);
+      }
+      throw error;
+    }
+  }
+
+  async deleteComponent(name) {
+    const key = this.componentObjectKey(name);
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+    } catch (error) {
+      const nameErr =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (nameErr === "NoSuchKey" || nameErr === "NotFound") {
+        throw new PathError("Component not found", 404);
+      }
+      throw error;
+    }
+  }
+
+  async deleteAsset(relativePath) {
+    const key = this.assetObjectKey(relativePath);
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+    } catch (error) {
+      const nameErr =
+        typeof error === "object" && error !== null && "name" in error
+          ? String(error.name)
+          : "";
+      if (nameErr === "NoSuchKey" || nameErr === "NotFound") {
+        throw new PathError("Asset not found", 404);
       }
       throw error;
     }

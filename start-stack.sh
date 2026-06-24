@@ -14,6 +14,7 @@ export DATA_ROOT
 export DATA_DIR
 export STORAGE_BACKEND="${STORAGE_BACKEND:-fs}"
 export DRAFTS_DIR="${DRAFTS_DIR:-.drafts}"
+export COMPONENTS_DIR="${COMPONENTS_DIR:-.components}"
 export PREVIEW_HOST
 
 if [ -z "$OPENAI_API_KEY" ] && [ -n "$OPENROUTER_API_KEY" ]; then

@@ -4,15 +4,18 @@ import fs from "node:fs";
 import { readFile, writeFile, unlink, mkdir, access } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import {
+  getComponentsDirName,
   getDraftsDirName,
-  isHiddenStorageSegment,
+  isSkippedStorageSegment,
   normalizeAssetPath,
+  normalizeComponentName,
   normalizePagePath,
   PathError,
 } from "../paths.js";
 
 const ALLOWED_EXTENSIONS = [".html", ".xml"];
 const DRAFTS_SEGMENT = getDraftsDirName();
+const COMPONENTS_SEGMENT = getComponentsDirName();
 
 function requireEnv(name) {
   const value = process.env[name]?.trim();
@@ -40,7 +43,7 @@ async function walk(dir, pages, root) {
   }
 
   for (const entry of entries) {
-    if (isHiddenStorageSegment(entry.name)) continue;
+    if (isSkippedStorageSegment(entry.name)) continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
       await walk(fullPath, pages, root);
@@ -49,6 +52,46 @@ async function walk(dir, pages, root) {
     const lower = entry.name.toLowerCase();
     if (ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
       pages.push(relative(root, fullPath).split("\\").join("/"));
+    }
+  }
+}
+
+async function walkAssets(dir, assets, root) {
+  let entries;
+  try {
+    entries = await fs.promises.readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (isSkippedStorageSegment(entry.name)) continue;
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await walkAssets(fullPath, assets, root);
+      continue;
+    }
+    assets.push(relative(root, fullPath).split("\\").join("/"));
+  }
+}
+
+async function walkComponents(dir, components, root) {
+  let entries;
+  try {
+    entries = await fs.promises.readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await walkComponents(fullPath, components, root);
+      continue;
+    }
+    if (entry.name.toLowerCase().endsWith(".html")) {
+      const rel = relative(root, fullPath).split("\\").join("/");
+      components.push(rel.replace(/\.html$/i, ""));
     }
   }
 }
@@ -74,6 +117,10 @@ export class GitStorage {
 
   draftsRoot() {
     return join(this.cloneDir, DRAFTS_SEGMENT);
+  }
+
+  componentsRoot() {
+    return join(this.cloneDir, COMPONENTS_SEGMENT);
   }
 
   async getPrivateKey() {
@@ -138,6 +185,11 @@ export class GitStorage {
     return join(this.draftsRoot(), normalized);
   }
 
+  componentAbsolutePath(name) {
+    const normalized = normalizeComponentName(name);
+    return join(this.componentsRoot(), `${normalized}.html`);
+  }
+
   assetAbsolutePath(relativePath) {
     const normalized = normalizeAssetPath(relativePath);
     return join(this.cloneDir, normalized);
@@ -157,6 +209,22 @@ export class GitStorage {
     await walk(this.draftsRoot(), pages, this.draftsRoot());
     pages.sort();
     return pages;
+  }
+
+  async listAssets(prefix = "") {
+    await this.ensureRepo();
+    const assets = [];
+    await walkAssets(this.cloneDir, assets, this.cloneDir);
+    const cleaned = prefix.replace(/^\/+/, "");
+    return assets.filter((path) => !cleaned || path.startsWith(cleaned)).sort();
+  }
+
+  async listComponents() {
+    await this.ensureRepo();
+    const components = [];
+    await walkComponents(this.componentsRoot(), components, this.componentsRoot());
+    components.sort();
+    return components;
   }
 
   async hasDraft(relativePath) {
@@ -204,6 +272,19 @@ export class GitStorage {
     } catch (err) {
       if (isEnoent(err)) {
         throw new PathError("Asset not found", 404);
+      }
+      throw err;
+    }
+  }
+
+  async readComponent(name) {
+    await this.ensureRepo();
+    const absolute = this.componentAbsolutePath(name);
+    try {
+      return await readFile(absolute, "utf8");
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Component not found", 404);
       }
       throw err;
     }
@@ -277,6 +358,24 @@ export class GitStorage {
     return `${normalized} (commit ${sha.slice(0, 7)}; deploy typically live in ~30s)`;
   }
 
+  async writeComponent(name, html) {
+    await this.ensureRepo();
+    const normalized = normalizeComponentName(name);
+    const absolute = this.componentAbsolutePath(normalized);
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(absolute, html, "utf8");
+    return normalized;
+  }
+
+  async writeAsset(relativePath, buffer) {
+    await this.ensureRepo();
+    const normalized = normalizeAssetPath(relativePath);
+    const absolute = this.assetAbsolutePath(normalized);
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(absolute, buffer);
+    return normalized;
+  }
+
   async publishDraft(relativePath) {
     const normalized = normalizePagePath(relativePath);
     const html = await this.readDraft(normalized);
@@ -329,5 +428,29 @@ export class GitStorage {
       ref: this.branch,
       onAuth: () => ({ privateKey }),
     });
+  }
+
+  async deleteComponent(name) {
+    const absolute = this.componentAbsolutePath(name);
+    try {
+      await unlink(absolute);
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Component not found", 404);
+      }
+      throw err;
+    }
+  }
+
+  async deleteAsset(relativePath) {
+    const absolute = this.assetAbsolutePath(relativePath);
+    try {
+      await unlink(absolute);
+    } catch (err) {
+      if (isEnoent(err)) {
+        throw new PathError("Asset not found", 404);
+      }
+      throw err;
+    }
   }
 }

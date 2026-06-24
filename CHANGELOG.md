@@ -2,6 +2,25 @@
 
 All notable changes to the Capuz CMS API plugin are documented here.
 
+## [0.3.0] - 2026-06-24
+
+### Added
+
+- MCP/REST quick wins: `edit_page`, `move_page`, `rename_page`, `copy_page`, `search_pages`, `diff_page`
+- Asset management: `list_assets`, `upload_asset`, `read_asset`, `delete_asset` with extension allowlist
+- Reusable components library under `.components/` with `data-capuz-component` embedding
+- Component tools: `list_components`, `read_component`, `write_component`, `delete_component`, `insert_component`, `sync_component`
+- Reverse-engineering onboarding: `suggest_components` (alias `reverse_engineer`) — read-only UI pattern clustering
+- SEO co-pilot: `audit_seo`, `apply_seo`, `regenerate_sitemap`
+- Link-graph guardian: `check_links` plus inbound-link warnings on delete/move/rename
+- Preview feedback: `render_preview` screenshot tool (optional `SCREENSHOT_RENDERER_URL`)
+- Shared HTML helpers (`api/src/html.js`) using `node-html-parser` and `diff`
+
+### Changed
+
+- Storage backends (`fs`, `sftp`, `git`, `s3`) extended with assets and components support
+- `.components/` excluded from public page listings (like `.drafts`; not served by nginx)
+
 ## [0.2.0] - 2026-06-23
 
 ### Added

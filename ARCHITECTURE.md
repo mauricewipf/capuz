@@ -28,16 +28,23 @@ This application uses a microservices architecture with separate Docker services
 
 **Responsibilities**:
 - REST API for draft and publish operations (`/api/pages`, `/api/drafts`)
+- Extended REST/MCP tools: surgical edits, search/diff, assets, components, SEO, link checks, preview screenshots
 - MCP server for Open WebUI integration (`/mcp`)
 - Preview vhost when `Host` matches `PREVIEW_HOST` (draft-or-fallback HTML + published assets)
 - Health check endpoint (`/health`)
-- File system operations on HTML/XML files; drafts under `.drafts/`
+- File system operations on HTML/XML files; drafts under `.drafts/`; components under `.components/`
 
 **Key Endpoints**:
 - `GET /api/pages` - List published pages (`?detail=status` for draft state)
 - `GET /api/drafts` - List draft paths
 - `PUT /api/pages/{path}` - Save draft
 - `POST /api/pages/{path}/publish` - Publish draft
+- `POST /api/pages/{path}/edit` - Find/replace patch on draft
+- `GET /api/pages/{path}/diff` - Diff draft vs published
+- `GET /api/search` - Search page HTML
+- `GET /api/assets`, `PUT /api/assets/{path}` - Asset management
+- `GET /api/components`, `GET /api/components/suggest` - Component library and reverse-engineering
+- `GET /api/links/check` - Broken link scan
 - `GET /api/pages/{path}` - Read published page
 - `DELETE /api/pages/{path}` - Delete published page
 - `POST /mcp` - MCP protocol handler
@@ -101,6 +108,7 @@ All three services mount the same Docker volume:
 - **Contents**:
   - HTML pages (root level and subdirectories)
   - `.drafts/` - unpublished page drafts (cms-api only; hidden from published listings)
+  - `.components/` - reusable HTML component library (hidden from published listings; blocked by nginx)
   - CSS, JS, images under `assets/`, etc.
 - **Seed source** (repo): `public/pages/` → `/app/data/`, `public/assets/` → `/app/data/assets/` via `seed-data.sh` on first nginx start
 

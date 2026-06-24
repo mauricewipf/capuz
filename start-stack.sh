@@ -7,9 +7,11 @@ CMS_API_PORT="${CMS_API_PORT:-3000}"
 EDITOR_HOST="${EDITOR_HOST:-localhost}"
 PREVIEW_HOST="${PREVIEW_HOST:-preview.localhost}"
 DATA_ROOT="${DATA_ROOT:-/app/data}"
+DATA_DIR="${DATA_DIR:-/app/data/.open-webui}"
 
 export API_PORT="$CMS_API_PORT"
 export DATA_ROOT
+export DATA_DIR
 export STORAGE_BACKEND="${STORAGE_BACKEND:-fs}"
 export DRAFTS_DIR="${DRAFTS_DIR:-.drafts}"
 export PREVIEW_HOST
@@ -30,10 +32,11 @@ if [ -z "$PREVIEW_BASE_URL" ]; then
 fi
 
 if [ -z "$TOOL_SERVER_CONNECTIONS" ] && [ -n "$CMS_API_KEY" ]; then
-  export TOOL_SERVER_CONNECTIONS="[{\"type\":\"mcp\",\"url\":\"http://127.0.0.1:${CMS_API_PORT}\",\"path\":\"/mcp\",\"auth_type\":\"bearer\",\"key\":\"${CMS_API_KEY}\",\"config\":{\"enable\":true},\"info\":{\"id\":\"cms-pages\",\"name\":\"CMS Pages\",\"description\":\"Read and write HTML files on the site\"}}]"
+  export TOOL_SERVER_CONNECTIONS="[{\"type\":\"mcp\",\"url\":\"http://127.0.0.1:${CMS_API_PORT}/mcp\",\"path\":\"/mcp\",\"auth_type\":\"bearer\",\"key\":\"${CMS_API_KEY}\",\"config\":{\"enable\":true},\"info\":{\"id\":\"cms-pages\",\"name\":\"CMS Pages\",\"description\":\"Read and write HTML files on the site\"}}]"
 fi
 
 /app/seed-data.sh
+mkdir -p "$DATA_DIR"
 
 cd /app/cms-api
 bun run src/server.js &

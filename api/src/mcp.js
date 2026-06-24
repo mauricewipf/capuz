@@ -2,9 +2,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
 import { buildPreviewUrl } from "./paths.js";
-import { handlePathError } from "./pages.js";
 import { getStorage, listPagesWithStatus } from "./storage/index.js";
 import { VERSION } from "./version.js";
+
+function errorResult(error) {
+  const message =
+    error && typeof error.message === "string" ? error.message : String(error);
+  return {
+    content: [{ type: "text", text: `Error: ${message}` }],
+    isError: true,
+  };
+}
 
 export function createMcpServer() {
   const storage = getStorage();
@@ -23,16 +31,17 @@ export function createMcpServer() {
         .describe('Set to "status" to include draft state per path'),
     },
     async ({ detail }) => {
-      if (detail === "status") {
-        const pages = await listPagesWithStatus(storage);
+      try {
+        const pages =
+          detail === "status"
+            ? await listPagesWithStatus(storage)
+            : await storage.listPages();
         return {
           content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
         };
+      } catch (error) {
+        return errorResult(error);
       }
-      const pages = await storage.listPages();
-      return {
-        content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
-      };
     },
   );
 
@@ -41,10 +50,14 @@ export function createMcpServer() {
     "List page paths that have unpublished drafts",
     {},
     async () => {
-      const pages = await storage.listDrafts();
-      return {
-        content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
-      };
+      try {
+        const pages = await storage.listDrafts();
+        return {
+          content: [{ type: "text", text: JSON.stringify(pages, null, 2) }],
+        };
+      } catch (error) {
+        return errorResult(error);
+      }
     },
   );
 
@@ -57,8 +70,7 @@ export function createMcpServer() {
         const html = await storage.readPage(path);
         return { content: [{ type: "text", text: html }] };
       } catch (error) {
-        const { message } = handlePathError(error);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        return errorResult(error);
       }
     },
   );
@@ -72,8 +84,7 @@ export function createMcpServer() {
         const html = await storage.readDraft(path);
         return { content: [{ type: "text", text: html }] };
       } catch (error) {
-        const { message } = handlePathError(error);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        return errorResult(error);
       }
     },
   );
@@ -98,8 +109,7 @@ export function createMcpServer() {
           ],
         };
       } catch (error) {
-        const { message } = handlePathError(error);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        return errorResult(error);
       }
     },
   );
@@ -115,8 +125,7 @@ export function createMcpServer() {
           content: [{ type: "text", text: `Published ${saved}` }],
         };
       } catch (error) {
-        const { message } = handlePathError(error);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        return errorResult(error);
       }
     },
   );
@@ -130,8 +139,7 @@ export function createMcpServer() {
         await storage.discardDraft(path);
         return { content: [{ type: "text", text: `Discarded draft for ${path}` }] };
       } catch (error) {
-        const { message } = handlePathError(error);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        return errorResult(error);
       }
     },
   );
@@ -145,8 +153,7 @@ export function createMcpServer() {
         await storage.deletePage(path);
         return { content: [{ type: "text", text: `Deleted ${path}` }] };
       } catch (error) {
-        const { message } = handlePathError(error);
-        return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+        return errorResult(error);
       }
     },
   );

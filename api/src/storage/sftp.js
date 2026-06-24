@@ -1,5 +1,5 @@
 import SftpClient from "ssh2-sftp-client";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
 import {
   getDraftsDirName,
@@ -49,6 +49,35 @@ export class SftpStorage {
     return `${this.remoteRoot}/${normalized}`;
   }
 
+  async readPrivateKey() {
+    let info;
+    try {
+      info = await stat(this.keyPath);
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        throw new PathError(
+          `SFTP private key not found at SFTP_KEY_PATH=${this.keyPath}. Mount your SSH private key file to this path (e.g. -v ~/.ssh/your_key:${this.keyPath}:ro).`,
+          500,
+        );
+      }
+      throw error;
+    }
+    if (info.isDirectory()) {
+      throw new PathError(
+        `SFTP_KEY_PATH=${this.keyPath} is a directory, not a private key file. This usually means the host path in the volume mount does not exist, so Docker created an empty directory. Point the mount at an existing SSH private key file.`,
+        500,
+      );
+    }
+    const key = (await readFile(this.keyPath, "utf8")).trim();
+    if (!key.includes("PRIVATE KEY")) {
+      throw new PathError(
+        `SFTP_KEY_PATH=${this.keyPath} does not contain a PEM private key. Provide an unencrypted OpenSSH/PEM private key file.`,
+        500,
+      );
+    }
+    return key;
+  }
+
   async connect() {
     if (this.client) return;
     if (this.connecting) {
@@ -57,7 +86,7 @@ export class SftpStorage {
     }
 
     this.connecting = (async () => {
-      const privateKey = await readFile(this.keyPath, "utf8");
+      const privateKey = await this.readPrivateKey();
       const client = new SftpClient();
       await client.connect({
         host: this.host,

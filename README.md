@@ -45,31 +45,103 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-### sftp — remote nginx VPS
+### sftp — remote nginx or shared hosting
 
-Use this when your site runs on a remote Linux VPS (nginx serving files from disk) and cms-api connects over SSH/SFTP to read and write pages.
+Use this when your site runs on a remote server (nginx or Apache serving files from disk) and cms-api connects over SFTP to read and write pages. The SFTP backend uses **SSH key authentication only** — no password auth in cms-api.
 
-**Prepare the VPS** — create a deploy user with write access to the web root and add your public key (the SFTP backend uses key-based auth only):
+Set `SFTP_REMOTE_ROOT` to the absolute path of your **web document root** (where `index.html` lives), not your SSH home directory. On some hosts that looks like `/var/www/site`; on shared hosting it may look like `/customers/…/yourdomain/httpd.www`.
+
+#### 1. Generate a deploy key
+
+On the machine that runs cms-api (your laptop for local dev):
 
 ```bash
-# On the VPS
+ssh-keygen -t ed25519 -f ~/.ssh/capuz_deploy_key -C "capuz-cms-api" -N ""
+chmod 600 ~/.ssh/capuz_deploy_key
+```
+
+Keep `~/.ssh/capuz_deploy_key` private. You will install `~/.ssh/capuz_deploy_key.pub` on the server.
+
+#### 2. Get connection details and enable SFTP
+
+From your hosting control panel (e.g. **Advanced settings → SSH & SFTP**):
+
+- Turn **Allow SSH & SFTP access** on
+- Note **hostname**, **username**, and **port**
+- Set the SSH/SFTP password via the panel’s reset-email flow if you have not already
+
+Use these values for `SFTP_HOST`, `SFTP_USER`, and `SFTP_PORT` in `.env`.
+
+#### 3. Install your public key on the server
+
+The server must have your public key in `~/.ssh/authorized_keys` for the SFTP user (one key per line, no extra quotes or blank lines).
+
+**Option A — VPS with SSH shell** (recommended when available):
+
+On the VPS, ensure a deploy user exists with write access to the web root, then copy your key:
+
+```bash
+# On the VPS (once)
 sudo useradd -m -s /bin/bash capuz
 sudo mkdir -p /var/www/site
 sudo chown capuz:capuz /var/www/site
 ```
 
 ```bash
-# On the cms-api host — generate a deploy key if needed
-ssh-keygen -t ed25519 -f ~/.ssh/capuz_deploy_key -N ""
+# On the cms-api host
+ssh-copy-id -i ~/.ssh/capuz_deploy_key.pub -p PORT USER@HOST
 
-# Copy the public key to the VPS
-ssh-copy-id -i ~/.ssh/capuz_deploy_key.pub capuz@vps.example.com
-
-# Verify access
-ssh -i ~/.ssh/capuz_deploy_key capuz@vps.example.com "ls /var/www/site"
+# Verify
+ssh -i ~/.ssh/capuz_deploy_key -p PORT USER@HOST "ls /var/www/site"
 ```
 
-Run cms-api on any host that can reach the VPS on port 22:
+**Option B — SFTP only** (shared hosting without shell access):
+
+Log in with password once, upload the key file, then switch to key auth.
+
+```bash
+# Local: prepare authorized_keys (exactly one line — the contents of your .pub file)
+cp ~/.ssh/capuz_deploy_key.pub /tmp/authorized_keys
+
+# Connect with password
+sftp -P PORT USER@HOST
+```
+
+At the `sftp>` prompt:
+
+```text
+pwd                          # note your home directory, e.g. /home/example.com
+mkdir .ssh                   # ignore "already exists" if present
+put /tmp/authorized_keys .ssh/authorized_keys
+quit
+```
+
+Tips for shared hosting:
+
+- Put `authorized_keys` in the SFTP user’s **home** directory (`~/.ssh/`), not in the website folder (`httpd.www`).
+- If `mkdir .ssh` fails, try the full path shown by `pwd`, e.g. `mkdir /home/example.com/.ssh`.
+- Some panels document home as `/home/yourdomain.com` even when the web root is elsewhere.
+
+If you have shell access later, tighten permissions: `chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`.
+
+#### 4. Test key-based SFTP
+
+```bash
+sftp -o IdentitiesOnly=yes -i ~/.ssh/capuz_deploy_key -P PORT USER@HOST
+```
+
+You should connect **without** a password prompt. List your web root to confirm the path for `SFTP_REMOTE_ROOT`:
+
+```text
+ls /var/www/site
+# or, on shared hosting:
+ls /customers/…/yourdomain/httpd.www
+quit
+```
+
+#### 5. Run cms-api
+
+**Docker (plugin only):**
 
 ```bash
 docker run -d \
@@ -77,13 +149,36 @@ docker run -d \
   -p 3000:3000 \
   -e CMS_API_KEY="$CMS_API_KEY" \
   -e STORAGE_BACKEND=sftp \
-  -e SFTP_HOST=vps.example.com \
-  -e SFTP_USER=capuz \
+  -e SFTP_HOST=HOST \
+  -e SFTP_PORT=PORT \
+  -e SFTP_USER=USER \
   -e SFTP_REMOTE_ROOT=/var/www/site \
   -e SFTP_KEY_PATH=/keys/id_ed25519 \
   -v ~/.ssh/capuz_deploy_key:/keys/id_ed25519:ro \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
+
+**Bundled editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` and mount the private key:
+
+```yaml
+# docker-compose.stack.yml — under stack.volumes
+volumes:
+  - stack-data:/app/data
+  - ~/.ssh/capuz_deploy_key:/keys/id_ed25519:ro
+```
+
+```bash
+docker compose -f docker-compose.stack.yml up --build
+```
+
+#### 6. Verify cms-api
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3000/api/pages
+```
+
+You should get `{"ok":true}` and a JSON list of pages from the remote site.
 
 ### git — static host auto-deploy
 
@@ -248,7 +343,11 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `DRAFTS_DIR` | `.drafts` | Draft pages directory name |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Preview links in API responses |
-| `SFTP_*` | — | SFTP connection settings |
+| `SFTP_HOST` | — | SFTP server hostname |
+| `SFTP_PORT` | `22` | SFTP port |
+| `SFTP_USER` | — | SFTP username |
+| `SFTP_KEY_PATH` | — | Path to private key inside the container |
+| `SFTP_REMOTE_ROOT` | — | Absolute path to web document root on the server |
 | `GIT_*` | — | Git remote and deploy key settings |
 | `S3_*` | — | S3-compatible bucket settings |
 

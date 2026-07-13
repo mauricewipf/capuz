@@ -309,6 +309,9 @@ export const openApiDocument = {
     "/api/pages/copy": {
       post: { summary: "Copy page", operationId: "copyPage", security: bearerSecurity, responses: { "200": { description: "Page copied as draft" } } },
     },
+    "/api/pages/seed-drafts": {
+      post: { summary: "Copy all published pages into drafts (skips pages with existing drafts)", operationId: "seedDrafts", security: bearerSecurity, responses: { "200": { description: "Drafts seeded from live pages" } } },
+    },
     "/api/sitemap/regenerate": {
       post: { summary: "Regenerate sitemap.xml draft", operationId: "regenerateSitemap", security: bearerSecurity, responses: { "200": { description: "Sitemap draft saved" } } },
     },

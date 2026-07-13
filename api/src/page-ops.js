@@ -69,6 +69,35 @@ export async function searchPages(storage, query, maxResults = 20) {
   return { query, count: results.length, results };
 }
 
+export async function seedDrafts(storage) {
+  const pages = await storage.listPages();
+  const drafts = new Set(await storage.listDrafts());
+  const created = [];
+  const skipped = [];
+
+  for (const path of pages) {
+    if (drafts.has(path)) {
+      skipped.push(path);
+      continue;
+    }
+    try {
+      const html = await storage.readPage(path);
+      await storage.writeDraft(path, html);
+      created.push(path);
+    } catch (error) {
+      if (!(error instanceof PathError && error.status === 404)) throw error;
+    }
+  }
+
+  return {
+    created,
+    skipped,
+    createdCount: created.length,
+    skippedCount: skipped.length,
+    totalPages: pages.length,
+  };
+}
+
 export async function diffPage(storage, path) {
   let published;
   try {

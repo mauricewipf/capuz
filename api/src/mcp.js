@@ -20,6 +20,7 @@ import {
   movePage,
   renamePage,
   searchPages,
+  seedDrafts,
 } from "./page-ops.js";
 import { applyPageSeo, auditPageSeo, regenerateSitemap } from "./seo.js";
 import { renderPreviewScreenshot } from "./screenshot.js";
@@ -279,6 +280,19 @@ export function createMcpServer() {
       try {
         await storage.discardDraft(path);
         return { content: [{ type: "text", text: `Discarded draft for ${path}` }] };
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.tool(
+    "seed_drafts",
+    "Copy all published pages into drafts so they can be edited via preview. Skips pages that already have a draft.",
+    {},
+    async () => {
+      try {
+        return jsonResult(await seedDrafts(storage));
       } catch (error) {
         return errorResult(error);
       }

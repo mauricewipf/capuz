@@ -22,6 +22,7 @@ import {
   movePage,
   renamePage,
   searchPages,
+  seedDrafts,
 } from "./page-ops.js";
 import { previewMiddleware } from "./preview.js";
 import { applyPageSeo, auditPageSeo, regenerateSitemap } from "./seo.js";
@@ -345,6 +346,17 @@ app.post("/api/pages/copy", requireAuth, async (c) => {
   try {
     const body = await c.req.json();
     const result = await copyPage(storage, body.from, body.to);
+    invalidateLinkGraph();
+    return c.json({ ok: true, ...result });
+  } catch (error) {
+    const { message, status } = handlePathError(error);
+    return c.json({ error: message }, status);
+  }
+});
+
+app.post("/api/pages/seed-drafts", requireAuth, async (c) => {
+  try {
+    const result = await seedDrafts(storage);
     invalidateLinkGraph();
     return c.json({ ok: true, ...result });
   } catch (error) {

@@ -8,7 +8,8 @@ services:
     plan: starter
     healthCheckPath: /
     autoDeployTrigger: commit
-    branch: main
+    # Deploy this feature branch until merged; switch back to main after merge.
+    branch: cursor/render-chat-preview-hosts-fe5c
     envVars:
       - key: APP_NAME
         value: Capuz CMS

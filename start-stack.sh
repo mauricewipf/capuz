@@ -14,8 +14,13 @@ if [ -z "$CHAT_HOST" ] && [ -n "$EDITOR_HOST" ]; then
 fi
 
 # On Render, derive hosts from the assigned hostname when not set explicitly.
+# Nested *.onrender.com names (chat.<service>.onrender.com) do not resolve on
+# Render DNS — for production set SITE_HOST / CHAT_HOST / PREVIEW_HOST to a
+# real domain and attach those custom domains to the service.
 if [ -n "$RENDER_EXTERNAL_HOSTNAME" ]; then
   SITE_HOST="${SITE_HOST:-$RENDER_EXTERNAL_HOSTNAME}"
+  # Prefer explicit custom-domain overrides; otherwise keep chat/preview on
+  # derived names so Host routing works once those domains are attached.
   CHAT_HOST="${CHAT_HOST:-chat.${RENDER_EXTERNAL_HOSTNAME}}"
   PREVIEW_HOST="${PREVIEW_HOST:-preview.${RENDER_EXTERNAL_HOSTNAME}}"
 fi

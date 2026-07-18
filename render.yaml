@@ -1,3 +1,4 @@
+# Capuz full stack Blueprint (site + chat + preview).
 services:
   - type: web
     name: capuz

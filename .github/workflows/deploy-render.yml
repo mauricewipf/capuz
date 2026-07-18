@@ -1,0 +1,35 @@
+name: Deploy to Render
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/render-chat-preview-hosts-fe5c
+    paths:
+      - render.yaml
+      - Dockerfile.stack
+      - start-stack.sh
+      - Caddyfile.stack
+      - nginx.stack.conf
+      - docker-compose.stack.yml
+      - api/**
+      - public/**
+      - scripts/deploy-render.sh
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Blueprint service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          RENDER_DEPLOY_BRANCH: cursor/render-chat-preview-hosts-fe5c
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "RENDER_API_KEY secret is not set on this repository."
+            exit 1
+          fi
+          chmod +x scripts/deploy-render.sh
+          scripts/deploy-render.sh

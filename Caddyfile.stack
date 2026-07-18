@@ -1,5 +1,9 @@
 # Single listener on $PORT with host-based routing (Render and local dev).
 # Env vars are exported by start-stack.sh before caddy run.
+#
+#   SITE_HOST     → nginx (live published pages)
+#   CHAT_HOST     → Open WebUI
+#   PREVIEW_HOST  → cms-api preview vhost (drafts)
 
 :{$PORT} {
 	@preview host {$PREVIEW_HOST}
@@ -7,12 +11,18 @@
 		reverse_proxy 127.0.0.1:{$CMS_API_PORT}
 	}
 
-	@editor host {$EDITOR_HOST}
-	handle @editor {
+	@chat host {$CHAT_HOST}
+	handle @chat {
 		reverse_proxy 127.0.0.1:{$WEBUI_PORT}
 	}
 
+	@site host {$SITE_HOST}
+	handle @site {
+		reverse_proxy 127.0.0.1:{$NGINX_PORT}
+	}
+
+	# Default (e.g. service.onrender.com before custom domains): live site
 	handle {
-		reverse_proxy 127.0.0.1:{$WEBUI_PORT}
+		reverse_proxy 127.0.0.1:{$NGINX_PORT}
 	}
 }

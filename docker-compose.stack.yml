@@ -1,4 +1,4 @@
-# Bundled editor stack: Open WebUI + cms-api + preview routing (no nginx).
+# Bundled full stack: nginx (live site) + Open WebUI (chat) + cms-api (preview) + Caddy host routing.
 # Plugin-only and multi-service demos remain in docker-compose.plugin.yml / docker-compose.yml.
 services:
   stack:
@@ -12,9 +12,12 @@ services:
       PORT: ${PORT:-8081}
       WEBUI_PORT: ${WEBUI_PORT:-8080}
       CMS_API_PORT: ${CMS_API_PORT:-3000}
-      EDITOR_HOST: ${EDITOR_HOST:-localhost}
+      NGINX_PORT: ${NGINX_PORT:-8088}
+      SITE_HOST: ${SITE_HOST:-localhost}
+      CHAT_HOST: ${CHAT_HOST:-chat.localhost}
       PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8081}
+      SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8081}
       CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
       DATA_ROOT: ${DATA_ROOT:-/app/data}
@@ -28,7 +31,9 @@ services:
       DEFAULT_MODELS: ${DEFAULT_MODELS:-minimax/minimax-m3}
       DEFAULT_MODEL_PARAMS: '${DEFAULT_MODEL_PARAMS:-{"function_calling":"native"}}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
-      WEBUI_URL: ${WEBUI_URL:-http://localhost:8081}
+      WEBUI_URL: ${WEBUI_URL:-http://chat.localhost:8081}
+      # Skip local sentence-transformers download; use OpenAI-compatible embeddings via OpenRouter when needed
+      RAG_EMBEDDING_ENGINE: ${RAG_EMBEDDING_ENGINE:-openai}
     volumes:
       - stack-data:/app/data
       # Uncomment for SFTP backend (set SFTP_KEY_HOST_PATH in .env):
@@ -38,7 +43,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 180s
 
 volumes:
   stack-data:

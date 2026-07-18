@@ -3,7 +3,7 @@ FROM openwebui/open-webui:latest
 USER root
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl ca-certificates wget unzip \
+  && apt-get install -y --no-install-recommends curl ca-certificates wget unzip nginx \
   && curl -fsSL https://bun.sh/install | bash \
   && apt-get install -y --no-install-recommends caddy \
   && rm -rf /var/lib/apt/lists/*
@@ -12,6 +12,7 @@ ENV PATH="/root/.bun/bin:${PATH}" \
   API_PORT=3000 \
   CMS_API_PORT=3000 \
   WEBUI_PORT=8080 \
+  NGINX_PORT=8088 \
   DATA_ROOT=/app/data \
   STORAGE_BACKEND=fs \
   DRAFTS_DIR=.drafts \
@@ -26,6 +27,7 @@ COPY public/ /app/seed/
 COPY seed-data.sh /app/seed-data.sh
 RUN chmod +x /app/seed-data.sh
 
+COPY nginx.stack.conf /etc/nginx/nginx.stack.conf
 COPY Caddyfile.stack /etc/caddy/Caddyfile
 COPY start-stack.sh /start-stack.sh
 RUN chmod +x /start-stack.sh

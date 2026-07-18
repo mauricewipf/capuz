@@ -11,7 +11,7 @@ services:
     branch: main
     envVars:
       - key: APP_NAME
-        value: Capuzzella CMS
+        value: Capuz CMS
       - key: OPENAI_API_BASE_URL
         value: https://openrouter.ai/api/v1
       - key: OPENROUTER_API_KEY
@@ -26,16 +26,13 @@ services:
         generateValue: true
       - key: WEBUI_SECRET_KEY
         generateValue: true
-      - key: WEBUI_URL
-        value: https://editor.example.com
-      - key: EDITOR_HOST
-        value: editor.example.com
-      - key: PREVIEW_HOST
-        value: preview.example.com
-      - key: PREVIEW_BASE_URL
-        value: https://preview.example.com
+      # Host routing is derived at runtime from RENDER_EXTERNAL_HOSTNAME:
+      #   SITE_HOST    = <service>.onrender.com   (nginx live pages)
+      #   CHAT_HOST    = chat.<service>.onrender.com  (Open WebUI)
+      #   PREVIEW_HOST = preview.<service>.onrender.com (draft preview)
+      # Override these (and add matching custom domains) for a real domain.
       - key: ENABLE_SIGNUP
-        value: "false"
+        value: "true"
       - key: DATA_DIR
         value: /app/data/.open-webui
       - key: DATA_ROOT
@@ -46,6 +43,10 @@ services:
         value: .drafts
       - key: COMPONENTS_DIR
         value: .components
+      - key: NGINX_PORT
+        value: "8088"
+      - key: RAG_EMBEDDING_ENGINE
+        value: openai
     disk:
       name: data
       mountPath: /app/data

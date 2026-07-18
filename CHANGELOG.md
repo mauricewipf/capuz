@@ -2,6 +2,16 @@
 
 All notable changes to the Capuz CMS API plugin are documented here.
 
+## Unreleased
+
+### Changed
+
+- Bundled Render stack (`Dockerfile.stack`) now includes nginx for live pages with host-based routing:
+  - `SITE_HOST` → nginx (published pages)
+  - `CHAT_HOST` → Open WebUI (replaces `EDITOR_HOST`; alias still accepted)
+  - `PREVIEW_HOST` → cms-api draft preview
+- On Render, hosts default from `RENDER_EXTERNAL_HOSTNAME` when unset
+
 ## [0.3.0] - 2026-06-24
 
 ### Added

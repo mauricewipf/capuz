@@ -393,7 +393,11 @@ docker compose -f docker-compose.stack.yml up --build
 - Open WebUI: http://chat.localhost:8081
 - Preview: http://preview.localhost:8081
 
-Deploy with the root `render.yaml` Blueprint (service name `capuz`). Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `CHAT_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
+Deploy with the root `render.yaml` Blueprint (service name `capuz`), or use the button below after this branch is available on GitHub:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mauricewipf/capuz)
+
+Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `CHAT_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service. You can also set the `RENDER_API_KEY` repository secret and run `scripts/deploy-render.sh` / the **Deploy to Render** GitHub Action.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 

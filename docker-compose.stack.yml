@@ -19,7 +19,9 @@ services:
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8081}
       SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8081}
       CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
-      STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
+      # Bundled stack always uses the local disk volume; ignore STORAGE_BACKEND in .env
+      # (e.g. sftp settings for plugin-only / remote nginx deployments).
+      STORAGE_BACKEND: fs
       DATA_ROOT: ${DATA_ROOT:-/app/data}
       DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
       DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}

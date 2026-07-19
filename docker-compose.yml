@@ -32,6 +32,10 @@ services:
       PREVIEW_BASE_URL: http://preview.localhost:8081
       DRAFTS_DIR: .drafts
       COMPONENTS_DIR: .components
+      # Lets upload_asset_from_url resolve chat attachments from Open WebUI.
+      # Create an API key in Open WebUI (Settings > Account) and set it in .env.
+      OPENWEBUI_BASE_URL: http://openwebui:8080
+      OPENWEBUI_API_KEY: ${OPENWEBUI_API_KEY:-}
     volumes:
       - site-data:/app/data
     healthcheck:

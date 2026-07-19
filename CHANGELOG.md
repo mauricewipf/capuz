@@ -2,6 +2,13 @@
 
 All notable changes to the Capuz CMS API plugin are documented here.
 
+## [Unreleased]
+
+### Added
+
+- `upload_asset_from_url` MCP tool and `POST /api/assets/fetch` REST endpoint: fetch a file server-side from an http(s) URL, an Open WebUI file URL (`/api/v1/files/{id}/content`), or a bare Open WebUI file id, and store it as an asset. Enables uploading images attached in Open WebUI chats (and other MCP clients) without base64.
+- `OPENWEBUI_BASE_URL` / `OPENWEBUI_API_KEY` env vars for resolving Open WebUI chat attachments.
+
 ## [0.3.0] - 2026-06-24
 
 ### Added

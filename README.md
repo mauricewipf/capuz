@@ -253,6 +253,22 @@ Replace the URL with wherever cms-api is reachable from Open WebUI (e.g. `https:
 
 Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.json` with the same bearer key.
 
+### Uploading images from chat
+
+LLMs cannot read the binary content of chat attachments, so `upload_asset` (base64) does not work for images dropped into a chat. Use `upload_asset_from_url` instead: the model passes a source URL and cms-api downloads the file server-side.
+
+For Open WebUI attachments this requires two things:
+
+1. **cms-api can reach Open WebUI's files API.** Set `OPENWEBUI_BASE_URL` (preset in the reference stack) and `OPENWEBUI_API_KEY` — an API key created in Open WebUI under **Settings → Account → API Keys**. The tool then accepts Open WebUI file URLs (`/api/v1/files/{id}/content`) or bare file ids.
+2. **The model can see the attachment's file URL.** Open WebUI injects an `<attached_files>` block with the file URL into the prompt when the model uses native function calling (`"function_calling": "native"`, the reference stack default). Without native function calling, images arrive as inline base64 and no URL is available to pass along.
+
+Any public `http(s)` URL also works, from any MCP client (Claude, Cursor, etc.):
+
+```
+"Download https://example.com/photo.jpg as assets/images/photo.jpg
+ and add it to the gallery on wohnzimmer.html"
+```
+
 ## MCP tools
 
 | Tool | Description |
@@ -270,6 +286,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `discard_draft` | Delete a draft without publishing |
 | `delete_page` | Delete a published page |
 | `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |
+| `upload_asset_from_url` | Fetch a file server-side from a URL or Open WebUI chat attachment and store it as an asset |
 | `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` |
 | `insert_component` | Embed a tagged component block into a page draft |
 | `sync_component` | Propagate updated component HTML to all tagged page drafts |
@@ -301,6 +318,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET | `/api/links/check` | — | Broken link report |
 | GET | `/api/assets` | — | List assets |
 | GET/PUT/DELETE | `/api/assets/{path}` | PUT/DELETE: Bearer | Read/upload/delete asset |
+| POST | `/api/assets/fetch` | Bearer | Upload asset by fetching from a URL or Open WebUI file id |
 | GET | `/api/components` | — | List components |
 | GET | `/api/components/suggest` | — | Suggest components from existing pages |
 | GET/PUT/DELETE | `/api/components/{name}` | PUT/DELETE: Bearer | Read/write/delete component |
@@ -382,6 +400,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `COMPONENTS_DIR` | `.components` | Component library directory name |
 | `SITE_BASE_URL` | `https://example.com` | Base URL for sitemap generation |
 | `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
+| `OPENWEBUI_BASE_URL` | — | Open WebUI base URL for resolving chat-attachment file ids in `upload_asset_from_url` |
+| `OPENWEBUI_API_KEY` | — | Open WebUI API key used to fetch attachment content |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Preview links in API responses |
 | `SFTP_HOST` | — | SFTP server hostname |

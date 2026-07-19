@@ -34,6 +34,8 @@ services:
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:3000}
       DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
       COMPONENTS_DIR: ${COMPONENTS_DIR:-.components}
+      OPENWEBUI_BASE_URL: ${OPENWEBUI_BASE_URL:-}
+      OPENWEBUI_API_KEY: ${OPENWEBUI_API_KEY:-}
     volumes:
       - site-data:/app/data
       - git-repo:/app/repo

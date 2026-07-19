@@ -29,6 +29,8 @@ services:
       DEFAULT_MODEL_PARAMS: '${DEFAULT_MODEL_PARAMS:-{"function_calling":"native"}}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
       WEBUI_URL: ${WEBUI_URL:-http://localhost:8081}
+      OPENWEBUI_BASE_URL: ${OPENWEBUI_BASE_URL:-http://127.0.0.1:8080}
+      OPENWEBUI_API_KEY: ${OPENWEBUI_API_KEY:-}
     volumes:
       - stack-data:/app/data
       # Uncomment for SFTP backend (set SFTP_KEY_HOST_PATH in .env):

@@ -28,6 +28,10 @@ services:
         generateValue: true
       - key: WEBUI_URL
         value: https://editor.example.com
+      - key: OPENWEBUI_BASE_URL
+        value: http://127.0.0.1:8080
+      - key: OPENWEBUI_API_KEY
+        sync: false
       - key: EDITOR_HOST
         value: editor.example.com
       - key: PREVIEW_HOST

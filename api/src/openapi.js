@@ -124,6 +124,31 @@ export const openApiDocument = {
         responses: { "200": { description: "Asset paths" } },
       },
     },
+    "/api/assets/fetch": {
+      post: {
+        summary: "Upload asset by fetching from a URL",
+        description:
+          "Fetches a file server-side and stores it as an asset. Accepts absolute http(s) URLs, Open WebUI file URLs (/api/v1/files/{id}/content), or bare Open WebUI file ids.",
+        operationId: "uploadAssetFromUrl",
+        security: bearerSecurity,
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  path: { type: "string", description: "Destination asset path" },
+                  url: { type: "string", description: "Source URL or Open WebUI file id" },
+                },
+                required: ["path", "url"],
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Asset uploaded" } },
+      },
+    },
     "/api/assets/{path}": {
       get: {
         summary: "Read asset",

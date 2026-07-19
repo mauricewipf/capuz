@@ -1,7 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
-import { deleteAsset, listAssets, readAssetInfo, uploadAsset } from "./assets.js";
+import {
+  deleteAsset,
+  listAssets,
+  readAssetInfo,
+  uploadAsset,
+  uploadAssetFromUrl,
+} from "./assets.js";
 import {
   deleteComponent,
   insertComponent,
@@ -340,6 +346,28 @@ export function createMcpServer() {
     async ({ path, contentBase64 }) => {
       try {
         const result = await uploadAsset(storage, path, contentBase64);
+        invalidateLinkGraph();
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.tool(
+    "upload_asset_from_url",
+    "Upload a static asset by fetching it from a URL server-side. Use this for images attached in chat: pass the attachment's file URL (e.g. an Open WebUI /api/v1/files/{id}/content URL or bare file id from <attached_files>) or any public http(s) URL. No base64 needed.",
+    {
+      path: z.string().describe("Destination asset path such as assets/images/photo.jpg"),
+      url: z
+        .string()
+        .describe(
+          "Source to fetch: absolute http(s) URL, an Open WebUI file URL like /api/v1/files/{id}/content, or a bare Open WebUI file id",
+        ),
+    },
+    async ({ path, url }) => {
+      try {
+        const result = await uploadAssetFromUrl(storage, path, url);
         invalidateLinkGraph();
         return jsonResult(result);
       } catch (error) {

@@ -6,7 +6,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Added
 
-- Bundled setup (`Dockerfile.bundled`, `docker-compose.bundled.yml`, `render.yaml`) — one port with host-based routing:
+- Bundled setup (`Dockerfile.bundled`, `docker-compose.bundled.yml`, `render.bundled.yaml`) — one port with host-based routing:
   - `SITE_HOST` → nginx (published pages)
   - `CHAT_HOST` → Open WebUI
   - `PREVIEW_HOST` → cms-api draft preview

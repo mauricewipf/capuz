@@ -406,7 +406,7 @@ docker compose -f docker-compose.bundled.yml up --build
 - Open WebUI: http://chat.localhost:8081
 - Preview: http://preview.localhost:8081
 
-Deploy with the root `render.yaml` Blueprint (service name `capuz`), or use the button below after this branch is available on GitHub:
+Deploy with `render.bundled.yaml` (editor-only deploy remains `render.yaml`), or use the button below:
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mauricewipf/capuz)
 

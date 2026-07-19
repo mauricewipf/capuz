@@ -169,8 +169,11 @@ Each service can be deployed as a separate pod with:
 - openwebui Deployment + Service
 - Persistent Volume Claim for shared storage
 
-### Bundled full stack (Render)
-For platforms like Render that prefer a single web service, use `Dockerfile.stack` with `docker-compose.stack.yml` / `render.yaml`. One container runs:
+### Editor stack (single container)
+For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included (use nginx separately, the bundled setup below, or an external host).
+
+### Bundled setup (Render)
+For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.yaml`. One container runs:
 
 | Host | Backend |
 |------|---------|

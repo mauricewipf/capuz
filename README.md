@@ -158,7 +158,7 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-**Bundled editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and uncomment the private key mount:
+**Editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and uncomment the private key mount:
 
 ```yaml
 # docker-compose.stack.yml — under stack.volumes
@@ -345,7 +345,7 @@ Reference stack (multi-container) URLs:
 - Live site: http://localhost:8080
 - Open WebUI: http://localhost:8081
 
-Bundled stack (`docker-compose.stack.yml` / Render) host routing:
+Bundled setup (`docker-compose.bundled.yml` / Render) host routing:
 
 | Host | Service |
 |------|---------|
@@ -379,14 +379,27 @@ docker compose up --build
 - Preview: http://preview.localhost:8081
 - CMS API: http://localhost:3000
 
-### Bundled stack (Render)
+### Editor stack (single container)
+
+Open WebUI + cms-api preview on one port (no bundled live site):
+
+```bash
+cp .env.example .env
+# set OPENROUTER_API_KEY
+docker compose -f docker-compose.stack.yml up --build
+```
+
+- Open WebUI: http://localhost:8081
+- Preview: http://preview.localhost:8081
+
+### Bundled setup (Render)
 
 Single Docker service with host-based routing (live site + chat + preview):
 
 ```bash
 cp .env.example .env
 # set OPENROUTER_API_KEY
-docker compose -f docker-compose.stack.yml up --build
+docker compose -f docker-compose.bundled.yml up --build
 ```
 
 - Live site: http://localhost:8081

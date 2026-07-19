@@ -1,0 +1,52 @@
+# Bundled full stack: nginx (live site) + Open WebUI (chat) + cms-api (preview) + Caddy host routing.
+# Editor-only single container remains in docker-compose.stack.yml.
+# Multi-service demo: docker-compose.yml; plugin-only: docker-compose.plugin.yml.
+services:
+  bundled:
+    build:
+      context: .
+      dockerfile: Dockerfile.bundled
+    ports:
+      - "8081:8081"
+    env_file: .env
+    environment:
+      PORT: ${PORT:-8081}
+      WEBUI_PORT: ${WEBUI_PORT:-8080}
+      CMS_API_PORT: ${CMS_API_PORT:-3000}
+      NGINX_PORT: ${NGINX_PORT:-8088}
+      SITE_HOST: ${SITE_HOST:-localhost}
+      CHAT_HOST: ${CHAT_HOST:-chat.localhost}
+      PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
+      PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8081}
+      SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8081}
+      CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
+      # Bundled setup always uses the local disk volume; ignore STORAGE_BACKEND in .env
+      # (e.g. sftp settings for plugin-only / remote nginx deployments).
+      STORAGE_BACKEND: fs
+      DATA_ROOT: ${DATA_ROOT:-/app/data}
+      DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
+      DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
+      COMPONENTS_DIR: ${COMPONENTS_DIR:-.components}
+      OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENAI_API_KEY: ${OPENROUTER_API_KEY:-}
+      ENABLE_OPENAI_API: ${ENABLE_OPENAI_API:-true}
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-true}
+      DEFAULT_MODELS: ${DEFAULT_MODELS:-minimax/minimax-m3}
+      DEFAULT_MODEL_PARAMS: '${DEFAULT_MODEL_PARAMS:-{"function_calling":"native"}}'
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
+      WEBUI_URL: ${WEBUI_URL:-http://chat.localhost:8081}
+      # Skip local sentence-transformers download; use OpenAI-compatible embeddings via OpenRouter when needed
+      RAG_EMBEDDING_ENGINE: ${RAG_EMBEDDING_ENGINE:-openai}
+    volumes:
+      - bundled-data:/app/data
+      # Uncomment for SFTP backend (set SFTP_KEY_HOST_PATH in .env):
+      # - ${SFTP_KEY_HOST_PATH}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+
+volumes:
+  bundled-data:

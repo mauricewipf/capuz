@@ -1,9 +1,9 @@
-# Capuz full stack Blueprint (site + chat + preview).
+# Capuz bundled Blueprint (site + chat + preview on one port).
 services:
   - type: web
     name: capuz
     runtime: docker
-    dockerfilePath: ./Dockerfile.stack
+    dockerfilePath: ./Dockerfile.bundled
     numInstances: 1
     region: frankfurt
     plan: starter

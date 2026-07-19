@@ -77,8 +77,10 @@ public/
 nginx.conf        # Static server config (extensionless URLs)
 Caddyfile         # Host router for Open WebUI + preview on :8081
 docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui + editor-router)
+docker-compose.stack.yml    # Editor-only single container (Open WebUI + preview)
+docker-compose.bundled.yml  # Full site + chat + preview on one port (Render)
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
-Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui
+Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui | Dockerfile.stack | Dockerfile.bundled
 ```
 
 ## Commands

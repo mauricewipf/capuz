@@ -178,7 +178,7 @@ For platforms like Render that prefer a single web service with live pages, use 
 | Host | Backend |
 |------|---------|
 | `SITE_HOST` (apex / default) | nginx — live published pages |
-| `CHAT_HOST` (`chat.*`) | Open WebUI |
+| `EDITOR_HOST` (`chat.*` locally, or your editor subdomain) | Open WebUI |
 | `PREVIEW_HOST` (`preview.*`) | cms-api preview vhost (drafts) |
 
 Caddy listens on `$PORT` and routes by `Host`. Shared disk at `/app/data` holds published pages, `.drafts/`, and Open WebUI data. Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.

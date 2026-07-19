@@ -350,7 +350,7 @@ Bundled setup (`docker-compose.bundled.yml` / Render) host routing:
 | Host | Service |
 |------|---------|
 | `SITE_HOST` (default `localhost`) | nginx — live published pages |
-| `CHAT_HOST` (default `chat.localhost`) | Open WebUI |
+| `EDITOR_HOST` (default `chat.localhost`) | Open WebUI |
 | `PREVIEW_HOST` (default `preview.localhost`) | cms-api draft preview |
 
 On Render, hosts default to `<service>.onrender.com`, `chat.<service>.onrender.com`, and `preview.<service>.onrender.com`. Add matching custom domains for chat/preview (nested `*.onrender.com` hostnames are not resolvable).
@@ -410,7 +410,7 @@ Deploy with `render.bundled.yaml` (editor-only deploy remains `render.yaml`), or
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mauricewipf/capuz)
 
-Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `CHAT_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
+Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `EDITOR_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 

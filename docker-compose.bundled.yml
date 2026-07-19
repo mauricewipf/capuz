@@ -15,7 +15,7 @@ services:
       CMS_API_PORT: ${CMS_API_PORT:-3000}
       NGINX_PORT: ${NGINX_PORT:-8088}
       SITE_HOST: ${SITE_HOST:-localhost}
-      CHAT_HOST: ${CHAT_HOST:-chat.localhost}
+      EDITOR_HOST: ${EDITOR_HOST:-chat.localhost}
       PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8081}
       SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8081}

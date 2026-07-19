@@ -29,7 +29,7 @@ services:
         generateValue: true
       # Host routing is derived at runtime from RENDER_EXTERNAL_HOSTNAME:
       #   SITE_HOST    = <service>.onrender.com   (nginx live pages)
-      #   CHAT_HOST    = chat.<service>.onrender.com  (Open WebUI)
+      #   EDITOR_HOST  = chat.<service>.onrender.com  (Open WebUI)
       #   PREVIEW_HOST = preview.<service>.onrender.com (draft preview)
       # Override these (and add matching custom domains) for a real domain.
       - key: ENABLE_SIGNUP

@@ -2,7 +2,7 @@
 # Env vars are exported by start-bundled.sh before caddy run.
 #
 #   SITE_HOST     → nginx (live published pages)
-#   CHAT_HOST     → Open WebUI
+#   EDITOR_HOST   → Open WebUI
 #   PREVIEW_HOST  → cms-api preview vhost (drafts)
 
 :{$PORT} {
@@ -11,8 +11,8 @@
 		reverse_proxy 127.0.0.1:{$CMS_API_PORT}
 	}
 
-	@chat host {$CHAT_HOST}
-	handle @chat {
+	@editor host {$EDITOR_HOST}
+	handle @editor {
 		reverse_proxy 127.0.0.1:{$WEBUI_PORT}
 	}
 

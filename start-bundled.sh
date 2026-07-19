@@ -8,25 +8,20 @@ NGINX_PORT="${NGINX_PORT:-8088}"
 DATA_ROOT="${DATA_ROOT:-/app/data}"
 DATA_DIR="${DATA_DIR:-/app/data/.open-webui}"
 
-# Prefer CHAT_HOST; keep EDITOR_HOST as a backward-compatible alias.
-if [ -z "$CHAT_HOST" ] && [ -n "$EDITOR_HOST" ]; then
-  CHAT_HOST="$EDITOR_HOST"
-fi
-
 # On Render, derive hosts from the assigned hostname when not set explicitly.
 # Nested *.onrender.com names (chat.<service>.onrender.com) do not resolve on
-# Render DNS — for production set SITE_HOST / CHAT_HOST / PREVIEW_HOST to a
+# Render DNS — for production set SITE_HOST / EDITOR_HOST / PREVIEW_HOST to a
 # real domain and attach those custom domains to the service.
 if [ -n "$RENDER_EXTERNAL_HOSTNAME" ]; then
   SITE_HOST="${SITE_HOST:-$RENDER_EXTERNAL_HOSTNAME}"
-  # Prefer explicit custom-domain overrides; otherwise keep chat/preview on
+  # Prefer explicit custom-domain overrides; otherwise keep editor/preview on
   # derived names so Host routing works once those domains are attached.
-  CHAT_HOST="${CHAT_HOST:-chat.${RENDER_EXTERNAL_HOSTNAME}}"
+  EDITOR_HOST="${EDITOR_HOST:-chat.${RENDER_EXTERNAL_HOSTNAME}}"
   PREVIEW_HOST="${PREVIEW_HOST:-preview.${RENDER_EXTERNAL_HOSTNAME}}"
 fi
 
 SITE_HOST="${SITE_HOST:-localhost}"
-CHAT_HOST="${CHAT_HOST:-chat.localhost}"
+EDITOR_HOST="${EDITOR_HOST:-chat.localhost}"
 PREVIEW_HOST="${PREVIEW_HOST:-preview.localhost}"
 
 export API_PORT="$CMS_API_PORT"
@@ -37,7 +32,7 @@ export DRAFTS_DIR="${DRAFTS_DIR:-.drafts}"
 export COMPONENTS_DIR="${COMPONENTS_DIR:-.components}"
 export PREVIEW_HOST
 export SITE_HOST
-export CHAT_HOST
+export EDITOR_HOST
 export NGINX_PORT
 
 if [ -z "$OPENAI_API_KEY" ] && [ -n "$OPENROUTER_API_KEY" ]; then
@@ -77,13 +72,13 @@ fi
 if [ -z "$WEBUI_URL" ]; then
   case "${SITE_BASE_URL:-}" in
     https://*)
-      export WEBUI_URL="https://${CHAT_HOST}"
+      export WEBUI_URL="https://${EDITOR_HOST}"
       ;;
     *)
       if [ "$PORT" = "80" ] || [ "$PORT" = "443" ]; then
-        export WEBUI_URL="http://${CHAT_HOST}"
+        export WEBUI_URL="http://${EDITOR_HOST}"
       else
-        export WEBUI_URL="http://${CHAT_HOST}:${PORT}"
+        export WEBUI_URL="http://${EDITOR_HOST}:${PORT}"
       fi
       ;;
   esac
@@ -128,9 +123,9 @@ wait_for() {
 wait_for "http://127.0.0.1:${NGINX_PORT}/" 60
 wait_for "http://127.0.0.1:${CMS_API_PORT}/health" 60
 
-export PORT WEBUI_PORT CMS_API_PORT NGINX_PORT SITE_HOST CHAT_HOST PREVIEW_HOST
+export PORT WEBUI_PORT CMS_API_PORT NGINX_PORT SITE_HOST EDITOR_HOST PREVIEW_HOST
 
-echo "Bundled starting: site=${SITE_HOST} chat=${CHAT_HOST} preview=${PREVIEW_HOST} port=${PORT}"
+echo "Bundled starting: site=${SITE_HOST} editor=${EDITOR_HOST} preview=${PREVIEW_HOST} port=${PORT}"
 
 cleanup() {
   kill "$CADDY_PID" "$CMS_PID" "$WEBUI_PID" "$NGINX_PID" 2>/dev/null || true
@@ -144,7 +139,7 @@ CADDY_PID=$!
 # Open WebUI first boot can download embedding models; allow plenty of time.
 # After the model is cached on the persistent disk, startups are much faster.
 if wait_for "http://127.0.0.1:${WEBUI_PORT}/health" 1200; then
-  echo "Bundled ready: site=${SITE_HOST} chat=${CHAT_HOST} preview=${PREVIEW_HOST} port=${PORT}"
+  echo "Bundled ready: site=${SITE_HOST} editor=${EDITOR_HOST} preview=${PREVIEW_HOST} port=${PORT}"
 else
   echo "Open WebUI not healthy yet; continuing (site/preview may still work)" >&2
 fi

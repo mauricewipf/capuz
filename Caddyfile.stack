@@ -21,8 +21,7 @@
 		reverse_proxy 127.0.0.1:{$NGINX_PORT}
 	}
 
-	# Default (e.g. service.onrender.com before custom domains): live site
 	handle {
-		reverse_proxy 127.0.0.1:{$NGINX_PORT}
+		respond 404
 	}
 }

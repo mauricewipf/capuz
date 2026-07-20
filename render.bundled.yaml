@@ -1,0 +1,54 @@
+# Capuz bundled Blueprint (site + chat + preview on one port).
+services:
+  - type: web
+    name: capuz
+    runtime: docker
+    dockerfilePath: ./Dockerfile.bundled
+    numInstances: 1
+    region: frankfurt
+    plan: starter
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    branch: main
+    envVars:
+      - key: APP_NAME
+        value: Capuz CMS
+      - key: OPENAI_API_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: ENABLE_OPENAI_API
+        value: "true"
+      - key: DEFAULT_MODELS
+        value: minimax/minimax-m3
+      - key: DEFAULT_MODEL_PARAMS
+        value: '{"function_calling":"native"}'
+      - key: CMS_API_KEY
+        generateValue: true
+      - key: WEBUI_SECRET_KEY
+        generateValue: true
+      # Host routing is derived at runtime from RENDER_EXTERNAL_HOSTNAME:
+      #   SITE_HOST    = <service>.onrender.com   (nginx live pages)
+      #   EDITOR_HOST  = chat.<service>.onrender.com  (Open WebUI)
+      #   PREVIEW_HOST = preview.<service>.onrender.com (draft preview)
+      # Override these (and add matching custom domains) for a real domain.
+      - key: ENABLE_SIGNUP
+        value: "true"
+      - key: DATA_DIR
+        value: /app/data/.open-webui
+      - key: DATA_ROOT
+        value: /app/data
+      - key: STORAGE_BACKEND
+        value: fs
+      - key: DRAFTS_DIR
+        value: .drafts
+      - key: COMPONENTS_DIR
+        value: .components
+      - key: NGINX_PORT
+        value: "8088"
+      - key: RAG_EMBEDDING_ENGINE
+        value: openai
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1

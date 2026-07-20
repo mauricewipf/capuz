@@ -169,8 +169,19 @@ Each service can be deployed as a separate pod with:
 - openwebui Deployment + Service
 - Persistent Volume Claim for shared storage
 
-### Bundled editor stack (no nginx)
-For platforms like Render that prefer a single web service, use `Dockerfile.stack` with `docker-compose.stack.yml`. It runs Open WebUI, cms-api, and Caddy host routing in one container. The public static site is **not** included (use nginx separately or an external host). Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.
+### Editor stack (single container)
+For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included (use nginx separately, the bundled setup below, or an external host).
+
+### Bundled setup (Render)
+For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. One container runs:
+
+| Host | Backend |
+|------|---------|
+| `SITE_HOST` (apex / default) | nginx — live published pages |
+| `EDITOR_HOST` (`chat.*` locally, or your editor subdomain) | Open WebUI |
+| `PREVIEW_HOST` (`preview.*`) | cms-api preview vhost (drafts) |
+
+Caddy listens on `$PORT` and routes by `Host`. Shared disk at `/app/data` holds published pages, `.drafts/`, and Open WebUI data. Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.
 
 ## Development vs Production
 

@@ -158,7 +158,7 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-**Bundled editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and uncomment the private key mount:
+**Editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and uncomment the private key mount:
 
 ```yaml
 # docker-compose.stack.yml — under stack.volumes
@@ -339,10 +339,21 @@ Draft pages are previewed on a separate host (subdomain). cms-api serves preview
 | `SITE_BASE_URL` | `https://example.com` | Base URL for sitemap generation |
 | `SCREENSHOT_RENDERER_URL` | — | Optional POST endpoint `{ url }` → PNG bytes for `render_preview` |
 
-Reference stack URLs:
+Reference stack (multi-container) URLs:
 
 - Preview: http://preview.localhost:8081 (via Caddy on port 8081)
 - Live site: http://localhost:8080
+- Open WebUI: http://localhost:8081
+
+Bundled setup (`docker-compose.bundled.yml` / Render) host routing:
+
+| Host | Service |
+|------|---------|
+| `SITE_HOST` (default `localhost`) | nginx — live published pages |
+| `EDITOR_HOST` (default `chat.localhost`) | Open WebUI |
+| `PREVIEW_HOST` (default `preview.localhost`) | cms-api draft preview |
+
+On Render, hosts default to `<service>.onrender.com`, `chat.<service>.onrender.com`, and `preview.<service>.onrender.com`. Add matching custom domains for chat/preview (nested `*.onrender.com` hostnames are not resolvable).
 
 Plugin-only deployments: point `PREVIEW_BASE_URL` at wherever preview traffic reaches cms-api (e.g. `http://preview.localhost:3000` with `Host: preview.localhost`), or configure your own reverse proxy.
 
@@ -367,6 +378,39 @@ docker compose up --build
 - Open WebUI: http://localhost:8081
 - Preview: http://preview.localhost:8081
 - CMS API: http://localhost:3000
+
+### Editor stack (single container)
+
+Open WebUI + cms-api preview on one port (no bundled live site):
+
+```bash
+cp .env.example .env
+# set OPENROUTER_API_KEY
+docker compose -f docker-compose.stack.yml up --build
+```
+
+- Open WebUI: http://localhost:8081
+- Preview: http://preview.localhost:8081
+
+### Bundled setup (Render)
+
+Single Docker service with host-based routing (live site + chat + preview):
+
+```bash
+cp .env.example .env
+# set OPENROUTER_API_KEY
+docker compose -f docker-compose.bundled.yml up --build
+```
+
+- Live site: http://localhost:8081
+- Open WebUI: http://chat.localhost:8081
+- Preview: http://preview.localhost:8081
+
+Deploy with `render.bundled.yaml` (editor-only deploy remains `render.yaml`), or use the button below:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mauricewipf/capuz)
+
+Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `EDITOR_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 

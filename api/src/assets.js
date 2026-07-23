@@ -137,7 +137,8 @@ function defaultAssetPath(safeFilename) {
 }
 
 function ensureAssetPathExtension(path, ext) {
-  if (ALLOWED_ASSET_EXTENSIONS.has(extname(path))) {
+  const existingExt = extname(path);
+  if (ALLOWED_ASSET_EXTENSIONS.has(existingExt)) {
     return path;
   }
   if (!ext) {
@@ -145,6 +146,11 @@ function ensureAssetPathExtension(path, ext) {
       "Asset path must include a file extension (e.g. assets/images/hero.jpg)",
       400,
     );
+  }
+  // If the path ends with an unknown/disallowed "extension", replace it rather
+  // than appending (e.g. assets/images/hero.bmp + .jpg → hero.jpg).
+  if (existingExt) {
+    return `${path.slice(0, -existingExt.length)}${ext}`;
   }
   return `${path}${ext}`;
 }

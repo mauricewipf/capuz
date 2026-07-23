@@ -23,7 +23,9 @@ open http://localhost:8081    # AI Editor
 | Service | URL | Purpose |
 |---------|-----|---------|
 | **nginx** | http://localhost:8080 | Public website |
-| **openwebui** | http://localhost:8081 | AI editor interface |
+| **editor-router** | http://localhost:8081 | Caddy host router (Open WebUI + preview) |
+| **openwebui** | http://localhost:8081 | AI editor (via editor-router) |
+| **preview** | http://preview.localhost:8081 | Draft page preview (via editor-router) |
 | **cms-api** | http://localhost:3000 | API (optional) |
 
 ## Common Commands
@@ -95,17 +97,18 @@ curl -H "Authorization: Bearer dev-local-key" \
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Compose                        │
-├─────────────────┬─────────────────┬────────────────────┤
-│   nginx:8080    │   cms-api:3000  │  openwebui:8081    │
-│  Static Server  │   Bun API + MCP │   AI Editor        │
-└────────┬────────┴────────┬────────┴─────────┬──────────┘
-         │                 │                  │
-         └─────────────────┴──────────────────┘
-                           │
-                   Shared Volume
-                   /app/data
+┌──────────────────────────────────────────────────────────────────┐
+│                         Docker Compose                            │
+├──────────────┬──────────────┬────────────────────────────────────┤
+│ nginx:8080   │ cms-api:3000 │ editor-router:8081                 │
+│ Static site  │ Bun API + MCP│  ├─ openwebui:8080 (AI editor)     │
+│              │              │  └─ cms-api:3000 (draft preview)   │
+└──────┬───────┴──────┬───────┴────────────────────────────────────┘
+       │              │
+       └──────────────┘
+              │
+      Shared volume /app/data
+      (pages, drafts, assets)
 ```
 
 ## Service Details
@@ -122,11 +125,17 @@ curl -H "Authorization: Bearer dev-local-key" \
 - **Purpose**: File management API + MCP server
 - **Dockerfile**: `Dockerfile.api`
 
+### editor-router
+- **Image**: caddy:2-alpine
+- **Port**: 8081
+- **Purpose**: Route `localhost:8081` to Open WebUI; `preview.localhost:8081` to cms-api preview
+- **Config**: `Caddyfile`
+
 ### openwebui
-- **Image**: python:3.11-slim + Open WebUI
-- **Port**: 8081 → 8080
-- **Purpose**: AI-powered editor
-- **Dockerfile**: `Dockerfile.openwebui`
+- **Image**: `openwebui/open-webui:latest` (official Open WebUI Docker image)
+- **Port**: 8080 (internal; exposed as http://localhost:8081 via editor-router)
+- **Purpose**: AI-powered editor; MCP tool server **CMS Pages** preconfigured in `docker-compose.yml`
+- **Dockerfile**: `Dockerfile.openwebui` (thin wrapper on the official image)
 
 ## Directory Structure
 
@@ -146,8 +155,9 @@ capuz/
 │   └── assets/             # CSS, JS, favicon
 ├── Dockerfile.nginx        # nginx image
 ├── Dockerfile.api          # API image
-├── Dockerfile.openwebui    # Editor image
+├── Dockerfile.openwebui    # Open WebUI wrapper (FROM openwebui/open-webui:latest)
 ├── docker-compose.yml      # Service orchestration
+├── Caddyfile               # editor-router host routing (Open WebUI + preview)
 ├── nginx.conf              # nginx configuration
 ├── README.md              # Overview
 ├── ARCHITECTURE.md        # Detailed architecture

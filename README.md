@@ -270,6 +270,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `discard_draft` | Delete a draft without publishing |
 | `delete_page` | Delete a published page |
 | `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |
+| `import_chat_file` | Copy a chat-attached Open WebUI file into site assets (bundled/stack shared disk only); returns `url` with file extension for `<img src>` |
 | `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` |
 | `insert_component` | Embed a tagged component block into a page draft |
 | `sync_component` | Propagate updated component HTML to all tagged page drafts |
@@ -300,6 +301,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET | `/api/search?q=` | — | Search page HTML |
 | GET | `/api/links/check` | — | Broken link report |
 | GET | `/api/assets` | — | List assets |
+| POST | `/api/assets/import-chat` | Bearer | Import chat-attached Open WebUI file into assets (bundled/stack) |
 | GET/PUT/DELETE | `/api/assets/{path}` | PUT/DELETE: Bearer | Read/upload/delete asset |
 | GET | `/api/components` | — | List components |
 | GET | `/api/components/suggest` | — | Suggest components from existing pages |

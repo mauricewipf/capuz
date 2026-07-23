@@ -1,6 +1,12 @@
 import { Hono } from "hono";
 import { requireAuth, warnIfInsecureApiKey } from "./auth.js";
-import { deleteAsset, listAssets, readAssetInfo, uploadAsset } from "./assets.js";
+import {
+  deleteAsset,
+  importChatFile,
+  listAssets,
+  readAssetInfo,
+  uploadAsset,
+} from "./assets.js";
 import {
   deleteComponent,
   insertComponent,
@@ -94,6 +100,22 @@ app.get("/api/assets", async (c) => {
     const prefix = c.req.query("prefix") || "";
     const assets = await listAssets(storage, prefix);
     return c.json({ assets });
+  } catch (error) {
+    const { message, status } = handlePathError(error);
+    return c.json({ error: message }, status);
+  }
+});
+
+app.post("/api/assets/import-chat", requireAuth, async (c) => {
+  try {
+    const body = await c.req.json();
+    const result = await importChatFile(storage, {
+      fileId: body.fileId,
+      fileName: body.fileName,
+      targetPath: body.targetPath,
+    });
+    invalidateLinkGraph();
+    return c.json({ ok: true, ...result });
   } catch (error) {
     const { message, status } = handlePathError(error);
     return c.json({ error: message }, status);

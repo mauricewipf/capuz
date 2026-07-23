@@ -1,7 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
-import { deleteAsset, listAssets, readAssetInfo, uploadAsset } from "./assets.js";
+import {
+  deleteAsset,
+  importChatFile,
+  listAssets,
+  readAssetInfo,
+  uploadAsset,
+} from "./assets.js";
 import {
   deleteComponent,
   insertComponent,
@@ -326,6 +332,39 @@ export function createMcpServer() {
     async ({ path, contentBase64 }) => {
       try {
         const result = await uploadAsset(storage, path, contentBase64);
+        invalidateLinkGraph();
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.tool(
+    "import_chat_file",
+    "Copy a chat-attached Open WebUI file into site assets (bundled/stack shared disk). Use when the user attaches a file and asks to add it to a page. On success, put the returned `url` EXACTLY into img src or href — keep the file extension (asset URLs are not extensionless like HTML pages). Then edit the page draft.",
+    {
+      fileId: z
+        .string()
+        .optional()
+        .describe("Open WebUI file id from the chat attachment metadata"),
+      fileName: z
+        .string()
+        .optional()
+        .describe("Attached filename fallback when fileId is unavailable"),
+      targetPath: z
+        .string()
+        .optional()
+        .describe(
+          "Optional destination such as assets/images/hero.jpg (include the file extension)",
+        ),
+    },
+    async ({ fileId, fileName, targetPath }) => {
+      try {
+        if (!fileId && !fileName) {
+          return errorResult(new Error("fileId or fileName is required"));
+        }
+        const result = await importChatFile(storage, { fileId, fileName, targetPath });
         invalidateLinkGraph();
         return jsonResult(result);
       } catch (error) {

@@ -119,7 +119,16 @@ export function readChatFileBytes({ fileId, fileName }) {
   const dataDir = resolveOpenWebUiDataDir();
   const row = lookupFileRow(dataDir, { fileId, fileName });
   const meta = parseMeta(row.meta);
-  const displayName = meta.name || row.filename || fileName || row.id;
+  // Prefer a name that still has a file extension. Open WebUI's meta.name is a
+  // display label and is sometimes stored without one even when filename/path keep it.
+  const displayName =
+    [meta.name, row.filename, fileName]
+      .filter((value) => value != null && String(value).trim() !== "")
+      .find((value) => String(value).includes(".")) ||
+    meta.name ||
+    row.filename ||
+    fileName ||
+    row.id;
   const absolutePath = resolveStoredFilePath(dataDir, row.path, row.filename);
   const buffer = readFileSync(absolutePath);
 
@@ -127,6 +136,8 @@ export function readChatFileBytes({ fileId, fileName }) {
     buffer,
     fileId: row.id,
     filename: displayName,
+    rowFilename: row.filename || null,
+    diskPath: absolutePath,
     contentType: meta.content_type || null,
   };
 }

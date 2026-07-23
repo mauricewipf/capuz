@@ -4,6 +4,10 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+### Fixed
+
+- `import_chat_file` / `POST /api/assets/import-chat` now always resolves a real file extension (from filename, on-disk upload path, or Content-Type) and returns a ready-to-use `url` (e.g. `/assets/images/hero.jpg`) so `<img src>` keeps the file ending
+
 ### Added
 
 - `import_chat_file` MCP tool and `POST /api/assets/import-chat` — copy chat-attached Open WebUI files into site assets via shared disk (bundled/stack; uses existing `DATA_DIR` or `${DATA_ROOT}/.open-webui`, no new env vars)

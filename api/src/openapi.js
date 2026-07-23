@@ -129,7 +129,7 @@ export const openApiDocument = {
         summary: "Import chat-attached Open WebUI file into site assets",
         operationId: "importChatFile",
         description:
-          "Reads a file from Open WebUI shared disk (bundled/stack) and copies it into site assets. Requires fileId or fileName.",
+          "Reads a file from Open WebUI shared disk (bundled/stack) and copies it into site assets. Requires fileId or fileName. Response includes `url` (e.g. /assets/images/hero.jpg) for use in img src — keep the file extension.",
         security: bearerSecurity,
         requestBody: {
           required: true,
@@ -149,7 +149,13 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { "200": { description: "Asset imported" }, "503": errorResponse },
+        responses: {
+          "200": {
+            description:
+              "Asset imported. Body includes path, url (with file extension, for img src), size, sourceFileId, sourceFileName.",
+          },
+          "503": errorResponse,
+        },
       },
     },
     "/api/assets/{path}": {

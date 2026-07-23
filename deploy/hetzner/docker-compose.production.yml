@@ -1,0 +1,7 @@
+# Production overrides for bundled VPS deploy (use with docker-compose.bundled.yml).
+# Binds the app to localhost only — host Caddy terminates TLS on :443.
+services:
+  bundled:
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:8081:8081"

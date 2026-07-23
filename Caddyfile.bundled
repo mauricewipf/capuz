@@ -16,8 +16,13 @@
 		reverse_proxy 127.0.0.1:{$WEBUI_PORT}
 	}
 
-	@site host {$SITE_HOST}
+	@site host {$SITE_HOST} www.{$SITE_HOST}
 	handle @site {
+		reverse_proxy 127.0.0.1:{$NGINX_PORT}
+	}
+
+	@render host {$RENDER_EXTERNAL_HOSTNAME}
+	handle @render {
 		reverse_proxy 127.0.0.1:{$NGINX_PORT}
 	}
 

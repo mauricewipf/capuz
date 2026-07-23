@@ -123,9 +123,16 @@ wait_for() {
 wait_for "http://127.0.0.1:${NGINX_PORT}/" 60
 wait_for "http://127.0.0.1:${CMS_API_PORT}/health" 60
 
-export PORT WEBUI_PORT CMS_API_PORT NGINX_PORT SITE_HOST EDITOR_HOST PREVIEW_HOST
+export PORT WEBUI_PORT CMS_API_PORT NGINX_PORT SITE_HOST EDITOR_HOST PREVIEW_HOST RENDER_EXTERNAL_HOSTNAME
 
 echo "Bundled starting: site=${SITE_HOST} editor=${EDITOR_HOST} preview=${PREVIEW_HOST} port=${PORT}"
+
+CADDY_CONF=/tmp/caddy-bundled.conf
+cp /etc/caddy/Caddyfile "$CADDY_CONF"
+if [ -z "$RENDER_EXTERNAL_HOSTNAME" ]; then
+  awk 'BEGIN{skip=0} /^[[:space:]]*@render /{skip=1; next} skip && /^[[:space:]]*handle @render \{/{skip=2; next} skip==2 && /^[[:space:]]*\}/{skip=0; next} skip{next} {print}' \
+    "$CADDY_CONF" > "${CADDY_CONF}.tmp" && mv "${CADDY_CONF}.tmp" "$CADDY_CONF"
+fi
 
 cleanup() {
   kill "$CADDY_PID" "$CMS_PID" "$WEBUI_PID" "$NGINX_PID" 2>/dev/null || true
@@ -133,7 +140,7 @@ cleanup() {
 }
 trap cleanup TERM INT
 
-caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
+caddy run --config "$CADDY_CONF" --adapter caddyfile &
 CADDY_PID=$!
 
 # Open WebUI first boot can download embedding models; allow plenty of time.

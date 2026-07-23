@@ -1,0 +1,32 @@
+#cloud-config
+# First-boot bootstrap for Capuz bundled on Hetzner Cloud.
+# Secrets are NOT passed here — upload .env after the server is up (see docs/DEPLOY-HETZNER.md).
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - ufw
+  - caddy
+
+write_files:
+  - path: /etc/capuz-bootstrap.env
+    permissions: "0644"
+    content: |
+      CAPUZ_APP_DIR=/opt/capuz/app
+      CAPUZ_ENV_FILE=/opt/capuz/.env
+
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - systemctl enable docker
+  - systemctl enable caddy
+  - ufw allow OpenSSH
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+  - mkdir -p /opt/capuz
+  - touch /opt/capuz/.env
+  - chmod 600 /opt/capuz/.env

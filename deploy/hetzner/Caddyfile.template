@@ -1,0 +1,16 @@
+# Host-level TLS termination for Capuz bundled (deploy/hetzner).
+# Rendered to /etc/caddy/Caddyfile by install-on-server.sh (envsubst).
+# All three hostnames proxy to the bundled container on 127.0.0.1:8081;
+# in-container Caddy routes by Host to nginx / Open WebUI / cms-api.
+
+${SITE_HOST}, www.${SITE_HOST} {
+	reverse_proxy 127.0.0.1:8081
+}
+
+${EDITOR_HOST} {
+	reverse_proxy 127.0.0.1:8081
+}
+
+${PREVIEW_HOST} {
+	reverse_proxy 127.0.0.1:8081
+}

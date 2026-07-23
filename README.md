@@ -412,6 +412,12 @@ Deploy with `render.bundled.yaml` (editor-only deploy remains `render.yaml`), or
 
 Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `EDITOR_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
 
+### Bundled setup (Hetzner VPS)
+
+Self-host on Hetzner Cloud with host Caddy (TLS) and the same bundled image. Point `@`, `chat`, and `preview` DNS at one VPS — no Render custom-domain limits.
+
+See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for the manual checklist and `deploy/hetzner/*.sh` scripts.
+
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ## Environment variables

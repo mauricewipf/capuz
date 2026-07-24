@@ -158,24 +158,19 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-**Editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and uncomment the private key mount:
-
-```yaml
-# docker-compose.stack.yml — under stack.volumes
-volumes:
-  - stack-data:/app/data
-  - ${SFTP_KEY_HOST_PATH}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro
-```
+**Editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and add the SFTP override:
 
 ```env
 # .env
-SFTP_KEY_HOST_PATH=~/.ssh/capuz_deploy_key
+SFTP_KEY_HOST_PATH=/Users/YOU/.ssh/capuz_deploy_key
 SFTP_KEY_PATH=/keys/id_ed25519
 ```
 
 ```bash
-docker compose -f docker-compose.stack.yml up --build
+docker compose -f docker-compose.stack.yml -f docker-compose.stack.sftp.yml up --build
 ```
+
+For a Hetzner VPS as the live site (nginx + Tailscale SFTP), see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (minimal mode) and `deploy/hetzner/minimal/env.local.example`.
 
 #### 6. Verify cms-api
 
@@ -416,11 +411,12 @@ Deploy with `render.bundled.yaml` (editor-only deploy remains `render.yaml`), or
 
 Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `EDITOR_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
 
-### Bundled setup (Hetzner VPS)
+### Hetzner VPS
 
-Self-host on Hetzner Cloud with host Caddy (TLS) and the same bundled image. Point `@`, `chat`, and `preview` DNS at one VPS — no Render custom-domain limits.
+- **Minimal (recommended):** native nginx on the VPS; Open WebUI + cms-api on your laptop via `docker-compose.stack.yml` and SFTP over Tailscale.
+- **Bundled:** live site + chat + preview all on one VPS behind host Caddy.
 
-See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for the manual checklist and `deploy/hetzner/*.sh` scripts.
+See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 

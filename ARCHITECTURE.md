@@ -170,10 +170,10 @@ Each service can be deployed as a separate pod with:
 - Persistent Volume Claim for shared storage
 
 ### Editor stack (single container)
-For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included (use nginx separately, the bundled setup below, or an external host).
+For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.stack.sftp.yml` (Hetzner **minimal** mode in [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)), or use the bundled setup below.
 
 ### Bundled setup (Render or VPS)
-For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. On a **Hetzner VPS**, add host Caddy for TLS and `deploy/hetzner/docker-compose.production.yml` — see [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md). One container runs:
+For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. On a **Hetzner VPS**, prefer **minimal** (local stack + remote nginx) or run **bundled** behind host Caddy (`deploy/hetzner/docker-compose.production.yml`) — see [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md). Bundled one container runs:
 
 | Host | Backend |
 |------|---------|

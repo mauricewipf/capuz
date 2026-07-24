@@ -231,7 +231,22 @@ export class SftpStorage {
     const pages = [];
     const draftRoot = `${this.remoteRoot}/${DRAFTS_SEGMENT}`;
     await this.withClient(async (client) => {
-      await this.walk(client, draftRoot, pages, draftRoot);
+      // Avoid walk()'s missing-dir swallow masking real SFTP failures: if .drafts
+      // exists, listing errors must surface so callers do not assume "no changes".
+      const exists = await client.exists(draftRoot);
+      if (!exists) return;
+      const entries = await client.list(draftRoot);
+      for (const entry of entries) {
+        if (isSkippedStorageSegment(entry.name)) continue;
+        const fullPath = `${draftRoot}/${entry.name}`;
+        if (entry.type === "d") {
+          await this.walk(client, fullPath, pages, draftRoot);
+          continue;
+        }
+        if (isAllowedPage(entry.name)) {
+          pages.push(entry.name.split("\\").join("/"));
+        }
+      }
     });
     pages.sort();
     return pages;

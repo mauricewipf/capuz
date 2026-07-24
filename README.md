@@ -257,7 +257,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 
 | Tool | Description |
 |------|-------------|
-| `list_pages` | List published `.html` and `.xml` paths; optional `detail: "status"` for draft state |
+| `list_pages` | List pages with `{path, status}` (`published` / `draft` / `modified`). Use `changedOnly: true` for unpublished changes only; `detail: "paths"` for legacy path strings |
 | `list_drafts` | List paths with unpublished drafts |
 | `read_page` | Read **published** page content by path |
 | `read_draft` | Read pending draft content |
@@ -285,8 +285,10 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 |--------|------|------|-------------|
 | GET | `/health` | — | Health check |
 | GET | `/openapi.json` | — | OpenAPI spec |
-| GET | `/api/pages` | — | List published pages |
-| GET | `/api/pages?detail=status` | — | List all pages with `published` / `draft` / `modified` status |
+| GET | `/api/pages` | — | List pages with `published` / `draft` / `modified` status (default) |
+| GET | `/api/pages?changedOnly=true` | — | List only draft and modified pages |
+| GET | `/api/pages?detail=paths` | — | Legacy: list published page paths only |
+| GET | `/api/pages?detail=status` | — | Same as default (explicit status) |
 | GET | `/api/pages/{path}` | — | Read published page |
 | PUT | `/api/pages/{path}` | Bearer | Save draft |
 | POST | `/api/pages/{path}/publish` | Bearer | Publish draft |

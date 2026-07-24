@@ -51,11 +51,15 @@ app.all("/mcp/*", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 app.get("/api/pages", async (c) => {
   try {
     const detail = c.req.query("detail");
-    if (detail === "status") {
-      const pages = await listPagesWithStatus(storage);
+    const changedOnly =
+      c.req.query("changedOnly") === "true" ||
+      c.req.query("changed_only") === "true";
+    // Default to status so unpublished drafts are visible. Use detail=paths for legacy path-only lists.
+    if (detail === "paths") {
+      const pages = await storage.listPages();
       return c.json({ pages });
     }
-    const pages = await storage.listPages();
+    const pages = await listPagesWithStatus(storage, { changedOnly });
     return c.json({ pages });
   } catch (error) {
     const { message, status } = handlePathError(error);

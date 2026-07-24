@@ -6,6 +6,10 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Fixed
 
+- `list_pages` / `GET /api/pages` now return draft status by default (`published` / `draft` / `modified`), so unpublished preview changes are visible without remembering `detail=status`. Use `changedOnly=true` to list only pages with changes; use `detail=paths` for the old path-only list.
+- SFTP `listDrafts` no longer treats listing failures on an existing `.drafts/` directory as an empty draft set.
+- Preview HTML `HEAD` responses include `Content-Length` (previously always `0`).
+- Minimal nginx config: missing `/assets/*` return 404 instead of falling back to `index.html`.
 - `import_chat_file` / `POST /api/assets/import-chat` now always resolves a real file extension (from filename, on-disk upload path, or Content-Type) and returns a ready-to-use `url` (e.g. `/assets/images/hero.jpg`) so `<img src>` keeps the file ending
 
 ### Added

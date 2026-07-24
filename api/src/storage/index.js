@@ -31,7 +31,7 @@ export function getStorage() {
   return storageInstance;
 }
 
-export async function listPagesWithStatus(storage) {
+export async function listPagesWithStatus(storage, { changedOnly = false } = {}) {
   const [published, drafts] = await Promise.all([
     storage.listPages(),
     storage.listDrafts(),
@@ -52,7 +52,8 @@ export async function listPagesWithStatus(storage) {
         status = "draft";
       }
       return { path, status };
-    });
+    })
+    .filter((page) => !changedOnly || page.status === "draft" || page.status === "modified");
 
   return pages;
 }

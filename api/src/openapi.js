@@ -86,16 +86,29 @@ export const openApiDocument = {
     },
     "/api/pages": {
       get: {
-        summary: "List published pages",
+        summary: "List pages with publish status",
+        description:
+          "Defaults to {path, status} for each page (published, draft, or modified). Use changedOnly=true for unpublished changes only. Use detail=paths for a legacy path-only string array.",
         operationId: "listPages",
         parameters: [
           {
             name: "detail",
             in: "query",
-            schema: { type: "string", enum: ["status"] },
+            schema: { type: "string", enum: ["status", "paths"] },
+            description: "status (default) returns path+status objects; paths returns string paths only",
+          },
+          {
+            name: "changedOnly",
+            in: "query",
+            schema: { type: "boolean" },
+            description: "If true, only return draft and modified pages",
           },
         ],
-        responses: { "200": { description: "List of page paths" } },
+        responses: {
+          "200": {
+            description: "List of pages (with status by default)",
+          },
+        },
       },
     },
     "/api/search": {

@@ -58,10 +58,15 @@ export async function handlePreviewRequest(c) {
   try {
     if (isPageRequest(uriPath)) {
       const { body, source, pagePath } = await readPreviewPage(storage, uriPath);
-      return c.text(body, 200, {
+      const headers = {
         "Content-Type": pageContentType(pagePath),
         "X-Preview-Source": source,
-      });
+        "Content-Length": String(Buffer.byteLength(body, "utf8")),
+      };
+      if (c.req.method === "HEAD") {
+        return c.body(null, 200, headers);
+      }
+      return c.text(body, 200, headers);
     }
 
     const assetPath = uriPath.replace(/^\/+/, "");

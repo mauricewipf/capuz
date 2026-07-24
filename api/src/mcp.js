@@ -83,19 +83,29 @@ export function createMcpServer() {
 
   server.tool(
     "list_pages",
-    "List HTML and XML page paths. Use detail=status for published, draft, and modified pages.",
+    "List HTML/XML pages with publish state. Always returns {path, status} where status is published (live only), draft (new unpublished page), or modified (live page with unpublished draft). For \"pages with changes\" / unpublished work, set changedOnly=true (or call list_drafts), then publish_page to go live.",
     {
-      detail: z
-        .enum(["status"])
+      changedOnly: z
+        .boolean()
         .optional()
-        .describe('Set to "status" to include draft state per path'),
+        .describe(
+          "If true, only return draft and modified pages (unpublished changes). Use this when the user asks for pages with changes.",
+        ),
+      detail: z
+        .enum(["status", "paths"])
+        .optional()
+        .describe(
+          'Deprecated: status is the default. Use "paths" only if you need a bare path string array without draft state.',
+        ),
     },
-    async ({ detail }) => {
+    async ({ changedOnly, detail }) => {
       try {
-        const pages =
-          detail === "status"
-            ? await listPagesWithStatus(storage)
-            : await storage.listPages();
+        if (detail === "paths") {
+          return jsonResult(await storage.listPages());
+        }
+        const pages = await listPagesWithStatus(storage, {
+          changedOnly: Boolean(changedOnly),
+        });
         return jsonResult(pages);
       } catch (error) {
         return errorResult(error);
@@ -103,13 +113,18 @@ export function createMcpServer() {
     },
   );
 
-  server.tool("list_drafts", "List page paths that have unpublished drafts", {}, async () => {
-    try {
-      return jsonResult(await storage.listDrafts());
-    } catch (error) {
-      return errorResult(error);
-    }
-  });
+  server.tool(
+    "list_drafts",
+    "List page paths that have unpublished drafts (same set as list_pages with changedOnly=true, paths only). Prefer this or list_pages(changedOnly=true) before publish_page.",
+    {},
+    async () => {
+      try {
+        return jsonResult(await storage.listDrafts());
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
 
   server.tool(
     "read_page",

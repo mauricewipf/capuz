@@ -55,6 +55,7 @@ export function isPageRequest(uriPath) {
   const cleaned = uriPath.replace(/^\/+/, "").trim();
   if (!cleaned) return true;
   const lower = cleaned.toLowerCase();
+  if (lower.startsWith("assets/")) return false;
   if (PAGE_EXTENSIONS.some((ext) => lower.endsWith(ext))) return true;
   if (lower.endsWith("/")) return true;
   if (!lower.includes(".")) return true;

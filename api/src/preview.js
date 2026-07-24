@@ -67,9 +67,14 @@ export async function handlePreviewRequest(c) {
     const assetPath = uriPath.replace(/^\/+/, "");
     const buffer = await storage.readAsset(assetPath);
     const body = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-    return c.body(body, 200, {
+    const headers = {
       "Content-Type": contentTypeForAsset(assetPath),
-    });
+      "Content-Length": String(body.length),
+    };
+    if (c.req.method === "HEAD") {
+      return c.body(null, 200, headers);
+    }
+    return c.body(body, 200, headers);
   } catch (error) {
     const { message, status } = handlePathError(error);
     if (status === 404) {
@@ -79,9 +84,24 @@ export async function handlePreviewRequest(c) {
   }
 }
 
+function shouldBypassPreview(pathname) {
+  return (
+    pathname === "/health" ||
+    pathname === "/openapi.json" ||
+    pathname === "/api" ||
+    pathname.startsWith("/api/") ||
+    pathname === "/mcp" ||
+    pathname.startsWith("/mcp/")
+  );
+}
+
 export function previewMiddleware() {
   return async (c, next) => {
     if (!isPreviewHost(c.req.header("host"))) {
+      return next();
+    }
+    const pathname = new URL(c.req.url).pathname;
+    if (shouldBypassPreview(pathname)) {
       return next();
     }
     return handlePreviewRequest(c);

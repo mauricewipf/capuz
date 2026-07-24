@@ -28,9 +28,14 @@ function requireEnv(name) {
   return value;
 }
 
+function shouldResetSftpConnection(error) {
+  return !(error instanceof PathError);
+}
+
 export class SftpStorage {
   client = null;
   connecting = null;
+  operationQueue = Promise.resolve();
   host = requireEnv("SFTP_HOST");
   port = Number(process.env.SFTP_PORT || 22);
   username = requireEnv("SFTP_USER");
@@ -117,24 +122,38 @@ export class SftpStorage {
     }
   }
 
-  async withClient(fn) {
+  async resetClient() {
+    if (!this.client) return;
     try {
-      await this.connect();
-      if (!this.client) {
-        throw new Error("SFTP client is not connected");
-      }
-      return await fn(this.client);
-    } catch (error) {
-      if (this.client) {
-        try {
-          await this.client.end();
-        } catch {
-          // ignore disconnect errors
-        }
-        this.client = null;
-      }
-      throw error;
+      await this.client.end();
+    } catch {
+      // ignore disconnect errors
     }
+    this.client = null;
+  }
+
+  async withClient(fn) {
+    const run = async () => {
+      try {
+        await this.connect();
+        if (!this.client) {
+          throw new Error("SFTP client is not connected");
+        }
+        return await fn(this.client);
+      } catch (error) {
+        if (shouldResetSftpConnection(error)) {
+          await this.resetClient();
+        }
+        throw error;
+      }
+    };
+
+    const result = this.operationQueue.then(run, run);
+    this.operationQueue = result.then(
+      () => {},
+      () => {},
+    );
+    return result;
   }
 
   async walk(client, dir, pages, root) {
@@ -220,11 +239,20 @@ export class SftpStorage {
 
   async listAssets(prefix = "") {
     const assets = [];
+    const assetsRoot = `${this.remoteRoot}/assets`;
     await this.withClient(async (client) => {
-      await this.walkAssets(client, this.remoteRoot, assets, this.remoteRoot);
+      if (!(await client.exists(assetsRoot))) return;
+      await this.walkAssets(client, assetsRoot, assets, this.remoteRoot);
     });
     const cleaned = prefix.replace(/^\/+/, "");
     return assets.filter((path) => !cleaned || path.startsWith(cleaned)).sort();
+  }
+
+  async hasAsset(relativePath) {
+    const remote = this.assetRemotePath(relativePath);
+    return await this.withClient(async (client) => {
+      return Boolean(await client.exists(remote));
+    });
   }
 
   async listComponents() {

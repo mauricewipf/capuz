@@ -106,9 +106,27 @@ export class FsStorage {
 
   async listAssets(prefix = "") {
     const assets = [];
-    await walkAssets(getDataRoot(), assets, getDataRoot());
+    const assetsRoot = `${getDataRoot()}/assets`;
+    try {
+      await access(assetsRoot);
+    } catch (err) {
+      if (isEnoent(err)) return [];
+      throw err;
+    }
+    await walkAssets(assetsRoot, assets, getDataRoot());
     const cleaned = prefix.replace(/^\/+/, "");
     return assets.filter((path) => !cleaned || path.startsWith(cleaned)).sort();
+  }
+
+  async hasAsset(relativePath) {
+    const absolute = resolveAssetPath(relativePath);
+    try {
+      await access(absolute);
+      return true;
+    } catch (err) {
+      if (isEnoent(err)) return false;
+      throw err;
+    }
   }
 
   async listComponents() {

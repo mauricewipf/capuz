@@ -156,6 +156,14 @@ function ensureAssetPathExtension(path, ext) {
 }
 
 async function assetExists(storage, path) {
+  if (typeof storage.hasAsset === "function") {
+    try {
+      const normalized = normalizeAssetPath(path);
+      return await storage.hasAsset(normalized);
+    } catch {
+      return false;
+    }
+  }
   try {
     await readAssetInfo(storage, path);
     return true;

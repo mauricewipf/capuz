@@ -75,12 +75,18 @@ public/
   pages/          # Seed HTML/XML for the demo site
   assets/         # Bootstrap, theme CSS, JS, favicon
 nginx.conf        # Static server config (extensionless URLs)
-Caddyfile         # Host router for Open WebUI + preview on :8081
+Caddyfile         # Local editor-router: preview + Open WebUI on :8081
+deploy/hetzner/
+  Caddyfile.host.template              # Reference VPS: host TLS → nginx / openwebui / cms-api
+  Caddyfile.template                   # Bundled VPS: host TLS → single container :8081
+  docker-compose.reference.production.yml
+  docker-compose.production.yml
 docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui + editor-router)
 docker-compose.stack.yml    # Editor-only single container (Open WebUI + preview)
 docker-compose.bundled.yml  # Full site + chat + preview on one port (Render)
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
 Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui | Dockerfile.stack | Dockerfile.bundled
+seed-data.sh                # Seeds demo public/ into nginx volume; skip with CAPUZ_SKIP_SEED=1
 ```
 
 ## Commands
@@ -117,6 +123,18 @@ cd api && bun install && bun run start
 
 Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`).
 
+### Hetzner VPS (reference stack)
+
+Production deploy of `docker-compose.yml` — three containers, host Caddy, no demo seed:
+
+```bash
+cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
+# CAPUZ_STACK=reference, secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST
+CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
+```
+
+See `docs/DEPLOY-HETZNER.md`. Bundled VPS: set `CAPUZ_STACK=bundled`. Minimal: laptop stack + SFTP, no full compose on VPS.
+
 ### Publish cms-api plugin image
 
 Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/capuz-cms-api` (multi-arch `linux/amd64`, `linux/arm64`).
@@ -145,7 +163,7 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 ### Docker / config
 
 - API image builds from `Dockerfile.api` (context: repo root, copies `api/`).
-- nginx image seeds `public/` into the volume on first run (`seed-data.sh` flattens `pages/` and copies `assets/`).
+- nginx image seeds `public/` into the volume on first run (`seed-data.sh` flattens `pages/` and copies `assets/`) unless `CAPUZ_SKIP_SEED=1` (production reference deploy on Hetzner).
 - Environment variables are documented in `.env.example` and `README.md`.
 
 ## Guardrails

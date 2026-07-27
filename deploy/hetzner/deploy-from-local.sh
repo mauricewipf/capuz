@@ -36,7 +36,8 @@ rsync -az --delete \
   "$REPO_ROOT/" "${TARGET}:/opt/capuz/app/"
 
 echo "Running install-on-server.sh on ${TARGET} ..."
-ssh "$TARGET" 'CAPUZ_SKIP_GIT_PULL=1 CAPUZ_APP_DIR=/opt/capuz/app CAPUZ_ENV_FILE=/opt/capuz/.env bash /opt/capuz/app/deploy/hetzner/install-on-server.sh'
+CAPUZ_STACK="${CAPUZ_STACK:-reference}"
+ssh "$TARGET" "CAPUZ_SKIP_GIT_PULL=1 CAPUZ_STACK=${CAPUZ_STACK} CAPUZ_APP_DIR=/opt/capuz/app CAPUZ_ENV_FILE=/opt/capuz/.env bash /opt/capuz/app/deploy/hetzner/install-on-server.sh"
 
 echo ""
 echo "Deploy finished. Verify HTTPS for hosts in your env file."

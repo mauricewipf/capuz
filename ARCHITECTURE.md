@@ -170,10 +170,22 @@ Each service can be deployed as a separate pod with:
 - Persistent Volume Claim for shared storage
 
 ### Editor stack (single container)
-For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.stack.sftp.yml` (Hetzner **minimal** mode in [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)), or use the bundled setup below.
+For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.stack.sftp.yml` (Hetzner **minimal** mode in [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)), or use the reference or bundled VPS setups below.
+
+### Reference stack on Hetzner VPS
+Deploy the same multi-service layout as local `docker compose up` (`docker-compose.yml`) to a VPS with **host Caddy** for TLS. Production uses `deploy/hetzner/docker-compose.reference.production.yml`:
+
+| Component | Role |
+|-----------|------|
+| Host Caddy | TLS on `:443`; routes `SITE_HOST` / `www` → nginx, `EDITOR_HOST` → openwebui, `PREVIEW_HOST` → cms-api |
+| `nginx` | Live published pages (`127.0.0.1:8080`); **`CAPUZ_SKIP_SEED=1`** — no demo seed from `public/` |
+| `cms-api` | API, MCP, preview vhost (`127.0.0.1:3000`) |
+| `openwebui` | Chat UI (`127.0.0.1:8082` → container `:8080`) |
+
+The in-compose **`editor-router`** (Caddy on `:8081`) runs locally only; on the VPS, host Caddy replaces it. Set `CAPUZ_STACK=reference` in production env. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
 ### Bundled setup (Render or VPS)
-For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. On a **Hetzner VPS**, prefer **minimal** (local stack + remote nginx) or run **bundled** behind host Caddy (`deploy/hetzner/docker-compose.production.yml`) — see [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md). Bundled one container runs:
+For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. On a **Hetzner VPS**, use **minimal** (local stack + remote nginx), **reference** (`docker-compose.yml` + `docker-compose.reference.production.yml`), or **bundled** behind host Caddy (`deploy/hetzner/docker-compose.production.yml`) — see [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md). Bundled one container runs:
 
 | Host | Backend |
 |------|---------|

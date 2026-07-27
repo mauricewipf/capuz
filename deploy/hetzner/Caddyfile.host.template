@@ -1,0 +1,15 @@
+# Host-level TLS for reference stack (deploy/hetzner).
+# Rendered to /etc/caddy/Caddyfile by install-on-server.sh (envsubst).
+# Routes directly to docker-compose services on localhost — no in-compose Caddy.
+
+${SITE_HOST}, www.${SITE_HOST} {
+	reverse_proxy 127.0.0.1:8080
+}
+
+${EDITOR_HOST} {
+	reverse_proxy 127.0.0.1:8082
+}
+
+${PREVIEW_HOST} {
+	reverse_proxy 127.0.0.1:3000
+}

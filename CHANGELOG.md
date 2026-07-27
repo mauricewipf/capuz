@@ -14,6 +14,8 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Added
 
+- Hetzner **reference stack** production deploy (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`): nginx, cms-api, and openwebui behind host Caddy; no in-compose `editor-router`; `CAPUZ_SKIP_SEED` for empty live site
+- `CAPUZ_STACK` env (`reference` | `bundled`) in `install-on-server.sh` and `deploy-from-local.sh`
 - `import_chat_file` MCP tool and `POST /api/assets/import-chat` — copy chat-attached Open WebUI files into site assets via shared disk (bundled/stack; uses existing `DATA_DIR` or `${DATA_ROOT}/.open-webui`, no new env vars)
 - Bundled setup (`Dockerfile.bundled`, `docker-compose.bundled.yml`, `render.bundled.yaml`) — one port with host-based routing:
   - `SITE_HOST` → nginx (published pages)

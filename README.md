@@ -170,7 +170,7 @@ SFTP_KEY_PATH=/keys/id_ed25519
 docker compose -f docker-compose.stack.yml -f docker-compose.stack.sftp.yml up --build
 ```
 
-For a Hetzner VPS as the live site (nginx + Tailscale SFTP), see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (minimal mode) and `deploy/hetzner/minimal/env.local.example`.
+For Hetzner VPS deploys (minimal, reference, or bundled), see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**. Minimal mode uses `deploy/hetzner/minimal/env.local.example` for the laptop editor.
 
 #### 6. Verify cms-api
 
@@ -378,6 +378,8 @@ docker compose up --build
 - Preview: http://preview.localhost:8081
 - CMS API: http://localhost:3000
 
+Production on Hetzner uses the same compose file with `deploy/hetzner/docker-compose.reference.production.yml` — host Caddy replaces `editor-router` for TLS and hostname routing. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md#reference-full-stack-on-the-vps-docker-composeyml).
+
 ### Editor stack (single container)
 
 Open WebUI + cms-api preview on one port (no bundled live site):
@@ -413,10 +415,24 @@ Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, se
 
 ### Hetzner VPS
 
-- **Minimal (recommended):** native nginx on the VPS; Open WebUI + cms-api on your laptop via `docker-compose.stack.yml` and SFTP over Tailscale.
-- **Bundled:** live site + chat + preview all on one VPS behind host Caddy.
+Three production modes — see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**:
 
-See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**.
+- **Minimal:** native nginx on the VPS; Open WebUI + cms-api on your laptop via `docker-compose.stack.yml` and SFTP over Tailscale.
+- **Reference:** full `docker-compose.yml` on the VPS (nginx + cms-api + openwebui) behind host Caddy; empty live site until publish (`CAPUZ_SKIP_SEED`).
+- **Bundled:** live site + chat + preview in one container behind host Caddy (4 GB RAM recommended).
+
+Quick deploy (reference stack on an existing VPS):
+
+```bash
+cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
+# Edit secrets + SITE_HOST / EDITOR_HOST / PREVIEW_HOST (CAPUZ_STACK=reference)
+./deploy/hetzner/configure-dns.sh your.domain YOUR_VPS_IP
+CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
+```
+
+- Live site: `https://your.domain` (404 until first publish)
+- Open WebUI: `https://chat.your.domain`
+- Preview: `https://preview.your.domain`
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
@@ -434,6 +450,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Preview links in API responses |
+| `CAPUZ_STACK` | — | Hetzner deploy: `reference` (`docker-compose.yml`) or `bundled` |
+| `CAPUZ_SKIP_SEED` | — | When `1`, nginx entrypoint skips copying demo `public/` into live volume |
 | `SFTP_HOST` | — | SFTP server hostname |
 | `SFTP_PORT` | `22` | SFTP port |
 | `SFTP_USER` | — | SFTP username |

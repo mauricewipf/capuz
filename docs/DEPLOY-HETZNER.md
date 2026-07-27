@@ -1,13 +1,16 @@
 # Deploy Capuz on Hetzner Cloud
 
-Two ways to run Capuz with a Hetzner VPS:
+Three ways to run Capuz with a Hetzner VPS:
 
 | Mode | VPS | Laptop | When to use |
 |------|-----|--------|-------------|
-| **Minimal** (recommended) | Native nginx + TLS; empty site root | `docker-compose.stack.yml` + SFTP over Tailscale | Small VPS, editor stays local |
-| **Bundled** | Full Docker app (site + chat + preview) behind host Caddy | Deploy scripts only | Everything on one server |
+| **Minimal** | Native nginx + TLS; empty site root | `docker-compose.stack.yml` + SFTP over Tailscale | Smallest VPS; editor stays local |
+| **Reference** | `docker-compose.yml` (nginx + cms-api + openwebui) behind host Caddy | Deploy scripts only | Same layout as local demo; separate containers; empty live site until publish |
+| **Bundled** | Single container (site + chat + preview) behind host Caddy | Deploy scripts only | One Docker image; needs more RAM (4 GB recommended) |
 
 Compared to Render, you control TLS and DNS yourself — no custom-domain slot limits.
+
+Set **`CAPUZ_STACK=reference`** or **`CAPUZ_STACK=bundled`** in `deploy/hetzner/.env.production` (or export it when running `deploy-from-local.sh`). The deploy script defaults to **reference**.
 
 ---
 
@@ -100,7 +103,109 @@ Publish a page from the editor, then confirm it appears on the live domain.
 
 ---
 
-## Bundled: everything on the VPS
+## Reference: full stack on the VPS (`docker-compose.yml`)
+
+Multi-container production deploy of the **reference demo stack** — same services as local `docker compose up`, but on the VPS with **host Caddy** for TLS and **no in-compose `editor-router`**. The live site volume starts **empty** (no demo HTML/assets seeded); pages appear after `publish_page` from chat.
+
+```
+Internet
+   │
+   ▼
+Host Caddy (:443, Let's Encrypt)     deploy/hetzner/Caddyfile.host.template
+   │  SITE_HOST / www     → 127.0.0.1:8080  (nginx)
+   │  EDITOR_HOST (chat)  → 127.0.0.1:8082  (openwebui)
+   │  PREVIEW_HOST         → 127.0.0.1:3000  (cms-api preview vhost)
+   ▼
+docker compose (nginx + cms-api + openwebui)
+   └─ shared volume site-data  (published pages + .drafts; not seeded from public/)
+```
+
+Local dev still runs all four compose services including `editor-router` on `:8081`; production skips `editor-router` because host Caddy routes by hostname directly.
+
+### Manual checklist (reference)
+
+| Step | Why manual |
+|------|------------|
+| Hetzner Cloud account + API token | Billing / `hcloud` |
+| SSH access to VPS | Public IP or **Tailscale** (`root@your-host.tailnet`) |
+| Production `.env` | Copy `env.production.example` → `.env.production`; set `CAPUZ_STACK=reference` and secrets |
+| DNS A records | `@`, `www`, `chat`, `preview` → VPS IPv4 |
+| Keep mail DNS | Do **not** remove MX/SPF/SRV if you use Hetzner mail |
+
+### Recommended server size (reference)
+
+| Plan | RAM | Notes |
+|------|-----|--------|
+| **cpx12** / **cx22** | 2–4 GB | 2 GB works with 2 GB swap + lean Open WebUI env; tight |
+| cx22+ | 4 GB | Comfortable for Open WebUI + cms-api + nginx |
+
+Install script creates **2 GB swap** if missing. Set lean Open WebUI flags in `.env.production` (see `env.production.example` — `RAG_EMBEDDING_ENGINE=openai`, disable Ollama, code exec, memories, etc.).
+
+### Quick deploy (reference)
+
+```bash
+brew install hcloud
+hcloud context create capuz-prod
+
+chmod +x deploy/hetzner/*.sh
+
+cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
+# Edit: CAPUZ_STACK=reference, OPENROUTER_API_KEY, CMS_API_KEY, WEBUI_SECRET_KEY,
+#       SITE_HOST, EDITOR_HOST, PREVIEW_HOST, WEBUI_URL, PREVIEW_BASE_URL
+
+# DNS: A @, www, chat, preview → VPS IP
+./deploy/hetzner/configure-dns.sh your.domain YOUR_VPS_IP
+
+# Deploy (Tailscale example; use root@YOUR_VPS_IP if public SSH is open)
+CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh \
+  root@your-host.tailnet deploy/hetzner/.env.production
+```
+
+### Verify (reference)
+
+```bash
+curl -sI https://your.domain/ | head -5          # 404 until first publish (expected)
+curl -sI https://www.your.domain/ | head -5
+curl -sI https://chat.your.domain/ | head -5       # Open WebUI
+curl -sI https://preview.your.domain/health | head -5
+```
+
+Smoke test: log into chat → MCP tools → write draft → preview → publish → page on apex.
+
+### Redeploy / update (reference)
+
+```bash
+CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh \
+  root@your-host.tailnet deploy/hetzner/.env.production
+```
+
+### Files (`deploy/hetzner/` — reference)
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.reference.production.yml` | Localhost port binds, `CAPUZ_SKIP_SEED`, production env overrides |
+| `Caddyfile.host.template` | Host TLS; routes apex/www/chat/preview to three localhost ports |
+| `deploy-from-local.sh` | SCP `.env` + rsync repo + remote install (defaults `CAPUZ_STACK=reference`) |
+| `install-on-server.sh` | Reference vs bundled path; swap; Docker/Caddy bootstrap |
+| `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
+| `env.production.example` | Production template incl. lean Open WebUI flags |
+
+Root: **`seed-data.sh`** respects `CAPUZ_SKIP_SEED=1` (production nginx skips copying `public/pages` and `public/assets`).
+
+### Operations (reference)
+
+```bash
+ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml ps'
+ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f openwebui'
+ssh root@YOUR_VPS 'journalctl -u caddy -f'
+ssh root@YOUR_VPS 'docker stats --no-stream'
+```
+
+Firewall: **80**, **443** public. App containers listen on **127.0.0.1** only.
+
+---
+
+## Bundled: everything in one container
 
 Single VPS running the **bundled** stack (`Dockerfile.bundled`): live site + Open WebUI + draft preview in one Docker container, with **host Caddy** for HTTPS on three hostnames.
 
@@ -161,7 +266,7 @@ openssl rand -hex 32   # WEBUI_SECRET_KEY
 # Or: ./deploy/hetzner/configure-dns.sh just-html.com YOUR_VPS_IP
 
 # Wait ~60s for cloud-init, then:
-./deploy/hetzner/deploy-from-local.sh root@YOUR_VPS_IP deploy/hetzner/.env.production
+CAPUZ_STACK=bundled ./deploy/hetzner/deploy-from-local.sh root@YOUR_VPS_IP deploy/hetzner/.env.production
 ```
 
 ```bash
@@ -173,7 +278,7 @@ curl -sI https://preview.just-html.com/ | head -5
 ### Redeploy / update (bundled)
 
 ```bash
-./deploy/hetzner/deploy-from-local.sh root@YOUR_VPS_IP deploy/hetzner/.env.production
+CAPUZ_STACK=bundled ./deploy/hetzner/deploy-from-local.sh root@YOUR_VPS_IP deploy/hetzner/.env.production
 ```
 
 ### Files (`deploy/hetzner/` — bundled)
@@ -185,9 +290,11 @@ curl -sI https://preview.just-html.com/ | head -5
 | `deploy-from-local.sh` | SCP `.env` + remote install |
 | `install-on-server.sh` | Clone/pull repo, Caddyfile, `docker compose up` |
 | `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
-| `Caddyfile.template` | Host TLS + reverse proxy |
-| `docker-compose.production.yml` | Bind `8081` to localhost, `restart: unless-stopped` |
-| `env.production.example` | Production env template |
+| `Caddyfile.template` | Bundled: host TLS → single container on `8081` |
+| `Caddyfile.host.template` | Reference: host TLS → nginx / openwebui / cms-api ports |
+| `docker-compose.production.yml` | Bundled: bind `8081` to localhost, `restart: unless-stopped` |
+| `docker-compose.reference.production.yml` | Reference: three services, localhost binds, skip seed |
+| `env.production.example` | Production env template (`CAPUZ_STACK`, lean Open WebUI flags) |
 
 ### Operations (bundled)
 
@@ -203,7 +310,7 @@ Firewall (bundled cloud-init): **22**, **80**, **443**. App listens on **127.0.0
 
 ## Migrating from Render
 
-1. Prefer **minimal** or **bundled** deploy above.
+1. Prefer **minimal**, **reference**, or **bundled** deploy above.
 2. Copy site data if needed (export disk / republish via API).
 3. Update DNS from Render to the VPS IP.
 4. Suspend Render when satisfied.
@@ -214,15 +321,18 @@ Firewall (bundled cloud-init): **22**, **80**, **443**. App listens on **127.0.0
 |---------|--------|
 | Minimal: SFTP auth fails | Tailscale up on laptop + VPS; `SFTP_HOST` = MagicDNS; key mounted via `docker-compose.stack.sftp.yml` |
 | Minimal: TLS / empty site | DNS `@`/`www` → VPS; `certbot` / nginx; publish from editor (root starts with placeholder `index.html`) |
-| Bundled: TLS error on chat/preview | DNS A records; `systemctl status caddy` |
-| Bundled: 502 from Caddy | Container not up; compose logs |
-| Chat slow on first visit | Open WebUI still starting (bundled) |
+| Reference: apex 404 | Expected until first `publish_page`; `CAPUZ_SKIP_SEED=1` — no demo seed |
+| Reference: chat `/error` or 502 | Open WebUI not ready; check `PORT=8080` inside container (not `8081` from laptop `.env`); compose logs |
+| Reference: preview 502 | cms-api health on `127.0.0.1:3000`; `PREVIEW_HOST` matches DNS |
+| Reference / bundled: TLS error on chat/preview | DNS A records; `systemctl status caddy` |
+| Reference / bundled: 502 from Caddy | Containers not up; compose logs |
+| Chat slow on first visit | Open WebUI still starting |
 
 ## Security notes
 
 - Set `ENABLE_SIGNUP=false` in production / local `.env`.
 - Use strong `CMS_API_KEY` and `WEBUI_SECRET_KEY`.
 - Minimal: prefer Tailscale-only SSH after join; do not expose CMS/editor ports on the VPS.
-- Bundled: keep `/opt/capuz/.env` mode `600`.
+- Reference / bundled: keep `/opt/capuz/.env` mode `600`; app ports on localhost only.
 
 See also [README.md](../README.md) and [ARCHITECTURE.md](../ARCHITECTURE.md).

@@ -43,13 +43,15 @@ install_tailscale() {
   fi
 
   if [ -n "${TAILSCALE_AUTHKEY:-}" ]; then
-    tailscale up --ssh --accept-routes --auth-key="$TAILSCALE_AUTHKEY"
+    # Do not pass --ssh: Tailscale SSH requires browser auth and breaks cms-api SFTP (ssh key).
+    tailscale up --accept-routes --auth-key="$TAILSCALE_AUTHKEY"
     return
   fi
 
-  echo "Run: tailscale up --ssh"
+  echo "Run: tailscale up --accept-routes"
   echo "Or set TAILSCALE_AUTHKEY and re-run."
-  tailscale up --ssh --accept-routes || true
+  echo "Note: avoid 'tailscale up --ssh' — it blocks programmatic SFTP from cms-api."
+  tailscale up --accept-routes || true
 }
 
 setup_site_root() {

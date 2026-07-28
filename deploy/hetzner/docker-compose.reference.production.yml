@@ -1,36 +1,15 @@
 # Production overrides for reference stack (docker-compose.yml on Hetzner VPS).
-# Host Caddy terminates TLS; services bind localhost only. Do not start editor-router.
+# edge-router (in-compose Caddy) terminates TLS on :80/:443. No host Caddy.
 services:
-  nginx:
-    restart: unless-stopped
-    environment:
-      CAPUZ_SKIP_SEED: "1"
-    ports: !override
-      - "127.0.0.1:8080:80"
+  edge-router:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
-  cms-api:
-    restart: unless-stopped
-    ports: !override
-      - "127.0.0.1:3000:3000"
-    environment:
-      CMS_API_KEY: ${CMS_API_KEY}
-      STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
-      DATA_ROOT: ${DATA_ROOT:-/app/data}
-      DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
-      PREVIEW_HOST: ${PREVIEW_HOST:-preview.just-html.com}
-      PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-https://preview.just-html.com}
-      SITE_BASE_URL: ${SITE_BASE_URL:-https://just-html.com}
-
-  openwebui:
-    restart: unless-stopped
-    ports: !override
-      - "127.0.0.1:8082:8080"
-    volumes: !override
-      - site-data:/app/data
-    environment:
-      PORT: "8080"
-      DATA_DIR: /app/data/.open-webui
-      WEBUI_URL: ${WEBUI_URL:-https://chat.just-html.com}
-      ENABLE_SIGNUP: "false"
-      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
-      TOOL_SERVER_CONNECTIONS: '[{"type":"mcp","url":"http://cms-api:3000/mcp","path":"/mcp","auth_type":"bearer","key":"${CMS_API_KEY}","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
+volumes:
+  caddy_data:
+  caddy_config:

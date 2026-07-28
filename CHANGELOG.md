@@ -4,6 +4,13 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+### Changed
+
+- **Reference stack:** single in-compose Caddy (`edge-router`) for local and prod. Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml` (HTTP `:8080`, hostnames `localhost` / `chat.localhost` / `preview.localhost`). Prod: edge-router on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`, `caddy_data`). Host systemd Caddy removed from reference deploy (bundled still uses host Caddy).
+- cms-api / nginx / openwebui no longer publish host ports in the reference stack; optional `docker-compose.local-debug.yml` exposes `127.0.0.1:3000`.
+- Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the reference base compose (same as prod).
+- `install-on-server.sh` reference path: preflight validate, disable host Caddy, never `down -v`.
+
 ### Fixed
 
 - `list_pages` / `GET /api/pages` now return draft status by default (`published` / `draft` / `modified`), so unpublished preview changes are visible without remembering `detail=status`. Use `changedOnly=true` to list only pages with changes; use `detail=paths` for the old path-only list.
@@ -14,7 +21,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Added
 
-- Hetzner **reference stack** production deploy (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`): nginx, cms-api, and openwebui behind host Caddy; no in-compose `editor-router`; `CAPUZ_SKIP_SEED` for empty live site
+- Hetzner **reference stack** production deploy (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`) with `CAPUZ_SKIP_SEED` for empty live site (TLS via in-compose edge-router — see Changed above)
 - `CAPUZ_STACK` env (`reference` | `bundled`) in `install-on-server.sh` and `deploy-from-local.sh`
 - `import_chat_file` MCP tool and `POST /api/assets/import-chat` — copy chat-attached Open WebUI files into site assets via shared disk (bundled/stack; uses existing `DATA_DIR` or `${DATA_ROOT}/.open-webui`, no new env vars)
 - Bundled setup (`Dockerfile.bundled`, `docker-compose.bundled.yml`, `render.bundled.yaml`) — one port with host-based routing:

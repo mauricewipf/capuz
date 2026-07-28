@@ -67,7 +67,7 @@ export function getPreviewHost() {
 }
 
 export function getPreviewBaseUrl() {
-  return (process.env.PREVIEW_BASE_URL || "http://preview.localhost:8081").replace(
+  return (process.env.PREVIEW_BASE_URL || "http://preview.localhost:8080").replace(
     /\/+$/,
     "",
   );

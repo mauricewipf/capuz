@@ -11,7 +11,7 @@ This repo contains two things:
 1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `ghcr.io/mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
 2. **A reference demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
 
-The site content lives in `public/pages/` (seed HTML/XML) and `public/assets/` (CSS, JS, images). nginx seeds both into a shared Docker volume at runtime (`pages/` flattened to `/app/data/`, assets to `/app/data/assets/`). The API only manages HTML/XML; nginx serves static assets.
+The site content lives in `public/` (seed HTML/XML and `public/assets/`). nginx seeds into a shared Docker volume at runtime (HTML/XML to `/app/data/`, assets to `/app/data/assets/`). The API only manages HTML/XML; nginx serves static assets.
 
 Read `README.md` for plugin install, storage backends, and Open WebUI configuration. Read `ARCHITECTURE.md` for service topology and data flow.
 
@@ -72,16 +72,18 @@ api/src/
   openapi.js      # OpenAPI spec
   storage/        # Backend implementations (fs, sftp, git, s3)
 public/
-  pages/          # Seed HTML/XML for the demo site
-  assets/         # Bootstrap, theme CSS, JS, favicon
+  index.html      # Seed site root
+  assets/         # CSS, JS, favicon
 nginx.conf        # Static server config (extensionless URLs)
-Caddyfile         # Local editor-router: preview + Open WebUI on :8081
+Caddyfile.dev     # Local edge-router: site + chat + preview on :8080
+Caddyfile.prod    # Prod edge-router: auto-HTTPS + Let's Encrypt
 deploy/hetzner/
-  Caddyfile.host.template              # Reference VPS: host TLS → nginx / openwebui / cms-api
   Caddyfile.template                   # Bundled VPS: host TLS → single container :8081
   docker-compose.reference.production.yml
   docker-compose.production.yml
-docker-compose.yml          # Reference demo stack (nginx + cms-api + openwebui + editor-router)
+docker-compose.yml          # Reference stack base (nginx + cms-api + openwebui + edge-router)
+docker-compose.local.yml    # Local override (publish :8080, Caddyfile.dev)
+docker-compose.local-debug.yml  # Optional: expose cms-api on 127.0.0.1:3000
 docker-compose.stack.yml    # Editor-only single container (Open WebUI + preview)
 docker-compose.bundled.yml  # Full site + chat + preview on one port (Render)
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
@@ -95,24 +97,23 @@ seed-data.sh                # Seeds demo public/ into nginx volume; skip with CA
 
 ```bash
 cp .env.example .env   # set OPENROUTER_API_KEY
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 ```
 
-The demo uses `STORAGE_BACKEND=fs`, shared volume `site-data`, and `CMS_API_KEY=dev-local-key`. No sftp/git/s3 setup needed.
+The demo uses `STORAGE_BACKEND=fs`, shared volume `site-data`, and `CMS_API_KEY=dev-local-key`. No sftp/git/s3 setup needed. Base `docker-compose.yml` is not runnable alone — always pass the local (or prod) override.
 
 | Service | URL |
 |---------|-----|
 | Public site | http://localhost:8080 |
-| Open WebUI | http://localhost:8081 |
-| Preview | http://preview.localhost:8081 |
-| CMS API | http://localhost:3000 |
+| Open WebUI | http://chat.localhost:8080 |
+| Preview | http://preview.localhost:8080 |
+| CMS API | not published (use `docker-compose.local-debug.yml` for `127.0.0.1:3000`) |
 
 ```bash
-docker compose logs -f cms-api     # API logs
-docker compose build cms-api       # Rebuild after api/ changes
-docker compose exec cms-api sh     # Shell in API container
-curl http://localhost:3000/health  # Health check
-curl http://localhost:3000/api/pages
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs -f cms-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api sh
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health
 ```
 
 ### API (inside container or with Bun locally)
@@ -125,15 +126,15 @@ Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`
 
 ### Hetzner VPS (reference stack)
 
-Production deploy of `docker-compose.yml` — three containers, host Caddy, no demo seed:
+Production deploy of `docker-compose.yml` + prod override — four containers including in-compose `edge-router` (Caddy) for TLS; no demo seed:
 
 ```bash
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
-# CAPUZ_STACK=reference, secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST
+# CAPUZ_STACK=reference, secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL
 CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
 ```
 
-See `docs/DEPLOY-HETZNER.md`. Bundled VPS: set `CAPUZ_STACK=bundled`. Minimal: laptop stack + SFTP, no full compose on VPS.
+See `docs/DEPLOY-HETZNER.md`. Bundled VPS: set `CAPUZ_STACK=bundled` (still uses host Caddy). Minimal: laptop stack + SFTP, no full compose on VPS.
 
 ### Publish cms-api plugin image
 
@@ -154,16 +155,16 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 
 ### Site content (`public/`)
 
-- HTML/XML lives in `public/pages/`; static assets in `public/assets/`.
-- Static HTML files — what you write is what nginx serves (after seed flattening).
-- Match existing patterns: Bootstrap 5, `/assets/css/theme.css`, semantic sections, mobile-friendly layout.
-- Use relative or root-absolute asset paths consistent with neighboring pages.
+- HTML/XML lives at the `public/` root (and subdirs); static assets in `public/assets/`.
+- Static HTML files — what you write is what nginx serves (after seed).
+- Match existing patterns: root-absolute `/assets/…` paths, mobile-friendly layout.
 - Extensionless URLs work via nginx rewrite (`/about` → `/about.html`); prefer `.html` in API/MCP paths.
 
 ### Docker / config
 
 - API image builds from `Dockerfile.api` (context: repo root, copies `api/`).
-- nginx image seeds `public/` into the volume on first run (`seed-data.sh` flattens `pages/` and copies `assets/`) unless `CAPUZ_SKIP_SEED=1` (production reference deploy on Hetzner).
+- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) unless `CAPUZ_SKIP_SEED=1` (production reference deploy on Hetzner).
+- Reference local stack always uses `-f docker-compose.yml -f docker-compose.local.yml`.
 - Environment variables are documented in `.env.example` and `README.md`.
 
 ## Guardrails
@@ -189,12 +190,12 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 
 There are no automated tests. After API changes:
 
-1. Rebuild: `docker compose build cms-api editor-router && docker compose up -d`
-2. `curl http://localhost:3000/health` → `{"ok":true}`
-3. `curl http://localhost:3000/api/pages` → lists published pages
-4. Save draft: `curl -H "Authorization: Bearer dev-local-key" -X PUT -H "Content-Type: text/html" -d '<!DOCTYPE html><html><body>ok</body></html>' http://localhost:3000/api/pages/agent-test.html`
-5. Preview at http://preview.localhost:8081/agent-test (draft only until publish)
-6. Publish: `curl -H "Authorization: Bearer dev-local-key" -X POST http://localhost:3000/api/pages/agent-test.html/publish`
+1. Rebuild: `docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api edge-router && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
+2. `docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health` → `{"ok":true}`
+3. With debug override (or exec): list pages via `GET /api/pages`
+4. Save draft (debug override or exec): `PUT /api/pages/agent-test.html` with bearer `dev-local-key`
+5. Preview at http://preview.localhost:8080/agent-test (draft only until publish)
+6. Publish: `POST /api/pages/agent-test.html/publish`
 7. Confirm live at http://localhost:8080/agent-test.html, then delete the test page.
 
 After HTML or asset changes in `public/`, rebuild nginx or restart compose so seed/volume reflects updates.

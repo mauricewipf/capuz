@@ -1,0 +1,19 @@
+# Production reference stack — automatic HTTPS + Let's Encrypt.
+# Mounted by deploy/hetzner/docker-compose.reference.production.yml into edge-router.
+
+{
+	email {$ACME_EMAIL}
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+{$SITE_HOST}, www.{$SITE_HOST} {
+	reverse_proxy nginx:80
+}
+
+{$EDITOR_HOST} {
+	reverse_proxy openwebui:8080
+}
+
+{$PREVIEW_HOST} {
+	reverse_proxy cms-api:3000
+}

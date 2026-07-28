@@ -332,17 +332,17 @@ Draft pages are previewed on a separate host (subdomain). cms-api serves preview
 | Variable | Default (reference stack) | Description |
 |----------|---------------------------|-------------|
 | `PREVIEW_HOST` | `preview.localhost` | Hostname for preview vhost |
-| `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Base URL returned in draft write responses |
+| `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Base URL returned in draft write responses |
 | `DRAFTS_DIR` | `.drafts` | Draft storage directory name (under `DATA_ROOT` or backend equivalent) |
 | `COMPONENTS_DIR` | `.components` | Reusable HTML component library directory (hidden from page listings and nginx) |
-| `SITE_BASE_URL` | `https://example.com` | Base URL for sitemap generation |
+| `SITE_BASE_URL` | `http://localhost:8080` | Base URL for sitemap generation (use HTTPS in prod) |
 | `SCREENSHOT_RENDERER_URL` | — | Optional POST endpoint `{ url }` → PNG bytes for `render_preview` |
 
 Reference stack (multi-container) URLs:
 
-- Preview: http://preview.localhost:8081 (via Caddy on port 8081)
 - Live site: http://localhost:8080
-- Open WebUI: http://localhost:8081
+- Open WebUI: http://chat.localhost:8080
+- Preview: http://preview.localhost:8080 (via edge-router)
 
 Bundled setup (`docker-compose.bundled.yml` / Render) host routing:
 
@@ -365,20 +365,20 @@ Plugin-only deployments: point `PREVIEW_BASE_URL` at wherever preview traffic re
 
 ## Reference stack (this repo)
 
-This repository includes a full demo with nginx + cms-api + Open WebUI:
+This repository includes a full demo with nginx + cms-api + Open WebUI + edge-router (Caddy):
 
 ```bash
 cp .env.example .env
 # set OPENROUTER_API_KEY
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 ```
 
 - Public site: http://localhost:8080
-- Open WebUI: http://localhost:8081
-- Preview: http://preview.localhost:8081
-- CMS API: http://localhost:3000
+- Open WebUI: http://chat.localhost:8080
+- Preview: http://preview.localhost:8080
+- CMS API: not published on the host (optional: add `-f docker-compose.local-debug.yml` for `127.0.0.1:3000`)
 
-Production on Hetzner uses the same compose file with `deploy/hetzner/docker-compose.reference.production.yml` — host Caddy replaces `editor-router` for TLS and hostname routing. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md#reference-full-stack-on-the-vps-docker-composeyml).
+Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md#reference-full-stack-on-the-vps-docker-composeyml).
 
 ### Editor stack (single container)
 
@@ -418,14 +418,14 @@ Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, se
 Three production modes — see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**:
 
 - **Minimal:** native nginx on the VPS; Open WebUI + cms-api on your laptop via `docker-compose.stack.yml` and SFTP over Tailscale.
-- **Reference:** full `docker-compose.yml` on the VPS (nginx + cms-api + openwebui) behind host Caddy; empty live site until publish (`CAPUZ_SKIP_SEED`).
+- **Reference:** full `docker-compose.yml` on the VPS (nginx + cms-api + openwebui + edge-router); in-compose Caddy for TLS; empty live site until publish (`CAPUZ_SKIP_SEED`).
 - **Bundled:** live site + chat + preview in one container behind host Caddy (4 GB RAM recommended).
 
 Quick deploy (reference stack on an existing VPS):
 
 ```bash
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
-# Edit secrets + SITE_HOST / EDITOR_HOST / PREVIEW_HOST (CAPUZ_STACK=reference)
+# Edit secrets + SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL (CAPUZ_STACK=reference)
 ./deploy/hetzner/configure-dns.sh your.domain YOUR_VPS_IP
 CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
 ```
@@ -446,10 +446,14 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `DATA_ROOT` | `/app/data` | Site root (fs backend) |
 | `DRAFTS_DIR` | `.drafts` | Draft pages directory name |
 | `COMPONENTS_DIR` | `.components` | Component library directory name |
-| `SITE_BASE_URL` | `https://example.com` | Base URL for sitemap generation |
+| `SITE_HOST` | `localhost` | Public site hostname (edge-router) |
+| `EDITOR_HOST` | `chat.localhost` | Open WebUI hostname (edge-router) |
+| `SITE_BASE_URL` | `http://localhost:8080` | Base URL for sitemap generation |
+| `WEBUI_URL` | `http://chat.localhost:8080` | Open WebUI public URL |
 | `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
-| `PREVIEW_BASE_URL` | `http://preview.localhost:8081` | Preview links in API responses |
+| `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
+| `ACME_EMAIL` | — | Let's Encrypt contact (required for reference prod) |
 | `CAPUZ_STACK` | — | Hetzner deploy: `reference` (`docker-compose.yml`) or `bundled` |
 | `CAPUZ_SKIP_SEED` | — | When `1`, nginx entrypoint skips copying demo `public/` into live volume |
 | `SFTP_HOST` | — | SFTP server hostname |

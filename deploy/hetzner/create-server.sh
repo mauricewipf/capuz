@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Create a Hetzner Cloud VPS with Docker + host Caddy preinstalled (cloud-init).
+# Create a Hetzner Cloud VPS with Docker preinstalled (cloud-init).
+# Reference stack: in-compose edge-router handles TLS.
+# Bundled stack: install-on-server.sh installs host Caddy.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

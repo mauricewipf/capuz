@@ -24,4 +24,4 @@ hcloud zone rrset set-records "$ZONE" www A --record "$IP"
 hcloud zone rrset set-records "$ZONE" chat A --record "$IP"
 hcloud zone rrset set-records "$ZONE" preview A --record "$IP"
 
-echo "Done. TLS certificates issue after DNS propagates (host Caddy + Let's Encrypt)."
+echo "Done. TLS certificates issue after DNS propagates (edge-router / Let's Encrypt for reference; host Caddy for bundled)."

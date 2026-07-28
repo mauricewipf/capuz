@@ -1,5 +1,7 @@
 #cloud-config
-# First-boot bootstrap for Capuz bundled on Hetzner Cloud.
+# First-boot bootstrap for Capuz on Hetzner Cloud.
+# Host Caddy is installed only for CAPUZ_STACK=bundled (see install-on-server.sh).
+# Reference stack uses in-compose edge-router for TLS on :80/:443.
 # Secrets are NOT passed here — upload .env after the server is up (see docs/DEPLOY-HETZNER.md).
 
 package_update: true
@@ -10,7 +12,6 @@ packages:
   - curl
   - git
   - ufw
-  - caddy
 
 write_files:
   - path: /etc/capuz-bootstrap.env
@@ -22,7 +23,6 @@ write_files:
 runcmd:
   - curl -fsSL https://get.docker.com | sh
   - systemctl enable docker
-  - systemctl enable caddy
   - ufw allow OpenSSH
   - ufw allow 80/tcp
   - ufw allow 443/tcp

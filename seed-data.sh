@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-mkdir -p /app/data
+mkdir -p /app/data /app/data/.open-webui
 
 if [ "${CAPUZ_SKIP_SEED:-}" = "1" ] || [ "${CAPUZ_SKIP_SEED:-}" = "true" ]; then
   exit 0

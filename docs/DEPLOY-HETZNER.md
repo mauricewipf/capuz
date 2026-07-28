@@ -5,7 +5,7 @@ Three ways to run Capuz with a Hetzner VPS:
 | Mode | VPS | Laptop | When to use |
 |------|-----|--------|-------------|
 | **Minimal** | Native nginx + TLS; empty site root | `docker-compose.stack.yml` + SFTP over Tailscale | Smallest VPS; editor stays local |
-| **Reference** | `docker-compose.yml` (nginx + cms-api + openwebui) behind host Caddy | Deploy scripts only | Same layout as local demo; separate containers; empty live site until publish |
+| **Reference** | `docker-compose.yml` (nginx + cms-api + openwebui + edge-router) | Deploy scripts only | Same layout as local demo; in-compose Caddy for TLS; empty live site until publish |
 | **Bundled** | Single container (site + chat + preview) behind host Caddy | Deploy scripts only | One Docker image; needs more RAM (4 GB recommended) |
 
 Compared to Render, you control TLS and DNS yourself — no custom-domain slot limits.
@@ -105,22 +105,30 @@ Publish a page from the editor, then confirm it appears on the live domain.
 
 ## Reference: full stack on the VPS (`docker-compose.yml`)
 
-Multi-container production deploy of the **reference demo stack** — same services as local `docker compose up`, but on the VPS with **host Caddy** for TLS and **no in-compose `editor-router`**. The live site volume starts **empty** (no demo HTML/assets seeded); pages appear after `publish_page` from chat.
+Multi-container production deploy of the **reference demo stack** — same four services as local (`nginx` + `cms-api` + `openwebui` + `edge-router`). Local and prod both use in-compose Caddy for hostname routing; prod publishes `:80`/`:443` with automatic HTTPS (Let's Encrypt via `ACME_EMAIL`). The live site volume starts **empty** (no demo HTML/assets seeded); pages appear after `publish_page` from chat.
 
 ```
 Internet
    │
    ▼
-Host Caddy (:443, Let's Encrypt)     deploy/hetzner/Caddyfile.host.template
-   │  SITE_HOST / www     → 127.0.0.1:8080  (nginx)
-   │  EDITOR_HOST (chat)  → 127.0.0.1:8082  (openwebui)
-   │  PREVIEW_HOST         → 127.0.0.1:3000  (cms-api preview vhost)
+edge-router (Caddy in Docker) :443 TLS + Let's Encrypt
+   │  SITE_HOST / www  → nginx:80
+   │  EDITOR_HOST      → openwebui:8080
+   │  PREVIEW_HOST     → cms-api:3000
    ▼
-docker compose (nginx + cms-api + openwebui)
-   └─ shared volume site-data  (published pages + .drafts; not seeded from public/)
+docker compose (nginx + cms-api + openwebui + edge-router)
+   └─ shared volume site-data  (published pages + .drafts + .open-webui)
+   └─ caddy_data / caddy_config  (certificates — never down -v)
 ```
 
-Local dev still runs all four compose services including `editor-router` on `:8081`; production skips `editor-router` because host Caddy routes by hostname directly.
+Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d` (HTTP on `:8080`).
+
+### Migrating an existing reference VPS (host Caddy → edge-router)
+
+1. Deploy updated code with `ACME_EMAIL` set in `.env.production`.
+2. Install script preflights compose + Caddyfile, builds images, then `systemctl disable --now caddy`.
+3. Starts all four services with `up -d --build --remove-orphans` (no `down -v`).
+4. Expect one automatic ACME certificate issuance; later deploys reuse `caddy_data`.
 
 ### Manual checklist (reference)
 
@@ -128,7 +136,7 @@ Local dev still runs all four compose services including `editor-router` on `:80
 |------|------------|
 | Hetzner Cloud account + API token | Billing / `hcloud` |
 | SSH access to VPS | Public IP or **Tailscale** (`root@your-host.tailnet`) |
-| Production `.env` | Copy `env.production.example` → `.env.production`; set `CAPUZ_STACK=reference` and secrets |
+| Production `.env` | Copy `env.production.example` → `.env.production`; set `CAPUZ_STACK=reference`, secrets, **`ACME_EMAIL`** |
 | DNS A records | `@`, `www`, `chat`, `preview` → VPS IPv4 |
 | Keep mail DNS | Do **not** remove MX/SPF/SRV if you use Hetzner mail |
 
@@ -151,7 +159,7 @@ chmod +x deploy/hetzner/*.sh
 
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
 # Edit: CAPUZ_STACK=reference, OPENROUTER_API_KEY, CMS_API_KEY, WEBUI_SECRET_KEY,
-#       SITE_HOST, EDITOR_HOST, PREVIEW_HOST, WEBUI_URL, PREVIEW_BASE_URL
+#       SITE_HOST, EDITOR_HOST, PREVIEW_HOST, WEBUI_URL, PREVIEW_BASE_URL, ACME_EMAIL
 
 # DNS: A @, www, chat, preview → VPS IP
 ./deploy/hetzner/configure-dns.sh your.domain YOUR_VPS_IP
@@ -168,6 +176,7 @@ curl -sI https://your.domain/ | head -5          # 404 until first publish (expe
 curl -sI https://www.your.domain/ | head -5
 curl -sI https://chat.your.domain/ | head -5       # Open WebUI
 curl -sI https://preview.your.domain/health | head -5
+systemctl is-active caddy                          # inactive (reference uses Docker edge-router)
 ```
 
 Smoke test: log into chat → MCP tools → write draft → preview → publish → page on apex.
@@ -179,31 +188,33 @@ CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh \
   root@your-host.tailnet deploy/hetzner/.env.production
 ```
 
+Never run `docker compose down -v` on production — that deletes `site-data` and Let's Encrypt certificates in `caddy_data`.
+
 ### Files (`deploy/hetzner/` — reference)
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.reference.production.yml` | Localhost port binds, `CAPUZ_SKIP_SEED`, production env overrides |
-| `Caddyfile.host.template` | Host TLS; routes apex/www/chat/preview to three localhost ports |
+| `docker-compose.reference.production.yml` | edge-router `:80`/`:443`, `CAPUZ_SKIP_SEED`, production env, `caddy_data` |
+| `../Caddyfile.prod` | In-compose TLS + hostname routing (repo root) |
 | `deploy-from-local.sh` | SCP `.env` + rsync repo + remote install (defaults `CAPUZ_STACK=reference`) |
-| `install-on-server.sh` | Reference vs bundled path; swap; Docker/Caddy bootstrap |
+| `install-on-server.sh` | Reference vs bundled path; swap; Docker bootstrap; disables host Caddy for reference |
 | `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
-| `env.production.example` | Production template incl. lean Open WebUI flags |
+| `env.production.example` | Production template incl. `ACME_EMAIL` and lean Open WebUI flags |
 
-Root: **`seed-data.sh`** respects `CAPUZ_SKIP_SEED=1` (production nginx skips copying `public/pages` and `public/assets`).
+Root: **`seed-data.sh`** respects `CAPUZ_SKIP_SEED=1` (production nginx skips copying `public/` into live volume).
 
-**Shared disk for `import_chat_file`:** production override mounts `site-data` into Open WebUI at `/app/data` with `DATA_DIR=/app/data/.open-webui` so cms-api can read `webui.db` and chat uploads (same layout as bundled/stack).
+**Shared disk for `import_chat_file`:** Open WebUI mounts `site-data` at `/app/data` with `DATA_DIR=/app/data/.open-webui` so cms-api can read `webui.db` and chat uploads (same layout as bundled/stack).
 
 ### Operations (reference)
 
 ```bash
 ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml ps'
 ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f openwebui'
-ssh root@YOUR_VPS 'journalctl -u caddy -f'
+ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f edge-router'
 ssh root@YOUR_VPS 'docker stats --no-stream'
 ```
 
-Firewall: **80**, **443** public. App containers listen on **127.0.0.1** only.
+Firewall: **80**, **443** public. Only **edge-router** publishes those ports; nginx/cms-api/openwebui stay on the Docker network.
 
 ---
 
@@ -287,16 +298,15 @@ CAPUZ_STACK=bundled ./deploy/hetzner/deploy-from-local.sh root@YOUR_VPS_IP deplo
 
 | File | Purpose |
 |------|---------|
-| `cloud-init.yaml` | First boot: Docker, Caddy, UFW, `/opt/capuz` |
+| `cloud-init.yaml` | First boot: Docker, UFW, `/opt/capuz` (host Caddy installed by install script for bundled only) |
 | `create-server.sh` | `hcloud server create` wrapper |
 | `deploy-from-local.sh` | SCP `.env` + remote install |
-| `install-on-server.sh` | Clone/pull repo, Caddyfile, `docker compose up` |
+| `install-on-server.sh` | Clone/pull repo; reference uses edge-router; bundled uses host Caddy |
 | `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
 | `Caddyfile.template` | Bundled: host TLS → single container on `8081` |
-| `Caddyfile.host.template` | Reference: host TLS → nginx / openwebui / cms-api ports |
 | `docker-compose.production.yml` | Bundled: bind `8081` to localhost, `restart: unless-stopped` |
-| `docker-compose.reference.production.yml` | Reference: three services, localhost binds, skip seed |
-| `env.production.example` | Production env template (`CAPUZ_STACK`, lean Open WebUI flags) |
+| `docker-compose.reference.production.yml` | Reference: edge-router `:80`/`:443`, skip seed, `caddy_data` |
+| `env.production.example` | Production env template (`CAPUZ_STACK`, `ACME_EMAIL`, lean Open WebUI flags) |
 
 ### Operations (bundled)
 
@@ -325,9 +335,11 @@ Firewall (bundled cloud-init): **22**, **80**, **443**. App listens on **127.0.0
 | Minimal: TLS / empty site | DNS `@`/`www` → VPS; `certbot` / nginx; publish from editor (root starts with placeholder `index.html`) |
 | Reference: apex 404 | Expected until first `publish_page`; `CAPUZ_SKIP_SEED=1` — no demo seed |
 | Reference: chat `/error` or 502 | Open WebUI not ready; check `PORT=8080` inside container (not `8081` from laptop `.env`); compose logs |
-| Reference: preview 502 | cms-api health on `127.0.0.1:3000`; `PREVIEW_HOST` matches DNS |
-| Reference / bundled: TLS error on chat/preview | DNS A records; `systemctl status caddy` |
-| Reference / bundled: 502 from Caddy | Containers not up; compose logs |
+| Reference: preview 502 | `docker compose … logs edge-router cms-api`; `PREVIEW_HOST` matches DNS |
+| Reference: TLS / ACME fails | DNS A records; `ACME_EMAIL` set; ports 80/443 free (`systemctl is-active caddy` should be inactive); `logs edge-router` |
+| Reference: port 80/443 in use | Stop host Caddy: `systemctl disable --now caddy` |
+| Bundled: TLS error on chat/preview | DNS A records; `systemctl status caddy` |
+| Bundled: 502 from host Caddy | Containers not up; compose logs |
 | Chat slow on first visit | Open WebUI still starting |
 
 ## Security notes
@@ -335,6 +347,7 @@ Firewall (bundled cloud-init): **22**, **80**, **443**. App listens on **127.0.0
 - Set `ENABLE_SIGNUP=false` in production / local `.env`.
 - Use strong `CMS_API_KEY` and `WEBUI_SECRET_KEY`.
 - Minimal: prefer Tailscale-only SSH after join; do not expose CMS/editor ports on the VPS.
-- Reference / bundled: keep `/opt/capuz/.env` mode `600`; app ports on localhost only.
+- Reference: only edge-router publishes 80/443; never `docker compose down -v` (wipes site + certs).
+- Bundled: keep `/opt/capuz/.env` mode `600`; app port on localhost only.
 
 See also [README.md](../README.md) and [ARCHITECTURE.md](../ARCHITECTURE.md).

@@ -2,13 +2,13 @@
 
 ## Multi-Service Design
 
-This application uses a microservices architecture with separate Docker services (nginx, cms-api, openwebui, and a Caddy editor router).
+This application uses a microservices architecture with separate Docker services (nginx, cms-api, openwebui, and an in-compose Caddy **edge-router**).
 
 ### Services
 
 #### 1. nginx (Static Web Server)
 - **Image**: `nginx:alpine`
-- **Port**: 8080 (maps to internal 80)
+- **Internal port**: 80 (published only via edge-router)
 - **Purpose**: Serves static HTML files only
 - **Volume**: Reads from shared `site-data:/app/data`
 - **Dockerfile**: `Dockerfile.nginx`
@@ -21,7 +21,7 @@ This application uses a microservices architecture with separate Docker services
 
 #### 2. cms-api (Backend API)
 - **Image**: `oven/bun:1-alpine`
-- **Port**: 3000
+- **Internal port**: 3000 (not published to the host by default)
 - **Purpose**: File management API and MCP server
 - **Volume**: Reads/writes shared `site-data:/app/data`
 - **Dockerfile**: `Dockerfile.api`
@@ -49,21 +49,23 @@ This application uses a microservices architecture with separate Docker services
 - `DELETE /api/pages/{path}` - Delete published page
 - `POST /mcp` - MCP protocol handler
 
-#### 3. editor-router (Caddy)
+#### 3. edge-router (Caddy)
 - **Image**: `caddy:2-alpine`
-- **Port**: 8081
-- **Purpose**: Routes by hostname on the editor port
-- **Config**: `Caddyfile`
+- **Local port**: 8080 (HTTP); **prod ports**: 80 + 443 (HTTPS + Let's Encrypt)
+- **Purpose**: Single edge — hostname routing to nginx / openwebui / cms-api
+- **Config**: `Caddyfile.dev` (local) or `Caddyfile.prod` (production)
 
 **Routing**:
-- `preview.localhost:8081` → cms-api:3000 (preview vhost)
-- `:8081` → openwebui:8080 (AI editor)
+- `SITE_HOST` / `www` → nginx:80
+- `EDITOR_HOST` → openwebui:8080
+- `PREVIEW_HOST` → cms-api:3000 (preview vhost)
 
 #### 4. openwebui (AI Editor)
 - **Image**: `openwebui/open-webui`
-- **Internal port**: 8080 (exposed via editor-router on 8081)
+- **Internal port**: 8080 (exposed via edge-router)
 - **Purpose**: AI-powered content editor
 - **Dockerfile**: `Dockerfile.openwebui`
+- **Volume**: shared `site-data:/app/data` with `DATA_DIR=/app/data/.open-webui`
 
 **Responsibilities**:
 - Provide web-based AI chat interface
@@ -78,39 +80,41 @@ Open WebUI connects to cms-api at `http://cms-api:3000/mcp` using Docker's inter
 
 ### Reading Content
 ```
-User Browser → nginx:80 → /app/data/index.html → Response
+User Browser → edge-router → nginx:80 → /app/data/index.html → Response
 ```
 
 ### Editing Content via AI
 ```
-User → openwebui → MCP → cms-api:3000 → /app/data/.drafts/page.html (draft)
-User → preview.localhost:8081 → cms-api preview vhost → draft or published HTML
-User publishes → cms-api → /app/data/page.html → nginx:80 serves live file
+User → edge-router → openwebui → MCP → cms-api:3000 → /app/data/.drafts/page.html (draft)
+User → preview.localhost:8080 → edge-router → cms-api preview vhost → draft or published HTML
+User publishes → cms-api → /app/data/page.html → nginx serves live file
 ```
 
 ### Preview Browsing
 ```
-User Browser → preview.localhost:8081 → Caddy → cms-api:3000 (PREVIEW_HOST)
+User Browser → PREVIEW_HOST → edge-router → cms-api:3000 (PREVIEW_HOST)
   → read .drafts/page.html if present, else published page
   → assets from /app/data/assets/ (published)
 ```
 
 ### Direct API Access
 ```
+# Optional local debug override publishes 127.0.0.1:3000
 curl → cms-api:3000/api/pages → /app/data → JSON Response
 ```
 
 ## Shared Storage
 
-All three services mount the same Docker volume:
+All reference-stack app services mount the same Docker volume:
 - **Volume Name**: `site-data`
 - **Mount Point**: `/app/data`
 - **Contents**:
   - HTML pages (root level and subdirectories)
   - `.drafts/` - unpublished page drafts (cms-api only; hidden from published listings)
   - `.components/` - reusable HTML component library (hidden from published listings; blocked by nginx)
+  - `.open-webui/` - Open WebUI data (chat DB, uploads)
   - CSS, JS, images under `assets/`, etc.
-- **Seed source** (repo): `public/pages/` → `/app/data/`, `public/assets/` → `/app/data/assets/` via `seed-data.sh` on first nginx start
+- **Seed source** (repo): `public/*.html|*.xml` → `/app/data/`, `public/assets/` → `/app/data/assets/` via `seed-data.sh` on first nginx start
 
 ## Network Communication
 
@@ -120,11 +124,11 @@ Services communicate via Docker's internal bridge network:
 - `http://nginx:80` - Web server accessible from other services
 - `http://openwebui:8080` - Editor accessible from other services
 
-External access:
-- `localhost:8080` → nginx (public site)
-- `localhost:8081` → editor-router → Open WebUI
-- `preview.localhost:8081` → editor-router → cms-api preview
-- `localhost:3000` → cms-api (optional, for direct API access)
+External access (local):
+- `localhost:8080` → edge-router → nginx (public site)
+- `chat.localhost:8080` → edge-router → Open WebUI
+- `preview.localhost:8080` → edge-router → cms-api preview
+- cms-api is **not** published on the host unless `docker-compose.local-debug.yml` is used
 
 ## Advantages of This Architecture
 
@@ -173,16 +177,16 @@ Each service can be deployed as a separate pod with:
 For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.stack.sftp.yml` (Hetzner **minimal** mode in [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)), or use the reference or bundled VPS setups below.
 
 ### Reference stack on Hetzner VPS
-Deploy the same multi-service layout as local `docker compose up` (`docker-compose.yml`) to a VPS with **host Caddy** for TLS. Production uses `deploy/hetzner/docker-compose.reference.production.yml`:
+Deploy the same four-service layout as local (`docker-compose.yml` + override). Local and prod both use in-compose **edge-router** (Caddy). Production publishes `:80`/`:443` with auto-HTTPS via `Caddyfile.prod` and `ACME_EMAIL`; local publishes `:8080` with `Caddyfile.dev`.
 
 | Component | Role |
 |-----------|------|
-| Host Caddy | TLS on `:443`; routes `SITE_HOST` / `www` → nginx, `EDITOR_HOST` → openwebui, `PREVIEW_HOST` → cms-api |
-| `nginx` | Live published pages (`127.0.0.1:8080`); **`CAPUZ_SKIP_SEED=1`** — no demo seed from `public/` |
-| `cms-api` | API, MCP, preview vhost (`127.0.0.1:3000`) |
-| `openwebui` | Chat UI (`127.0.0.1:8082` → container `:8080`) |
+| `edge-router` | TLS (prod) / HTTP (local); routes by `SITE_HOST` / `EDITOR_HOST` / `PREVIEW_HOST` |
+| `nginx` | Live published pages; **`CAPUZ_SKIP_SEED=1`** in prod — no demo seed from `public/` |
+| `cms-api` | API, MCP, preview vhost (Docker network only) |
+| `openwebui` | Chat UI on shared `site-data` |
 
-The in-compose **`editor-router`** (Caddy on `:8081`) runs locally only; on the VPS, host Caddy replaces it. Set `CAPUZ_STACK=reference` in production env. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
+No host systemd Caddy for the reference stack. Set `CAPUZ_STACK=reference` in production env. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
 ### Bundled setup (Render or VPS)
 For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. On a **Hetzner VPS**, use **minimal** (local stack + remote nginx), **reference** (`docker-compose.yml` + `docker-compose.reference.production.yml`), or **bundled** behind host Caddy (`deploy/hetzner/docker-compose.production.yml`) — see [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md). Bundled one container runs:
@@ -199,13 +203,13 @@ Caddy listens on `$PORT` and routes by `Host`. Shared disk at `/app/data` holds 
 
 ### Local Development
 ```bash
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 ```
 
 ### Production Considerations
-1. **Add a reverse proxy** (Traefik, Caddy) for SSL/TLS
-2. **Separate the data volume** backup strategy
-3. **Environment-specific configs** using docker-compose.override.yml
+1. **Reference stack**: in-compose edge-router handles Let's Encrypt (`ACME_EMAIL`, `caddy_data` volume)
+2. **Separate the data volume** backup strategy — never `docker compose down -v` in prod
+3. **Environment-specific configs** using compose overrides
 4. **Health checks** are already configured
 5. **Logging**: Use Docker logging drivers or ship to external service
 

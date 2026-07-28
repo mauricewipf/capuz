@@ -28,6 +28,7 @@ PREVIEW_HOST="$(read_env PREVIEW_HOST)"
 OPENROUTER_API_KEY="$(read_env OPENROUTER_API_KEY)"
 CMS_API_KEY="$(read_env CMS_API_KEY)"
 WEBUI_SECRET_KEY="$(read_env WEBUI_SECRET_KEY)"
+ACME_EMAIL="$(read_env ACME_EMAIL)"
 
 for var in SITE_HOST EDITOR_HOST PREVIEW_HOST OPENROUTER_API_KEY CMS_API_KEY WEBUI_SECRET_KEY; do
   eval "val=\$$var"
@@ -37,9 +38,14 @@ for var in SITE_HOST EDITOR_HOST PREVIEW_HOST OPENROUTER_API_KEY CMS_API_KEY WEB
   fi
 done
 
-export SITE_HOST EDITOR_HOST PREVIEW_HOST
+if [ "$CAPUZ_STACK" = "reference" ] && [ -z "$ACME_EMAIL" ]; then
+  echo "Set ACME_EMAIL in $ENV_FILE before running reference install (Let's Encrypt contact)." >&2
+  exit 1
+fi
 
-ensure_packages() {
+export SITE_HOST EDITOR_HOST PREVIEW_HOST ACME_EMAIL
+
+ensure_docker() {
   export DEBIAN_FRONTEND=noninteractive
   if ! command -v docker >/dev/null 2>&1; then
     echo "Installing Docker..."
@@ -47,6 +53,15 @@ ensure_packages() {
     systemctl enable docker
     systemctl start docker
   fi
+  if ! command -v envsubst >/dev/null 2>&1; then
+    apt-get update -qq
+    apt-get install -y -qq gettext-base
+  fi
+}
+
+ensure_host_caddy() {
+  # Bundled stack only — reference stack uses in-compose edge-router for TLS.
+  export DEBIAN_FRONTEND=noninteractive
   if ! command -v caddy >/dev/null 2>&1; then
     echo "Installing Caddy..."
     apt-get update -qq
@@ -56,11 +71,15 @@ ensure_packages() {
     apt-get update -qq
     apt-get install -y -qq caddy
   fi
-  if ! command -v envsubst >/dev/null 2>&1; then
-    apt-get update -qq
-    apt-get install -y -qq gettext-base
-  fi
   systemctl enable caddy
+}
+
+disable_host_caddy() {
+  # Free :80/:443 for in-compose edge-router (reference stack).
+  if command -v caddy >/dev/null 2>&1 || systemctl list-unit-files caddy.service >/dev/null 2>&1; then
+    echo "Disabling host Caddy (reference stack uses Docker edge-router)..."
+    systemctl disable --now caddy 2>/dev/null || true
+  fi
 }
 
 ensure_swap() {
@@ -102,34 +121,39 @@ fi
 
 cp "$ENV_FILE" "$APP_DIR/.env"
 
-ensure_packages
+ensure_docker
 ensure_swap
 
 if [ "$CAPUZ_STACK" = "reference" ]; then
   stop_native_nginx
-
-  envsubst '${SITE_HOST} ${EDITOR_HOST} ${PREVIEW_HOST}' \
-    < "$APP_DIR/deploy/hetzner/Caddyfile.host.template" \
-    > /etc/caddy/Caddyfile
-
   cd "$APP_DIR"
-  docker compose -f docker-compose.yml down -v 2>/dev/null || true
-  docker compose -f docker-compose.bundled.yml down -v 2>/dev/null || true
 
-  docker compose \
-    -f docker-compose.yml \
-    -f deploy/hetzner/docker-compose.reference.production.yml \
-    up -d --build nginx cms-api openwebui
+  COMPOSE=(docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml)
 
-  systemctl enable caddy
-  if systemctl is-active --quiet caddy; then
-    systemctl reload caddy
-  else
-    systemctl start caddy
-  fi
+  echo "Preflight: validating merged compose config..."
+  "${COMPOSE[@]}" config >/dev/null
+
+  echo "Preflight: validating Caddyfile.prod..."
+  docker run --rm \
+    -e SITE_HOST="$SITE_HOST" \
+    -e EDITOR_HOST="$EDITOR_HOST" \
+    -e PREVIEW_HOST="$PREVIEW_HOST" \
+    -e ACME_EMAIL="$ACME_EMAIL" \
+    -v "$APP_DIR/Caddyfile.prod:/etc/caddy/Caddyfile:ro" \
+    caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+  echo "Preflight: building images..."
+  "${COMPOSE[@]}" build
+
+  disable_host_caddy
+
+  # Prefer up without volume wipe. Never use down -v here (site-data + caddy_data).
+  docker compose -f docker-compose.bundled.yml down --remove-orphans 2>/dev/null || true
+  "${COMPOSE[@]}" up -d --build --remove-orphans
 
   echo ""
-  echo "Reference stack started (nginx + cms-api + openwebui). Host Caddy serves TLS for:"
+  echo "Reference stack started (nginx + cms-api + openwebui + edge-router)."
+  echo "In-compose Caddy (edge-router) serves TLS for:"
   echo "  https://${SITE_HOST} (live site — empty until publish)"
   echo "  https://www.${SITE_HOST}"
   echo "  https://${EDITOR_HOST} (Open WebUI)"
@@ -137,7 +161,10 @@ if [ "$CAPUZ_STACK" = "reference" ]; then
   echo ""
   echo "First Open WebUI boot can take several minutes. Check:"
   echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f openwebui"
+  echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f edge-router"
 else
+  ensure_host_caddy
+
   envsubst '${SITE_HOST} ${EDITOR_HOST} ${PREVIEW_HOST}' \
     < "$APP_DIR/deploy/hetzner/Caddyfile.template" \
     > /etc/caddy/Caddyfile
@@ -146,7 +173,7 @@ else
   docker compose \
     -f docker-compose.bundled.yml \
     -f deploy/hetzner/docker-compose.production.yml \
-    up -d --build
+    up -d --build --remove-orphans
 
   systemctl enable caddy
   if systemctl is-active --quiet caddy; then

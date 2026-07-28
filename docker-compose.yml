@@ -1,12 +1,16 @@
+# Reference stack base (nginx + cms-api + openwebui + edge-router).
+# Not runnable alone — use an override:
+#   Local:  docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
+#   Prod:   docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml up -d --build
 services:
   nginx:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.nginx
-    ports:
-      - "8080:80"
     environment:
       PORT: 80
+      CAPUZ_SKIP_SEED: ${CAPUZ_SKIP_SEED:-1}
     volumes:
       - site-data:/app/data
     depends_on:
@@ -18,20 +22,28 @@ services:
       retries: 3
 
   cms-api:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.api
-    ports:
-      - "3000:3000"
     environment:
       API_PORT: 3000
-      DATA_ROOT: /app/data
+      DATA_ROOT: ${DATA_ROOT:-/app/data}
+      DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
       CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
-      STORAGE_BACKEND: fs
-      PREVIEW_HOST: preview.localhost
-      PREVIEW_BASE_URL: http://preview.localhost:8081
-      DRAFTS_DIR: .drafts
-      COMPONENTS_DIR: .components
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
+      SFTP_HOST: ${SFTP_HOST:-}
+      SFTP_PORT: ${SFTP_PORT:-22}
+      SFTP_USER: ${SFTP_USER:-}
+      SFTP_KEY_PATH: ${SFTP_KEY_PATH:-/keys/id_ed25519}
+      SFTP_REMOTE_ROOT: ${SFTP_REMOTE_ROOT:-}
+      SITE_HOST: ${SITE_HOST:-localhost}
+      EDITOR_HOST: ${EDITOR_HOST:-chat.localhost}
+      PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
+      PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8080}
+      SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8080}
+      DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
+      COMPONENTS_DIR: ${COMPONENTS_DIR:-.components}
     volumes:
       - site-data:/app/data
     healthcheck:
@@ -40,24 +52,16 @@ services:
       timeout: 5s
       retries: 3
 
-  editor-router:
-    image: caddy:2-alpine
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-    depends_on:
-      - cms-api
-      - openwebui
-
   openwebui:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.openwebui
     env_file: .env
     environment:
-      # Internal listen port (Caddyfile → openwebui:8080). Override .env PORT=8081 (stack/bundled edge port).
+      # Internal listen port (edge-router → openwebui:8080). Override .env PORT=8081 (stack/bundled edge port).
       PORT: "8080"
+      DATA_DIR: /app/data/.open-webui
       OPENAI_API_BASE_URL: https://openrouter.ai/api/v1
       OPENAI_API_KEY: ${OPENROUTER_API_KEY}
       ENABLE_OPENAI_API: "true"
@@ -65,13 +69,26 @@ services:
       DEFAULT_MODELS: minimax/minimax-m3
       DEFAULT_MODEL_PARAMS: '{"function_calling":"native"}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
-      WEBUI_URL: http://localhost:8081
+      WEBUI_URL: ${WEBUI_URL:-http://chat.localhost:8080}
       TOOL_SERVER_CONNECTIONS: '[{"type":"mcp","url":"http://cms-api:3000/mcp","path":"/mcp","auth_type":"bearer","key":"${CMS_API_KEY}","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}}]'
     volumes:
-      - openwebui-data:/app/backend/data
+      - site-data:/app/data
     depends_on:
       - cms-api
 
+  edge-router:
+    restart: unless-stopped
+    image: caddy:2-alpine
+    environment:
+      SITE_HOST: ${SITE_HOST:-localhost}
+      EDITOR_HOST: ${EDITOR_HOST:-chat.localhost}
+      PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-hello@example.com}
+    depends_on:
+      - nginx
+      - cms-api
+      - openwebui
+    # ports + Caddyfile mount + caddy_data/caddy_config: defined in local/prod overrides
+
 volumes:
   site-data:
-  openwebui-data:

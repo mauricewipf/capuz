@@ -1,0 +1,7 @@
+# Optional local override — expose cms-api on localhost only for curl / MCP debugging.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.local-debug.yml up -d
+services:
+  cms-api:
+    ports:
+      - "127.0.0.1:3000:3000"

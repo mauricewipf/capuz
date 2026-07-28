@@ -1,0 +1,10 @@
+# Optional override: mount SSH key for STORAGE_BACKEND=sftp (local reference stack).
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.local.sftp.yml up --build -d
+#
+# Requires SFTP_KEY_HOST_PATH in .env (absolute path to an existing private key file).
+
+services:
+  cms-api:
+    volumes:
+      - ${SFTP_KEY_HOST_PATH:?Set SFTP_KEY_HOST_PATH in .env to your SSH private key file}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro

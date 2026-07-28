@@ -10,60 +10,72 @@ cd capuz
 cp .env.example .env
 # Edit .env and set OPENROUTER_API_KEY
 
-# 3. Start services
-docker compose up --build -d
+# 3. Start services (base compose + local override — required)
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
 # 4. Open in browser
-open http://localhost:8080    # Public site
-open http://localhost:8081    # AI Editor
+open http://localhost:8080          # Public site
+open http://chat.localhost:8080     # AI Editor
+open http://preview.localhost:8080  # Draft preview
 ```
+
+On Linux, ensure `chat.localhost` and `preview.localhost` resolve (macOS usually does via `*.localhost`).
 
 ## URLs
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| **nginx** | http://localhost:8080 | Public website |
-| **editor-router** | http://localhost:8081 | Caddy host router (Open WebUI + preview) |
-| **openwebui** | http://localhost:8081 | AI editor (via editor-router) |
-| **preview** | http://preview.localhost:8081 | Draft page preview (via editor-router) |
-| **cms-api** | http://localhost:3000 | API (optional) |
+| **edge-router** | http://localhost:8080 | In-compose Caddy — only published port |
+| **nginx** (via edge) | http://localhost:8080 | Public website |
+| **openwebui** (via edge) | http://chat.localhost:8080 | AI editor |
+| **preview** (via edge) | http://preview.localhost:8080 | Draft page preview |
+| **cms-api** | (not published) | Internal only; optional debug override below |
+
+Optional API on localhost:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.local-debug.yml up -d
+curl http://127.0.0.1:3000/health
+```
 
 ## Common Commands
 
 ```bash
 # Start everything
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
 # View logs
-docker compose logs -f              # All services
-docker compose logs -f nginx        # Just nginx
-docker compose logs -f cms-api      # Just API
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs -f
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs -f nginx
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs -f cms-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs -f edge-router
 
-# Check status
-docker compose ps
+# Check status / merged config
+docker compose -f docker-compose.yml -f docker-compose.local.yml ps
+docker compose -f docker-compose.yml -f docker-compose.local.yml config
 
 # Stop everything
-docker compose down
+docker compose -f docker-compose.yml -f docker-compose.local.yml down
 
 # Restart services
-docker compose restart
+docker compose -f docker-compose.yml -f docker-compose.local.yml restart
 
 # Open shell in a service
-docker compose exec nginx sh
-docker compose exec cms-api sh
-docker compose exec openwebui sh
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec nginx sh
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api sh
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec openwebui sh
 
 # Rebuild after code changes
-docker compose build                # All services
-docker compose build cms-api        # Just API
+docker compose -f docker-compose.yml -f docker-compose.local.yml build
+docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api
 
-# Clean up (removes data!)
-docker compose down -v
+# Clean up (removes data volumes!)
+docker compose -f docker-compose.yml -f docker-compose.local.yml down -v
 ```
 
 ## Editor Setup (First Use)
 
-1. Open http://localhost:8081
+1. Open http://chat.localhost:8080
 2. Click "Sign Up" and create an admin account
 3. Go to **Settings** → **Integrations**
 4. Verify **CMS Pages** MCP server is connected
@@ -75,169 +87,96 @@ docker compose down -v
 
 ## API Usage (Optional)
 
+With the debug override (or from inside the cms-api container):
+
 ```bash
 # List all pages
-curl http://localhost:3000/api/pages
+curl http://127.0.0.1:3000/api/pages
 
-# Read a page
-curl http://localhost:3000/api/pages/index.html
+# Health check
+curl http://127.0.0.1:3000/health
 
-# Write a page (requires API key)
+# Save a draft (requires auth)
 curl -H "Authorization: Bearer dev-local-key" \
-     -X PUT \
-     -d '<html>...</html>' \
-     http://localhost:3000/api/pages/test.html
+  -X PUT -H "Content-Type: text/html" \
+  -d '<!DOCTYPE html><html><body>ok</body></html>' \
+  http://127.0.0.1:3000/api/pages/agent-test.html
+```
 
-# Delete a page
-curl -H "Authorization: Bearer dev-local-key" \
-     -X DELETE \
-     http://localhost:3000/api/pages/test.html
+Without the debug override, use:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api \
+  wget -qO- http://127.0.0.1:3000/health
 ```
 
 ## Architecture Overview
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                         Docker Compose                            │
-├──────────────┬──────────────┬────────────────────────────────────┤
-│ nginx:8080   │ cms-api:3000 │ editor-router:8081                 │
-│ Static site  │ Bun API + MCP│  ├─ openwebui:8080 (AI editor)     │
-│              │              │  └─ cms-api:3000 (draft preview)   │
-└──────┬───────┴──────┬───────┴────────────────────────────────────┘
-       │              │
-       └──────────────┘
-              │
-      Shared volume /app/data
-      (pages, drafts, assets)
+Browser
+   │
+   ▼
+edge-router (Caddy) :8080
+   ├── localhost / www.localhost → nginx:80
+   ├── chat.localhost            → openwebui:8080
+   └── preview.localhost         → cms-api:3000
 ```
 
-## Service Details
-
-### nginx
-- **Image**: nginx:alpine
-- **Port**: 8080 → 80
-- **Purpose**: Serve HTML files
-- **Dockerfile**: `Dockerfile.nginx`
-
-### cms-api
-- **Image**: oven/bun:1-alpine
-- **Port**: 3000
-- **Purpose**: File management API + MCP server
-- **Dockerfile**: `Dockerfile.api`
-
-### editor-router
-- **Image**: caddy:2-alpine
-- **Port**: 8081
-- **Purpose**: Route `localhost:8081` to Open WebUI; `preview.localhost:8081` to cms-api preview
-- **Config**: `Caddyfile`
-
-### openwebui
-- **Image**: `openwebui/open-webui:latest` (official Open WebUI Docker image)
-- **Port**: 8080 (internal; exposed as http://localhost:8081 via editor-router)
-- **Purpose**: AI-powered editor; MCP tool server **CMS Pages** preconfigured in `docker-compose.yml`
-- **Dockerfile**: `Dockerfile.openwebui` (thin wrapper on the official image)
-
-## Directory Structure
-
-```
-capuz/
-├── api/                    # API source code (JavaScript / Bun)
-│   ├── src/
-│   │   ├── server.js      # Main API server
-│   │   ├── mcp.js         # MCP server implementation
-│   │   ├── paths.js       # Path validation
-│   │   ├── auth.js        # API key auth
-│   │   ├── storage/       # Storage backends (fs, sftp, git, s3)
-│   │   └── ...
-│   └── package.json
-├── public/                 # Demo site seed data
-│   ├── pages/              # HTML/XML (flattened into /app/data at runtime)
-│   └── assets/             # CSS, JS, favicon
-├── Dockerfile.nginx        # nginx image
-├── Dockerfile.api          # API image
-├── Dockerfile.openwebui    # Open WebUI wrapper (FROM openwebui/open-webui:latest)
-├── docker-compose.yml      # Service orchestration
-├── Caddyfile               # editor-router host routing (Open WebUI + preview)
-├── nginx.conf              # nginx configuration
-├── README.md              # Overview
-├── ARCHITECTURE.md        # Detailed architecture
-└── QUICKSTART.md         # This file
-```
-
-## Environment Variables
-
-Required:
-- `OPENROUTER_API_KEY` - Your OpenRouter API key
-
-Optional (with defaults):
-- `CMS_API_KEY` - API authentication key (default: dev-local-key)
-- `WEBUI_SECRET_KEY` - Session secret (default: dev-secret-change-me)
-- `WEBUI_URL` - Editor URL (default: http://localhost:8081)
-- `ENABLE_SIGNUP` - Allow account creation (default: true)
-- `DEFAULT_MODELS` - Available models (default: minimax/minimax-m3)
+Shared volume `site-data` holds published pages, drafts, assets, and Open WebUI data (`.open-webui/`).
 
 ## Troubleshooting
 
-### Port Already in Use
+### Port already in use
+
 ```bash
-# Find what's using the port
 lsof -i :8080
-lsof -i :8081
-lsof -i :3000
-
-# Change ports in docker-compose.yml
-ports:
-  - "8082:80"  # Use 8082 instead of 8080
 ```
 
-### Services Not Starting
-```bash
-# Check Docker is running
-docker ps
-
-# View detailed logs
-docker compose logs --tail=100
-
-# Rebuild from scratch
-docker compose down -v
-docker compose up --build
-```
-
-### Can't Edit Pages
-1. Check Open WebUI MCP connection:
-   - Settings → Integrations → CMS Pages
-2. Verify API is reachable:
-   ```bash
-   docker compose exec openwebui wget -O- http://cms-api:3000/health
-   ```
-
-### No Pages Showing
-```bash
-# Verify seed data
-docker compose exec nginx ls -la /app/data
-
-# Check API
-curl http://localhost:3000/api/pages
-```
-
-## Reset Everything
+### Services not starting
 
 ```bash
-# Remove all containers and data
-docker compose down -v
-
-# Then restart
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs
+docker compose -f docker-compose.yml -f docker-compose.local.yml ps
 ```
+
+### Open WebUI not connecting to MCP
+
+Check `CMS_API_KEY` matches in `.env` and that cms-api is healthy:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs cms-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health
+```
+
+### chat.localhost / preview.localhost does not resolve
+
+Add to `/etc/hosts` if needed:
+
+```
+127.0.0.1 chat.localhost preview.localhost www.localhost
+```
+
+### preview.localhost opens Tailscale login / 502 Bad Gateway
+
+**Cause:** With `STORAGE_BACKEND=sftp`, preview reads pages over SSH from your VPS. If the VPS was set up with `tailscale up --ssh`, **Tailscale SSH** intercepts port 22 and requires a browser login at `login.tailscale.com` — cms-api cannot complete that, times out (~10s), and edge-router returns 502.
+
+**Fix (VPS — keep SFTP backend):** On the Hetzner machine, disable Tailscale SSH so regular sshd + your SFTP key in `authorized_keys` handles connections:
+
+```bash
+tailscale set --ssh=false
+```
+
+Verify from your laptop (should print `ok`, not a Tailscale login URL):
+
+```bash
+ssh -i ~/.ssh/capuz_hetzner_sftp root@YOUR_MACHINE.tailXXXX.ts.net echo ok
+```
+
+**Alternative (local reference stack only):** Use the default local volume instead of remote SFTP — in `.env` set `STORAGE_BACKEND=fs` and start without `docker-compose.local.sftp.yml`. SFTP + remote publish is intended for `docker-compose.stack.yml` (see `deploy/hetzner/minimal/env.local.example`).
 
 ## Next Steps
 
-- Read `ARCHITECTURE.md` for technical details
-- Check `README.md` for deployment options
-- Browse code in `api/src/` to understand the API
-
-## Getting Help
-
-1. Check logs: `docker compose logs -f`
-2. Check status: `docker compose ps`
-3. Review architecture: `ARCHITECTURE.md`
+- Edit pages via Open WebUI at http://chat.localhost:8080
+- Preview drafts at http://preview.localhost:8080
+- Publish to make pages live at http://localhost:8080
+- See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md) for production deploy

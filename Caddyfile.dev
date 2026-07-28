@@ -1,0 +1,19 @@
+# Local reference stack — HTTP only on :8080 (no TLS / ACME).
+# Mounted by docker-compose.local.yml into edge-router.
+
+{
+	email {$ACME_EMAIL}
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+http://{$SITE_HOST}:8080, http://www.{$SITE_HOST}:8080 {
+	reverse_proxy nginx:80
+}
+
+http://{$EDITOR_HOST}:8080 {
+	reverse_proxy openwebui:8080
+}
+
+http://{$PREVIEW_HOST}:8080 {
+	reverse_proxy cms-api:3000
+}

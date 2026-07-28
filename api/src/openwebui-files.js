@@ -111,7 +111,7 @@ function lookupFileRow(dataDir, { fileId, fileName }) {
 export function readChatFileBytes({ fileId, fileName }) {
   if (!isOpenWebUiDataAvailable()) {
     throw new PathError(
-      "Chat file import requires Open WebUI data on shared disk (bundled/stack). Not available in this deployment.",
+      "Chat file import requires Open WebUI data on shared disk (bundled, stack, or reference production with DATA_DIR). Not available in this deployment.",
       503,
     );
   }

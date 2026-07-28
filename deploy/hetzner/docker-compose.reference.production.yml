@@ -15,6 +15,8 @@ services:
     environment:
       CMS_API_KEY: ${CMS_API_KEY}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
+      DATA_ROOT: ${DATA_ROOT:-/app/data}
+      DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
       PREVIEW_HOST: ${PREVIEW_HOST:-preview.just-html.com}
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-https://preview.just-html.com}
       SITE_BASE_URL: ${SITE_BASE_URL:-https://just-html.com}
@@ -23,8 +25,11 @@ services:
     restart: unless-stopped
     ports: !override
       - "127.0.0.1:8082:8080"
+    volumes: !override
+      - site-data:/app/data
     environment:
       PORT: "8080"
+      DATA_DIR: /app/data/.open-webui
       WEBUI_URL: ${WEBUI_URL:-https://chat.just-html.com}
       ENABLE_SIGNUP: "false"
       OPENAI_API_KEY: ${OPENROUTER_API_KEY}

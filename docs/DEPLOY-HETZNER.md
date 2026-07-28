@@ -192,6 +192,8 @@ CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh \
 
 Root: **`seed-data.sh`** respects `CAPUZ_SKIP_SEED=1` (production nginx skips copying `public/pages` and `public/assets`).
 
+**Shared disk for `import_chat_file`:** production override mounts `site-data` into Open WebUI at `/app/data` with `DATA_DIR=/app/data/.open-webui` so cms-api can read `webui.db` and chat uploads (same layout as bundled/stack).
+
 ### Operations (reference)
 
 ```bash

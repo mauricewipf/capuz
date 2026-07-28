@@ -357,7 +357,7 @@ export function createMcpServer() {
 
   server.tool(
     "import_chat_file",
-    "Copy a chat-attached Open WebUI file into site assets (bundled/stack shared disk). Use when the user attaches a file and asks to add it to a page. On success, put the returned `url` EXACTLY into img src or href — keep the file extension (asset URLs are not extensionless like HTML pages). Then edit the page draft.",
+    "Copy a chat-attached Open WebUI file into site assets (shared site-data volume). Use when the user attaches a file and asks to add it to a page. On success, put the returned `url` EXACTLY into img src or href — keep the file extension (asset URLs are not extensionless like HTML pages). Then edit the page draft.",
     {
       fileId: z
         .string()

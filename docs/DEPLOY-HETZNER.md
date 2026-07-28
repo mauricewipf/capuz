@@ -194,14 +194,14 @@ Never run `docker compose down -v` on production — that deletes `site-data` an
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.reference.production.yml` | edge-router `:80`/`:443`, `CAPUZ_SKIP_SEED`, production env, `caddy_data` |
+| `docker-compose.reference.production.yml` | edge-router `:80`/`:443`, `CAPUZ_SEED`, production env, `caddy_data` |
 | `../Caddyfile.prod` | In-compose TLS + hostname routing (repo root) |
 | `deploy-from-local.sh` | SCP `.env` + rsync repo + remote install (defaults `CAPUZ_STACK=reference`) |
 | `install-on-server.sh` | Reference vs bundled path; swap; Docker bootstrap; disables host Caddy for reference |
 | `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
 | `env.production.example` | Production template incl. `ACME_EMAIL` and lean Open WebUI flags |
 
-Root: **`seed-data.sh`** respects `CAPUZ_SKIP_SEED=1` (production nginx skips copying `public/` into live volume).
+Root: **`seed-data.sh`** uses `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`; production uses `SKIP`).
 
 **Shared disk for `import_chat_file`:** Open WebUI mounts `site-data` at `/app/data` with `DATA_DIR=/app/data/.open-webui` so cms-api can read `webui.db` and chat uploads (same layout as bundled/stack).
 
@@ -333,7 +333,7 @@ Firewall (bundled cloud-init): **22**, **80**, **443**. App listens on **127.0.0
 |---------|--------|
 | Minimal: SFTP auth fails | Tailscale up on laptop + VPS; `SFTP_HOST` = MagicDNS; key mounted via `docker-compose.stack.sftp.yml` |
 | Minimal: TLS / empty site | DNS `@`/`www` → VPS; `certbot` / nginx; publish from editor (root starts with placeholder `index.html`) |
-| Reference: apex 404 | Expected until first `publish_page`; `CAPUZ_SKIP_SEED=1` — no demo seed |
+| Reference: apex 404 | Expected until first `publish_page`; `CAPUZ_SEED=SKIP` — no demo seed |
 | Reference: chat `/error` or 502 | Open WebUI not ready; check `PORT=8080` inside container (not `8081` from laptop `.env`); compose logs |
 | Reference: preview 502 | `docker compose … logs edge-router cms-api`; `PREVIEW_HOST` matches DNS |
 | Reference: TLS / ACME fails | DNS A records; `ACME_EMAIL` set; ports 80/443 free (`systemctl is-active caddy` should be inactive); `logs edge-router` |

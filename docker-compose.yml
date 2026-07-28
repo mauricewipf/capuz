@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile.nginx
     environment:
       PORT: 80
-      CAPUZ_SKIP_SEED: ${CAPUZ_SKIP_SEED:-1}
+      CAPUZ_SEED: ${CAPUZ_SEED:-SEED}
     volumes:
       - site-data:/app/data
     depends_on:

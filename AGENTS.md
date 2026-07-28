@@ -88,7 +88,7 @@ docker-compose.stack.yml    # Editor-only single container (Open WebUI + preview
 docker-compose.bundled.yml  # Full site + chat + preview on one port (Render)
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
 Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui | Dockerfile.stack | Dockerfile.bundled
-seed-data.sh                # Seeds demo public/ into nginx volume; skip with CAPUZ_SKIP_SEED=1
+seed-data.sh                # Seeds demo public/ into nginx volume; CAPUZ_SEED=SKIP|SEED|FORCE_OVERWRITE
 ```
 
 ## Commands
@@ -163,7 +163,7 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 ### Docker / config
 
 - API image builds from `Dockerfile.api` (context: repo root, copies `api/`).
-- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) unless `CAPUZ_SKIP_SEED=1` (production reference deploy on Hetzner).
+- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) per `CAPUZ_SEED` (production reference deploy uses `SKIP`).
 - Reference local stack always uses `-f docker-compose.yml -f docker-compose.local.yml`.
 - Environment variables are documented in `.env.example` and `README.md`.
 

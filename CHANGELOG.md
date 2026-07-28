@@ -10,6 +10,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - cms-api / nginx / openwebui no longer publish host ports in the reference stack; optional `docker-compose.local-debug.yml` exposes `127.0.0.1:3000`.
 - Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the reference base compose (same as prod).
 - `install-on-server.sh` reference path: preflight validate, disable host Caddy, never `down -v`.
+- Replace `CAPUZ_SKIP_SEED` with `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`). `FORCE_OVERWRITE` wipes `/app/data/assets` and copies `public/` seed again.
 
 ### Fixed
 

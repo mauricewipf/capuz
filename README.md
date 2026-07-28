@@ -418,7 +418,7 @@ Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, se
 Three production modes — see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**:
 
 - **Minimal:** native nginx on the VPS; Open WebUI + cms-api on your laptop via `docker-compose.stack.yml` and SFTP over Tailscale.
-- **Reference:** full `docker-compose.yml` on the VPS (nginx + cms-api + openwebui + edge-router); in-compose Caddy for TLS; empty live site until publish (`CAPUZ_SKIP_SEED`).
+- **Reference:** full `docker-compose.yml` on the VPS (nginx + cms-api + openwebui + edge-router); in-compose Caddy for TLS; empty live site until publish (`CAPUZ_SEED=SKIP`).
 - **Bundled:** live site + chat + preview in one container behind host Caddy (4 GB RAM recommended).
 
 Quick deploy (reference stack on an existing VPS):
@@ -455,7 +455,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
 | `ACME_EMAIL` | — | Let's Encrypt contact (required for reference prod) |
 | `CAPUZ_STACK` | — | Hetzner deploy: `reference` (`docker-compose.yml`) or `bundled` |
-| `CAPUZ_SKIP_SEED` | — | When `1`, nginx entrypoint skips copying demo `public/` into live volume |
+| `CAPUZ_SEED` | `SKIP` | nginx seed mode: `SKIP` (no copy), `SEED` (only if no `index.html`), `FORCE_OVERWRITE` (wipe `assets/`, copy `public/` again) |
 | `SFTP_HOST` | — | SFTP server hostname |
 | `SFTP_PORT` | `22` | SFTP port |
 | `SFTP_USER` | — | SFTP username |

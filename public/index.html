@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capuz — AI-editable static site CMS</title>
+  <meta name="description"
+    content="Open WebUI plugin for reading, writing, and publishing HTML and XML pages on static sites. MCP and OpenAPI tool server with draft preview." />
+  <link rel="icon" href="/assets/favicon.a659cc08.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/assets/css/daisyui@5.6901be23.css" />
+  <link rel="stylesheet" href="/assets/css/themes.e319f593.css" />
+  <script src="/assets/js/browser@4.6d8c473e.js" defer></script>
+</head>
+
+<body class="min-h-screen bg-base-100 text-base-content">
+
+  <div class="navbar bg-base-200 shadow-sm sticky top-0 z-50">
+    <div class="navbar-start">
+      <a class="btn btn-ghost text-xl font-bold" href="/">Capuz</a>
+    </div>
+    <div class="navbar-end gap-2">
+      <label class="swap swap-rotate btn btn-ghost btn-circle" aria-label="Toggle light and dark mode">
+        <input type="checkbox" id="mode-toggle" />
+        <svg class="swap-off h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,0,0-1.41-1.41l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,.71.29ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
+        </svg>
+        <svg class="swap-on h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Z" />
+        </svg>
+      </label>
+      <a class="btn btn-primary btn-sm" href="https://github.com/mauricewipf/capuz" target="_blank"
+        rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+
+  <header class="hero bg-primary text-primary-content">
+    <div class="hero-content text-center py-16">
+      <div class="max-w-3xl">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Capuz CMS API</h1>
+        <p class="text-lg md:text-xl opacity-90 mb-6">
+          An Open WebUI plugin that lets LLMs read, write, and publish <code class="text-primary-content">.html</code>
+          and <code class="text-primary-content">.xml</code> pages on static sites — with draft preview before going
+          live.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a class="btn btn-neutral" href="https://github.com/mauricewipf/capuz" target="_blank"
+            rel="noopener noreferrer">View on GitHub</a>
+          <a class="btn btn-outline border-primary-content text-primary-content hover:bg-primary-content hover:text-primary"
+            href="https://daisyui.com/" target="_blank" rel="noopener noreferrer">Built with daisyUI</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-12 max-w-4xl">
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-4">What is this?</h2>
+      <p class="text-base-content/80 leading-relaxed mb-4">
+        Capuz is a publishable MCP and OpenAPI tool server for hand-written HTML sites. Connect it to
+        <strong>Open WebUI</strong> (or any MCP client) and describe page changes in plain language — the model edits
+        drafts, you preview them, then publish when ready.
+      </p>
+      <p class="text-base-content/80 leading-relaxed">
+        Storage backends include local filesystem, SFTP, Git (for Pages, Netlify, Vercel), and S3-compatible buckets.
+        The API ships as a Docker image at
+        <code class="text-sm bg-base-200 px-2 py-1 rounded">ghcr.io/mauricewipf/capuz-cms-api</code>.
+      </p>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-4">How it works</h2>
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="card bg-base-200 shadow-sm">
+          <div class="card-body">
+            <h3 class="card-title text-lg">1. Connect</h3>
+            <p class="text-sm text-base-content/70">Point Open WebUI at the MCP endpoint with bearer auth.</p>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-sm">
+          <div class="card-body">
+            <h3 class="card-title text-lg">2. Edit drafts</h3>
+            <p class="text-sm text-base-content/70">The AI writes to drafts — preview on a separate host before
+              publish.</p>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-sm">
+          <div class="card-body">
+            <h3 class="card-title text-lg">3. Publish</h3>
+            <p class="text-sm text-base-content/70">Call <code>publish_page</code> to promote drafts to your live
+              site.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-4">MCP tools</h2>
+      <div class="overflow-x-auto rounded-box border border-base-300">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>list_pages</code></td>
+              <td>List published pages</td>
+            </tr>
+            <tr>
+              <td><code>read_page</code> / <code>write_page</code></td>
+              <td>Read or save a draft</td>
+            </tr>
+            <tr>
+              <td><code>publish_page</code></td>
+              <td>Promote draft to live</td>
+            </tr>
+            <tr>
+              <td><code>delete_page</code></td>
+              <td>Remove a page</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card bg-base-200 shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-2xl">Try a theme</h2>
+        <p class="text-base-content/70 mb-4">
+          This page uses <a class="link link-primary" href="https://daisyui.com/" target="_blank"
+            rel="noopener noreferrer">daisyUI</a> — a Tailwind CSS component library. Pick a theme below and watch the
+          page update instantly.
+        </p>
+        <label class="form-control w-full max-w-xs">
+          <span class="label-text font-medium mb-2">Theme</span>
+          <select id="theme-select" class="select select-bordered w-full">
+            <option value="light">light</option>
+            <option value="dark">dark</option>
+            <option value="cupcake">cupcake</option>
+            <option value="bumblebee">bumblebee</option>
+            <option value="emerald">emerald</option>
+            <option value="corporate">corporate</option>
+            <option value="synthwave">synthwave</option>
+            <option value="retro">retro</option>
+            <option value="cyberpunk">cyberpunk</option>
+            <option value="valentine">valentine</option>
+            <option value="halloween">halloween</option>
+            <option value="garden">garden</option>
+            <option value="forest">forest</option>
+            <option value="aqua">aqua</option>
+            <option value="lofi">lofi</option>
+            <option value="pastel">pastel</option>
+            <option value="fantasy">fantasy</option>
+            <option value="wireframe">wireframe</option>
+            <option value="black">black</option>
+            <option value="luxury">luxury</option>
+            <option value="dracula">dracula</option>
+            <option value="cmyk">cmyk</option>
+            <option value="autumn">autumn</option>
+            <option value="business">business</option>
+            <option value="acid">acid</option>
+            <option value="lemonade">lemonade</option>
+            <option value="night">night</option>
+            <option value="coffee">coffee</option>
+            <option value="winter">winter</option>
+            <option value="dim">dim</option>
+            <option value="nord">nord</option>
+            <option value="sunset">sunset</option>
+            <option value="caramellatte">caramellatte</option>
+            <option value="abyss">abyss</option>
+            <option value="silk">silk</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer footer-center bg-base-200 text-base-content/70 p-8 mt-8">
+    <aside>
+      <p>
+        <a class="link link-hover" href="https://github.com/mauricewipf/capuz" target="_blank"
+          rel="noopener noreferrer">Capuz</a>
+        — open source under MIT.
+        UI by
+        <a class="link link-hover" href="https://daisyui.com/" target="_blank" rel="noopener noreferrer">daisyUI</a>.
+      </p>
+    </aside>
+  </footer>
+
+  <script>
+    const DARK_THEMES = new Set(['dark', 'black', 'business', 'night', 'coffee', 'dim', 'dracula', 'halloween', 'forest', 'luxury', 'synthwave', 'aqua', 'sunset', 'abyss']);
+
+    const html = document.documentElement;
+    const themeSelect = document.getElementById('theme-select');
+    const modeToggle = document.getElementById('mode-toggle');
+
+    function isDarkTheme(theme) {
+      return DARK_THEMES.has(theme) || theme === 'dark';
+    }
+
+    function applyTheme(theme) {
+      html.setAttribute('data-theme', theme);
+      themeSelect.value = theme;
+      modeToggle.checked = isDarkTheme(theme);
+    }
+
+    themeSelect.addEventListener('change', () => applyTheme(themeSelect.value));
+
+    modeToggle.addEventListener('change', () => {
+      applyTheme(modeToggle.checked ? 'dark' : 'light');
+    });
+  </script>
+
+</body>
+
+</html>

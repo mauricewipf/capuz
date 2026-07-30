@@ -114,7 +114,7 @@ All reference-stack app services mount the same Docker volume:
   - `.components/` - reusable HTML component library (hidden from published listings; blocked by nginx)
   - `.open-webui/` - Open WebUI data (chat DB, uploads)
   - CSS, JS, images under `assets/`, etc.
-- **Seed source** (repo): `public/*.html|*.xml` → `/app/data/`, `public/assets/` → `/app/data/assets/` via `seed-data.sh` on first nginx start
+- **Seed source** (repo): `public/` → `/app/data/` via `seed-data.sh` on nginx start (`.open-webui/` on the volume is never touched)
 
 ## Network Communication
 

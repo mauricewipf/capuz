@@ -5,12 +5,18 @@ mkdir -p /app/data /app/data/.open-webui
 
 MODE="${CAPUZ_SEED:-SKIP}"
 
-seed_assets() {
-  cp -a /app/seed/assets/. /app/data/assets/
+fix_permissions() {
+  [ -d /app/data/assets ] && chmod -R a+rX /app/data/assets
+  find /app/data -path /app/data/.open-webui -prune -o -type f -exec chmod a+r {} + 2>/dev/null || true
 }
 
-seed_pages() {
-  find /app/seed -maxdepth 1 -type f \( -name '*.html' -o -name '*.xml' \) -exec cp -a {} /app/data/ \;
+wipe_site_data() {
+  find /app/data -mindepth 1 -maxdepth 1 ! -name '.open-webui' -exec rm -rf {} +
+}
+
+seed_site() {
+  cp -a /app/seed/. /app/data/
+  fix_permissions
 }
 
 case "$MODE" in
@@ -21,15 +27,11 @@ case "$MODE" in
     if [ -f /app/data/index.html ]; then
       exit 0
     fi
-    mkdir -p /app/data/assets
-    seed_assets
-    seed_pages
+    seed_site
   ;;
   FORCE_OVERWRITE)
-    rm -rf /app/data/assets
-    mkdir -p /app/data/assets
-    seed_assets
-    seed_pages
+    wipe_site_data
+    seed_site
   ;;
   *)
     echo "Invalid CAPUZ_SEED=$MODE (use SKIP, SEED, or FORCE_OVERWRITE)" >&2

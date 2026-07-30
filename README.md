@@ -455,7 +455,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
 | `ACME_EMAIL` | — | Let's Encrypt contact (required for reference prod) |
 | `CAPUZ_STACK` | — | Hetzner deploy: `reference` (`docker-compose.yml`) or `bundled` |
-| `CAPUZ_SEED` | `SKIP` | nginx seed mode: `SKIP` (no copy), `SEED` (only if no `index.html`), `FORCE_OVERWRITE` (wipe `assets/`, copy `public/` again) |
+| `CAPUZ_SEED` | `SKIP` | nginx seed mode: `SKIP` (no copy), `SEED` (only if no `index.html`), `FORCE_OVERWRITE` (wipe site content + drafts, recopy `public/`) |
 | `SFTP_HOST` | — | SFTP server hostname |
 | `SFTP_PORT` | `22` | SFTP port |
 | `SFTP_USER` | — | SFTP username |

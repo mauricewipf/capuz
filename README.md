@@ -378,7 +378,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 - Preview: http://preview.localhost:8080
 - CMS API: not published on the host (optional: add `-f docker-compose.local-debug.yml` for `127.0.0.1:3000`)
 
-Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md#reference-full-stack-on-the-vps-docker-composeyml).
+Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
 ### Editor stack (single container)
 

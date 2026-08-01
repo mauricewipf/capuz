@@ -78,9 +78,7 @@ nginx.conf        # Static server config (extensionless URLs)
 Caddyfile.dev     # Local edge-router: site + chat + preview on :8080
 Caddyfile.prod    # Prod edge-router: auto-HTTPS + Let's Encrypt
 deploy/hetzner/
-  Caddyfile.template                   # Bundled VPS: host TLS → single container :8081
   docker-compose.reference.production.yml
-  docker-compose.production.yml
 docker-compose.yml          # Reference stack base (nginx + cms-api + openwebui + edge-router)
 docker-compose.local.yml    # Local override (publish :8080, Caddyfile.dev)
 docker-compose.local-debug.yml  # Optional: expose cms-api on 127.0.0.1:3000
@@ -130,11 +128,11 @@ Production deploy of `docker-compose.yml` + prod override — four containers in
 
 ```bash
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
-# CAPUZ_STACK=reference, secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL
-CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
+# secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL
+./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
 ```
 
-See `docs/DEPLOY-HETZNER.md`. Bundled VPS: set `CAPUZ_STACK=bundled` (still uses host Caddy). Minimal: laptop stack + SFTP, no full compose on VPS.
+See `docs/DEPLOY-HETZNER.md`.
 
 ### Publish cms-api plugin image
 

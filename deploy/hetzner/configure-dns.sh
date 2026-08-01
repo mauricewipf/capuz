@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if [ "$#" -lt 2 ]; then
-  echo "Usage: ZONE=just-html.com $0 <zone> <vps-ipv4>" >&2
+  echo "Usage: ZONE=just-html.com $0 <zone> <ip>" >&2
   echo "Example: $0 just-html.com 203.0.113.10" >&2
   exit 1
 fi
@@ -24,4 +24,4 @@ hcloud zone rrset set-records "$ZONE" www A --record "$IP"
 hcloud zone rrset set-records "$ZONE" chat A --record "$IP"
 hcloud zone rrset set-records "$ZONE" preview A --record "$IP"
 
-echo "Done. TLS certificates issue after DNS propagates (edge-router / Let's Encrypt for reference; host Caddy for bundled)."
+echo "Done. TLS certificates issue after DNS propagates (edge-router / Let's Encrypt)."

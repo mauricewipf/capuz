@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Create a Hetzner Cloud VPS with Docker preinstalled (cloud-init).
 # Reference stack: in-compose edge-router handles TLS.
-# Bundled stack: install-on-server.sh installs host Caddy.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,6 +38,7 @@ echo ""
 echo "Next (manual):"
 echo "  1. cp deploy/hetzner/env.production.example deploy/hetzner/.env.production"
 echo "  2. Fill secrets and domain in deploy/hetzner/.env.production"
-echo "  3. ./deploy/hetzner/deploy-from-local.sh root@${IP} deploy/hetzner/.env.production"
+echo "  3. ./deploy/hetzner/configure-dns.sh your.domain ${IP}"
+echo "  4. ./deploy/hetzner/deploy-from-local.sh root@${IP} deploy/hetzner/.env.production"
 echo ""
-echo "Or wait ~60s for cloud-init, then point DNS A records for @, chat, preview to ${IP}."
+echo "Or wait ~60s for cloud-init, then point DNS A records for @, www, chat, preview to ${IP}."

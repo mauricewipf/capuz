@@ -6,7 +6,7 @@ Instructions for AI coding agents working in this repository.
 
 Capuz CMS API is an **Open WebUI plugin** — a publishable MCP / OpenAPI tool server that lets LLMs read, write, and delete `.html` and `.xml` pages on a static site. A Bun/Hono API exposes REST and MCP endpoints; Open WebUI (or any MCP client) connects to it with bearer auth.
 
-This repo contains two things:
+This repo contains three deployment modes: **plugin-only** (cms-api alone), **multi-service stack** (nginx + cms-api + openwebui), and **bundled monolith** (single container). See README [§ Choose a deployment mode](README.md#choose-a-deployment-mode).
 
 1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `ghcr.io/mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
 2. **A multi-service demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.

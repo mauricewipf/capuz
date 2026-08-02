@@ -4,6 +4,27 @@ AI-editable HTML and XML pages for static sites. Connect Open WebUI to this MCP 
 
 **Best for:** hand-written HTML sites, landing pages, and static sites where the file in storage is what ships. Not for build-step frameworks (Next.js, Astro, Hugo, etc.).
 
+## Choose a deployment mode
+
+```
+What do you want?
+
+  ├─ Just the MCP/API plugin
+  │     → plugin-only (`docker-compose.plugin.yml` or `ghcr.io/mauricewipf/capuz-cms-api`)
+  │
+  ├─ Full stack, multiple containers (local demo or production VPS)
+  │     → multi-service stack (`docker-compose.yml` + override)
+  │
+  └─ Everything in one container
+        ├─ Live site colocated (local demo, Render)
+        │     → bundled monolith, `CAPUZ_SERVE_SITE=true`, `STORAGE_BACKEND=fs`
+        │
+        └─ Laptop editor, live site on remote host
+              → bundled monolith, `CAPUZ_SERVE_SITE=false`, `STORAGE_BACKEND=sftp` | `git` | `s3`
+```
+
+See [Deploy options in this repo](#deploy-options-in-this-repo) for compose files and commands.
+
 ## Choose a storage backend
 
 ```
@@ -367,9 +388,13 @@ Plugin-only deployments: point `PREVIEW_BASE_URL` at wherever preview traffic re
 - MCP and write endpoints require bearer auth.
 - Path validation blocks traversal and restricts extensions to `.html` and `.xml`.
 
-## Multi-service stack (this repo)
+## Deploy options in this repo
 
-This repository includes a full demo with nginx + cms-api + Open WebUI + edge-router (Caddy):
+Compose files and commands for each branch of the [deployment mode](#choose-a-deployment-mode) map above.
+
+### Multi-service stack
+
+nginx + cms-api + Open WebUI + edge-router (Caddy):
 
 ```bash
 cp .env.example .env

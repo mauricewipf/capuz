@@ -160,6 +160,14 @@ docker compose up --scale cms-api=3
 
 ## Deployment Considerations
 
+For a deployment-mode decision map, see [README § Choose a deployment mode](README.md#choose-a-deployment-mode).
+
+| Mode | Compose / image | Use case |
+|------|-----------------|----------|
+| Plugin-only | `docker-compose.plugin.yml`, `Dockerfile.api` | cms-api standalone; connect your own Open WebUI |
+| Multi-service stack | `docker-compose.yml` + override | Local demo or production VPS (Hetzner) |
+| Bundled monolith | `docker-compose.bundled.yml`, `Dockerfile.bundled` | Single container; site colocated or remote editor |
+
 ### Docker Compose Platforms
 - AWS ECS with Docker Compose support
 - DigitalOcean App Platform

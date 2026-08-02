@@ -1,12 +1,12 @@
 # Optional override: mount an SSH private key for STORAGE_BACKEND=sftp.
-# Use with the editor compose when publishing to a remote nginx root.
+# Use with CAPUZ_SERVE_SITE=false when publishing to a remote nginx root.
 #
-#   # Set STORAGE_BACKEND=sftp and SFTP_* in .env
-#   docker compose -f docker-compose.editor.yml -f docker-compose.editor.sftp.yml up --build
+#   # Set CAPUZ_SERVE_SITE=false, STORAGE_BACKEND=sftp, and SFTP_* in .env
+#   docker compose -f docker-compose.bundled.yml -f docker-compose.bundled.sftp.yml up --build
 #
 # Requires SFTP_KEY_HOST_PATH in .env (absolute path to an existing private key file).
 
 services:
-  editor:
+  bundled:
     volumes:
       - ${SFTP_KEY_HOST_PATH:?Set SFTP_KEY_HOST_PATH in .env to your SSH private key file}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro

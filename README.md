@@ -158,16 +158,18 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-**Editor** (`docker-compose.editor.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and add the SFTP override:
+**Bundled monolith (remote site)** — set `CAPUZ_SERVE_SITE=false`, `STORAGE_BACKEND=sftp`, SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`), and add the SFTP override:
 
 ```env
 # .env
+CAPUZ_SERVE_SITE=false
+STORAGE_BACKEND=sftp
 SFTP_KEY_HOST_PATH=/Users/YOU/.ssh/capuz_deploy_key
 SFTP_KEY_PATH=/keys/id_ed25519
 ```
 
 ```bash
-docker compose -f docker-compose.editor.yml -f docker-compose.editor.sftp.yml up --build
+docker compose -f docker-compose.bundled.yml -f docker-compose.bundled.sftp.yml up --build
 ```
 
 For Hetzner VPS deploys, see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (reference stack).
@@ -344,7 +346,7 @@ Reference stack (multi-container) URLs:
 - Open WebUI: http://chat.localhost:8080
 - Preview: http://preview.localhost:8080 (via edge-router)
 
-Bundled setup (`docker-compose.bundled.yml` / Render) host routing:
+Bundled monolith (`docker-compose.bundled.yml` / Render) host routing when `CAPUZ_SERVE_SITE=true`:
 
 | Host | Service |
 |------|---------|
@@ -352,7 +354,9 @@ Bundled setup (`docker-compose.bundled.yml` / Render) host routing:
 | `EDITOR_HOST` (default `chat.localhost`) | Open WebUI |
 | `PREVIEW_HOST` (default `preview.localhost`) | cms-api draft preview |
 
-On Render, hosts default to `<service>.onrender.com`, `chat.<service>.onrender.com`, and `preview.<service>.onrender.com`. Add matching custom domains for chat/preview (nested `*.onrender.com` hostnames are not resolvable).
+When `CAPUZ_SERVE_SITE=false`, only `EDITOR_HOST` and `PREVIEW_HOST` are used (live site is on remote storage).
+
+**Render / production:** attach custom domains for `SITE_HOST`, `EDITOR_HOST`, and `PREVIEW_HOST` to the service. Render does not resolve nested `chat.<service>.onrender.com` style hostnames — set explicit domains in the dashboard and env (see `render.bundled.yaml`).
 
 Plugin-only deployments: point `PREVIEW_BASE_URL` at wherever preview traffic reaches cms-api (e.g. `http://preview.localhost:3000` with `Host: preview.localhost`), or configure your own reverse proxy.
 
@@ -380,22 +384,16 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
 Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
-### Editor (single container)
+### Bundled monolith (single container)
 
-Open WebUI + cms-api preview on one port (no bundled live site):
+One Docker image (`Dockerfile.bundled`) for Open WebUI + cms-api + Caddy. Mode is selected with `CAPUZ_SERVE_SITE`:
 
-```bash
-cp .env.example .env
-# set OPENROUTER_API_KEY
-docker compose -f docker-compose.editor.yml up --build
-```
+| `CAPUZ_SERVE_SITE` | Live site | `STORAGE_BACKEND` |
+|--------------------|-----------|-------------------|
+| `true` (default) | nginx on `SITE_HOST` | `fs` only |
+| `false` | remote (sftp / git / s3) | `sftp`, `git`, or `s3` |
 
-- Open WebUI: http://localhost:8081
-- Preview: http://preview.localhost:8081
-
-### Bundled setup (Render)
-
-Single Docker service with host-based routing (live site + chat + preview):
+**Local — full site** (`CAPUZ_SERVE_SITE=true`):
 
 ```bash
 cp .env.example .env
@@ -407,11 +405,13 @@ docker compose -f docker-compose.bundled.yml up --build
 - Open WebUI: http://chat.localhost:8081
 - Preview: http://preview.localhost:8081
 
-Deploy with `render.bundled.yaml` (editor-only deploy remains `render.yaml`), or use the button below:
+**Local — remote site** (`CAPUZ_SERVE_SITE=false` + SFTP): see the sftp section above.
+
+Deploy to Render with `render.bundled.yaml` (custom domains required):
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mauricewipf/capuz)
 
-Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, set `SITE_HOST=HOST`, `EDITOR_HOST=chat.HOST`, `PREVIEW_HOST=preview.HOST`, and attach those domains to the service.
+Set `OPENROUTER_API_KEY` in the Render dashboard. Attach custom domains for `SITE_HOST`, `EDITOR_HOST`, and `PREVIEW_HOST` (e.g. `example.com`, `chat.example.com`, `preview.example.com`) and set matching `SITE_BASE_URL`, `WEBUI_URL`, and `PREVIEW_BASE_URL`.
 
 ### Hetzner VPS
 
@@ -445,7 +445,8 @@ See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for server sizing, DNS,
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
 | `ACME_EMAIL` | — | Let's Encrypt contact email for Hetzner reference prod (edge-router TLS) |
-| `CAPUZ_SEED` | `SKIP` | nginx seed mode: `SKIP` (no copy), `SEED` (only if no `index.html`), `FORCE_OVERWRITE` (wipe site content + drafts, recopy `public/`) |
+| `CAPUZ_SERVE_SITE` | `true` | Bundled monolith: serve live site from nginx (`fs` only). Set `false` for remote-site mode (`sftp`/`git`/`s3`) |
+| `CAPUZ_SEED` | `SKIP` | nginx seed mode when `CAPUZ_SERVE_SITE=true`: `SKIP`, `SEED`, or `FORCE_OVERWRITE` |
 | `SFTP_HOST` | — | SFTP server hostname |
 | `SFTP_PORT` | `22` | SFTP port |
 | `SFTP_USER` | — | SFTP username |

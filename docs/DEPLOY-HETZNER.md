@@ -4,7 +4,7 @@ Production on Hetzner uses the **reference stack**: `docker-compose.yml` plus `d
 
 Compared to Render, you control TLS and DNS yourself — no custom-domain slot limits.
 
-For a laptop-only editor with a remote static site, use `docker-compose.editor.yml` with optional `docker-compose.editor.sftp.yml` (not a Hetzner VPS deploy path).
+For a laptop editor with a remote static site, use `docker-compose.bundled.yml` with `CAPUZ_SERVE_SITE=false`, `STORAGE_BACKEND=sftp`, and optional `docker-compose.bundled.sftp.yml` (not a Hetzner VPS deploy path).
 
 ---
 

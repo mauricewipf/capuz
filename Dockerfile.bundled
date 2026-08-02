@@ -28,7 +28,6 @@ COPY seed-data.sh /app/seed-data.sh
 RUN chmod +x /app/seed-data.sh
 
 COPY nginx.bundled.conf /etc/nginx/nginx.bundled.conf
-COPY Caddyfile.bundled /etc/caddy/Caddyfile
 COPY start-bundled.sh /start-bundled.sh
 RUN chmod +x /start-bundled.sh
 

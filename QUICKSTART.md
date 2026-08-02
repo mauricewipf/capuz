@@ -172,7 +172,7 @@ Verify from your laptop (should print `ok`, not a Tailscale login URL):
 ssh -i ~/.ssh/capuz_hetzner_sftp root@YOUR_MACHINE.tailXXXX.ts.net echo ok
 ```
 
-**Alternative (local reference stack only):** Use the default local volume instead of remote SFTP — in `.env` set `STORAGE_BACKEND=fs` and start without `docker-compose.local.sftp.yml`. SFTP + remote publish is for `docker-compose.editor.yml` with `docker-compose.editor.sftp.yml`.
+**Alternative (local reference stack only):** Use the default local volume instead of remote SFTP — in `.env` set `STORAGE_BACKEND=fs` and start without `docker-compose.local.sftp.yml`. SFTP + remote publish uses `docker-compose.bundled.yml` with `CAPUZ_SERVE_SITE=false` and `docker-compose.bundled.sftp.yml`.
 
 ## Next Steps
 

@@ -1,4 +1,8 @@
-# Capuz bundled Blueprint (site + chat + preview on one port).
+# Capuz monolith Blueprint (site + chat + preview on one port).
+# Requires custom domains on Render — nested *.onrender.com subdomains do not resolve.
+# Set SITE_HOST, EDITOR_HOST, PREVIEW_HOST (and matching WEBUI_URL / PREVIEW_BASE_URL / SITE_BASE_URL).
+# CAPUZ_SERVE_SITE=true (default): full site + chat + preview (STORAGE_BACKEND=fs).
+# CAPUZ_SERVE_SITE=false: chat + preview only; live site elsewhere (STORAGE_BACKEND=sftp|git|s3).
 services:
   - type: web
     name: capuz
@@ -13,6 +17,8 @@ services:
     envVars:
       - key: APP_NAME
         value: Capuz CMS
+      - key: CAPUZ_SERVE_SITE
+        value: "true"
       - key: OPENAI_API_BASE_URL
         value: https://openrouter.ai/api/v1
       - key: OPENROUTER_API_KEY
@@ -27,11 +33,18 @@ services:
         generateValue: true
       - key: WEBUI_SECRET_KEY
         generateValue: true
-      # Host routing is derived at runtime from RENDER_EXTERNAL_HOSTNAME:
-      #   SITE_HOST    = <service>.onrender.com   (nginx live pages)
-      #   EDITOR_HOST  = chat.<service>.onrender.com  (Open WebUI)
-      #   PREVIEW_HOST = preview.<service>.onrender.com (draft preview)
-      # Override these (and add matching custom domains) for a real domain.
+      - key: SITE_HOST
+        value: example.com
+      - key: EDITOR_HOST
+        value: chat.example.com
+      - key: PREVIEW_HOST
+        value: preview.example.com
+      - key: SITE_BASE_URL
+        value: https://example.com
+      - key: WEBUI_URL
+        value: https://chat.example.com
+      - key: PREVIEW_BASE_URL
+        value: https://preview.example.com
       - key: ENABLE_SIGNUP
         value: "true"
       - key: DATA_DIR

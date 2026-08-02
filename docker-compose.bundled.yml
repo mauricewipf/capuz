@@ -1,5 +1,6 @@
-# Bundled full stack: nginx (live site) + Open WebUI (chat) + cms-api (preview) + Caddy host routing.
-# Editor-only single container remains in docker-compose.editor.yml.
+# Bundled monolith: Open WebUI + cms-api + Caddy (+ nginx when CAPUZ_SERVE_SITE=true).
+# CAPUZ_SERVE_SITE=true (default): local live site (STORAGE_BACKEND=fs).
+# CAPUZ_SERVE_SITE=false: remote site via sftp/git/s3 — use docker-compose.bundled.sftp.yml for SFTP keys.
 # Multi-service demo: docker-compose.yml; plugin-only: docker-compose.plugin.yml.
 services:
   bundled:
@@ -10,6 +11,7 @@ services:
       - "8081:8081"
     env_file: .env
     environment:
+      CAPUZ_SERVE_SITE: ${CAPUZ_SERVE_SITE:-true}
       PORT: ${PORT:-8081}
       WEBUI_PORT: ${WEBUI_PORT:-8080}
       CMS_API_PORT: ${CMS_API_PORT:-3000}
@@ -20,9 +22,12 @@ services:
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8081}
       SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8081}
       CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
-      # Bundled setup always uses the local disk volume; ignore STORAGE_BACKEND in .env
-      # (e.g. sftp settings for plugin-only / remote nginx deployments).
-      STORAGE_BACKEND: fs
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-fs}
+      SFTP_HOST: ${SFTP_HOST:-}
+      SFTP_PORT: ${SFTP_PORT:-22}
+      SFTP_USER: ${SFTP_USER:-}
+      SFTP_KEY_PATH: ${SFTP_KEY_PATH:-/keys/id_ed25519}
+      SFTP_REMOTE_ROOT: ${SFTP_REMOTE_ROOT:-}
       DATA_ROOT: ${DATA_ROOT:-/app/data}
       DATA_DIR: ${DATA_DIR:-/app/data/.open-webui}
       DRAFTS_DIR: ${DRAFTS_DIR:-.drafts}
@@ -35,12 +40,9 @@ services:
       DEFAULT_MODEL_PARAMS: '${DEFAULT_MODEL_PARAMS:-{"function_calling":"native"}}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
       WEBUI_URL: ${WEBUI_URL:-http://chat.localhost:8081}
-      # Skip local sentence-transformers download; use OpenAI-compatible embeddings via OpenRouter when needed
       RAG_EMBEDDING_ENGINE: ${RAG_EMBEDDING_ENGINE:-openai}
     volumes:
       - bundled-data:/app/data
-      # Uncomment for SFTP backend (set SFTP_KEY_HOST_PATH in .env):
-      # - ${SFTP_KEY_HOST_PATH}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/"]
       interval: 30s

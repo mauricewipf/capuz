@@ -173,8 +173,19 @@ Each service can be deployed as a separate pod with:
 - openwebui Deployment + Service
 - Persistent Volume Claim for shared storage
 
-### Editor (single container)
-For a lightweight editor-only deploy, use `Dockerfile.editor` with `docker-compose.editor.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.editor.sftp.yml`, or deploy the reference stack on a Hetzner VPS (see below).
+### Bundled monolith (single container)
+One image (`Dockerfile.bundled`, `start-bundled.sh`) runs Open WebUI, cms-api, and Caddy. Mode is set with `CAPUZ_SERVE_SITE`:
+
+| `CAPUZ_SERVE_SITE` | nginx | `STORAGE_BACKEND` | Use case |
+|--------------------|-------|-------------------|----------|
+| `true` (default) | yes | `fs` only | Local or Render: live site + chat + preview on one port |
+| `false` | no | `sftp`, `git`, or `s3` | Laptop editor; live site on remote host |
+
+Caddy config is generated at startup (`prepare_caddy_config` in `start-bundled.sh`). When `CAPUZ_SERVE_SITE=true`, routes `SITE_HOST` → nginx, `EDITOR_HOST` → Open WebUI, `PREVIEW_HOST` → cms-api. When `false`, only editor/preview hosts plus a catch-all to Open WebUI.
+
+Remote-site mode: `docker-compose.bundled.yml` + `docker-compose.bundled.sftp.yml` (for SFTP). For a full VPS deploy, use the reference stack below.
+
+**Render:** deploy via `render.bundled.yaml`. Custom domains are required for `SITE_HOST`, `EDITOR_HOST`, and `PREVIEW_HOST` (nested `*.onrender.com` subdomains do not resolve).
 
 ### Reference stack on Hetzner VPS
 Deploy the same four-service layout as local (`docker-compose.yml` + override). Local and prod both use in-compose **edge-router** (Caddy). Production publishes `:80`/`:443` with auto-HTTPS via `Caddyfile.prod` and `ACME_EMAIL`; local publishes `:8080` with `Caddyfile.dev`.
@@ -188,16 +199,7 @@ Deploy the same four-service layout as local (`docker-compose.yml` + override). 
 
 No host systemd Caddy for the reference stack. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
-### Bundled setup (Render or VPS)
-For platforms like Render that prefer a single web service with live pages, use `Dockerfile.bundled` with `docker-compose.bundled.yml` / `render.bundled.yaml`. On a **Hetzner VPS**, deploy the **reference stack** (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`) — see [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md). Bundled one container runs:
-
-| Host | Backend |
-|------|---------|
-| `SITE_HOST` (apex / default) | nginx — live published pages |
-| `EDITOR_HOST` (`chat.*` locally, or your editor subdomain) | Open WebUI |
-| `PREVIEW_HOST` (`preview.*`) | cms-api preview vhost (drafts) |
-
-Caddy listens on `$PORT` and routes by `Host`. Shared disk at `/app/data` holds published pages, `.drafts/`, and Open WebUI data. Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.
+Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.
 
 ## Development vs Production
 

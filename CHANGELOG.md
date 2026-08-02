@@ -6,10 +6,13 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Removed
 - Removed Hetzner bundled and minimal deploy modes; Hetzner VPS uses reference stack only.
+- Removed separate editor deploy (`Dockerfile.editor`, `docker-compose.editor.yml`, `render.yaml`); merged into bundled monolith via `CAPUZ_SERVE_SITE`.
 
 ### Changed
 
-- Renamed editor deploy files: `docker-compose.editor.yml`, `docker-compose.editor.sftp.yml`, `Dockerfile.editor`, `start-editor.sh`, `Caddyfile.editor` (was `*.stack.*`).
+- **Bundled monolith:** single `Dockerfile.bundled` + `start-bundled.sh` for both local site mode (`CAPUZ_SERVE_SITE=true`, `STORAGE_BACKEND=fs`) and remote-site mode (`CAPUZ_SERVE_SITE=false`, `sftp`/`git`/`s3`). Caddy config generated at runtime.
+- **Render:** one blueprint (`render.bundled.yaml`); custom domains required for `SITE_HOST`, `EDITOR_HOST`, `PREVIEW_HOST` (nested `*.onrender.com` subdomains do not resolve).
+- Renamed editor deploy files: `docker-compose.editor.yml`, `docker-compose.editor.sftp.yml`, `Dockerfile.editor`, `start-editor.sh`, `Caddyfile.editor` (was `*.stack.*`) — superseded by bundled monolith merge above.
 - **Reference stack:** single in-compose Caddy (`edge-router`) for local and prod. Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml` (HTTP `:8080`, hostnames `localhost` / `chat.localhost` / `preview.localhost`). Prod: edge-router on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`, `caddy_data`). Host systemd Caddy removed from reference deploy (bundled still uses host Caddy).
 - cms-api / nginx / openwebui no longer publish host ports in the reference stack; optional `docker-compose.local-debug.yml` exposes `127.0.0.1:3000`.
 - Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the reference base compose (same as prod).
@@ -37,7 +40,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Note
 
-- Editor (`Dockerfile.editor`, `docker-compose.editor.yml`): Open WebUI + cms-api preview on one port, no bundled live site
+- Editor (`Dockerfile.editor`, `docker-compose.editor.yml`): superseded by bundled monolith with `CAPUZ_SERVE_SITE=false`
 
 ## [0.3.0] - 2026-06-24
 

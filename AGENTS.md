@@ -82,10 +82,10 @@ deploy/hetzner/
 docker-compose.yml          # Reference stack base (nginx + cms-api + openwebui + edge-router)
 docker-compose.local.yml    # Local override (publish :8080, Caddyfile.dev)
 docker-compose.local-debug.yml  # Optional: expose cms-api on 127.0.0.1:3000
-docker-compose.editor.yml    # Editor-only single container (Open WebUI + preview)
-docker-compose.bundled.yml  # Full site + chat + preview on one port (Render)
+docker-compose.bundled.yml  # Monolith: site + chat + preview (CAPUZ_SERVE_SITE)
+docker-compose.bundled.sftp.yml  # SFTP key mount for CAPUZ_SERVE_SITE=false
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
-Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui | Dockerfile.editor | Dockerfile.bundled
+Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui | Dockerfile.bundled
 seed-data.sh                # Seeds demo public/ into nginx volume; CAPUZ_SEED=SKIP|SEED|FORCE_OVERWRITE
 ```
 

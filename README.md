@@ -170,7 +170,7 @@ SFTP_KEY_PATH=/keys/id_ed25519
 docker compose -f docker-compose.stack.yml -f docker-compose.stack.sftp.yml up --build
 ```
 
-For Hetzner VPS deploys (minimal, reference, or bundled), see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**. Minimal mode uses `deploy/hetzner/minimal/env.local.example` for the laptop editor.
+For Hetzner VPS deploys, see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (reference stack).
 
 #### 6. Verify cms-api
 
@@ -378,7 +378,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 - Preview: http://preview.localhost:8080
 - CMS API: not published on the host (optional: add `-f docker-compose.local-debug.yml` for `127.0.0.1:3000`)
 
-Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md#reference-full-stack-on-the-vps-docker-composeyml).
+Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
 ### Editor stack (single container)
 
@@ -415,26 +415,17 @@ Set `OPENROUTER_API_KEY` in the Render dashboard. For a custom domain `HOST`, se
 
 ### Hetzner VPS
 
-Three production modes — see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)**:
-
-- **Minimal:** native nginx on the VPS; Open WebUI + cms-api on your laptop via `docker-compose.stack.yml` and SFTP over Tailscale.
-- **Reference:** full `docker-compose.yml` on the VPS (nginx + cms-api + openwebui + edge-router); in-compose Caddy for TLS; empty live site until publish (`CAPUZ_SEED=SKIP`).
-- **Bundled:** live site + chat + preview in one container behind host Caddy (4 GB RAM recommended).
-
-Quick deploy (reference stack on an existing VPS):
+Deploy the **reference stack** on a single VPS (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`):
 
 ```bash
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
-# Edit secrets + SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL (CAPUZ_STACK=reference)
-./deploy/hetzner/configure-dns.sh your.domain YOUR_VPS_IP
-CAPUZ_STACK=reference ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
+# Edit secrets + SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL
+
+./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
 ```
 
-- Live site: `https://your.domain` (404 until first publish)
-- Open WebUI: `https://chat.your.domain`
-- Preview: `https://preview.your.domain`
+See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for server sizing, DNS, verify, and operations.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ## Environment variables
 
@@ -453,8 +444,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 | `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
-| `ACME_EMAIL` | — | Let's Encrypt contact (required for reference prod) |
-| `CAPUZ_STACK` | — | Hetzner deploy: `reference` (`docker-compose.yml`) or `bundled` |
+| `ACME_EMAIL` | — | Let's Encrypt contact email for Hetzner reference prod (edge-router TLS) |
 | `CAPUZ_SEED` | `SKIP` | nginx seed mode: `SKIP` (no copy), `SEED` (only if no `index.html`), `FORCE_OVERWRITE` (wipe site content + drafts, recopy `public/`) |
 | `SFTP_HOST` | — | SFTP server hostname |
 | `SFTP_PORT` | `22` | SFTP port |

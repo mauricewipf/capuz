@@ -1,5 +1,5 @@
-# Bundled editor stack: Open WebUI + cms-api + preview routing (no nginx).
-# Live site is separate (e.g. Hetzner minimal nginx + SFTP via docker-compose.stack.sftp.yml).
+# Editor stack: Open WebUI + cms-api + preview routing (no nginx).
+# Pair with a remote live site via docker-compose.stack.sftp.yml (STORAGE_BACKEND=sftp).
 # Plugin-only and multi-service demos remain in docker-compose.plugin.yml / docker-compose.yml.
 services:
   stack:
@@ -37,7 +37,7 @@ services:
       WEBUI_URL: ${WEBUI_URL:-http://localhost:8081}
     volumes:
       - stack-data:/app/data
-      # For SFTP publish (e.g. Hetzner minimal): also use docker-compose.stack.sftp.yml
+      # For SFTP publish to a remote site: also use docker-compose.stack.sftp.yml
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/"]
       interval: 30s

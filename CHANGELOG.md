@@ -4,6 +4,9 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+### Removed
+- Removed Hetzner bundled and minimal deploy modes; Hetzner VPS uses reference stack only.
+
 ### Changed
 
 - **Reference stack:** single in-compose Caddy (`edge-router`) for local and prod. Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml` (HTTP `:8080`, hostnames `localhost` / `chat.localhost` / `preview.localhost`). Prod: edge-router on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`, `caddy_data`). Host systemd Caddy removed from reference deploy (bundled still uses host Caddy).

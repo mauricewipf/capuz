@@ -1,7 +1,6 @@
 #cloud-config
-# First-boot bootstrap for Capuz on Hetzner Cloud.
-# Host Caddy is installed only for CAPUZ_STACK=bundled (see install-on-server.sh).
-# Reference stack uses in-compose edge-router for TLS on :80/:443.
+# First-boot bootstrap for Capuz on Hetzner Cloud (reference stack).
+# TLS is handled by in-compose edge-router on :80/:443 after deploy.
 # Secrets are NOT passed here — upload .env after the server is up (see docs/DEPLOY-HETZNER.md).
 
 package_update: true

@@ -1,5 +1,5 @@
 # Single listener on $PORT with host-based routing (Render and local dev).
-# Env vars are exported by start-stack.sh before caddy run.
+# Env vars are exported by start-editor.sh before caddy run.
 
 :{$PORT} {
 	@preview host {$PREVIEW_HOST}

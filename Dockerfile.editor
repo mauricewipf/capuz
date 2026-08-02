@@ -26,13 +26,13 @@ COPY public/ /app/seed/
 COPY seed-data.sh /app/seed-data.sh
 RUN chmod +x /app/seed-data.sh
 
-COPY Caddyfile.stack /etc/caddy/Caddyfile
-COPY start-stack.sh /start-stack.sh
-RUN chmod +x /start-stack.sh
+COPY Caddyfile.editor /etc/caddy/Caddyfile
+COPY start-editor.sh /start-editor.sh
+RUN chmod +x /start-editor.sh
 
 EXPOSE 10000
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider "http://127.0.0.1:${PORT:-10000}/" || exit 1
 
-ENTRYPOINT ["/start-stack.sh"]
+ENTRYPOINT ["/start-editor.sh"]

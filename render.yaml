@@ -2,7 +2,7 @@ services:
   - type: web
     name: capuz
     runtime: docker
-    dockerfilePath: ./Dockerfile.stack
+    dockerfilePath: ./Dockerfile.editor
     numInstances: 1
     region: frankfurt
     plan: starter

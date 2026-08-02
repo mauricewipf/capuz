@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile.openwebui
     env_file: .env
     environment:
-      # Internal listen port (edge-router → openwebui:8080). Override .env PORT=8081 (stack/bundled edge port).
+      # Internal listen port (edge-router → openwebui:8080). Override .env PORT=8081 (editor/bundled edge port).
       PORT: "8080"
       DATA_DIR: /app/data/.open-webui
       OPENAI_API_BASE_URL: https://openrouter.ai/api/v1

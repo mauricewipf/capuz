@@ -173,8 +173,8 @@ Each service can be deployed as a separate pod with:
 - openwebui Deployment + Service
 - Persistent Volume Claim for shared storage
 
-### Editor stack (single container)
-For a lightweight editor-only deploy, use `Dockerfile.stack` with `docker-compose.stack.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.stack.sftp.yml`, or deploy the reference stack on a Hetzner VPS (see below).
+### Editor (single container)
+For a lightweight editor-only deploy, use `Dockerfile.editor` with `docker-compose.editor.yml`. One container runs Open WebUI, cms-api, and Caddy host routing for chat and draft preview. The public static site is **not** included — pair with remote nginx via `STORAGE_BACKEND=sftp` and `docker-compose.editor.sftp.yml`, or deploy the reference stack on a Hetzner VPS (see below).
 
 ### Reference stack on Hetzner VPS
 Deploy the same four-service layout as local (`docker-compose.yml` + override). Local and prod both use in-compose **edge-router** (Caddy). Production publishes `:80`/`:443` with auto-HTTPS via `Caddyfile.prod` and `ACME_EMAIL`; local publishes `:8080` with `Caddyfile.dev`.

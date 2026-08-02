@@ -9,6 +9,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Changed
 
+- Renamed editor deploy files: `docker-compose.editor.yml`, `docker-compose.editor.sftp.yml`, `Dockerfile.editor`, `start-editor.sh`, `Caddyfile.editor` (was `*.stack.*`).
 - **Reference stack:** single in-compose Caddy (`edge-router`) for local and prod. Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml` (HTTP `:8080`, hostnames `localhost` / `chat.localhost` / `preview.localhost`). Prod: edge-router on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`, `caddy_data`). Host systemd Caddy removed from reference deploy (bundled still uses host Caddy).
 - cms-api / nginx / openwebui no longer publish host ports in the reference stack; optional `docker-compose.local-debug.yml` exposes `127.0.0.1:3000`.
 - Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the reference base compose (same as prod).
@@ -36,7 +37,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Note
 
-- Editor stack (`Dockerfile.stack`, `docker-compose.stack.yml`) is unchanged: Open WebUI + cms-api preview on one port, no bundled live site
+- Editor (`Dockerfile.editor`, `docker-compose.editor.yml`): Open WebUI + cms-api preview on one port, no bundled live site
 
 ## [0.3.0] - 2026-06-24
 

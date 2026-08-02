@@ -1,5 +1,5 @@
 # Bundled full stack: nginx (live site) + Open WebUI (chat) + cms-api (preview) + Caddy host routing.
-# Editor-only single container remains in docker-compose.stack.yml.
+# Editor-only single container remains in docker-compose.editor.yml.
 # Multi-service demo: docker-compose.yml; plugin-only: docker-compose.plugin.yml.
 services:
   bundled:

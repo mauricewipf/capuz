@@ -158,7 +158,7 @@ docker run -d \
   ghcr.io/mauricewipf/capuz-cms-api:latest
 ```
 
-**Editor stack** (`docker-compose.stack.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and add the SFTP override:
+**Editor** (`docker-compose.editor.yml`) — set SFTP vars in `.env` (including `SFTP_KEY_HOST_PATH`) and add the SFTP override:
 
 ```env
 # .env
@@ -167,7 +167,7 @@ SFTP_KEY_PATH=/keys/id_ed25519
 ```
 
 ```bash
-docker compose -f docker-compose.stack.yml -f docker-compose.stack.sftp.yml up --build
+docker compose -f docker-compose.editor.yml -f docker-compose.editor.sftp.yml up --build
 ```
 
 For Hetzner VPS deploys, see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (reference stack).
@@ -380,14 +380,14 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
 Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
-### Editor stack (single container)
+### Editor (single container)
 
 Open WebUI + cms-api preview on one port (no bundled live site):
 
 ```bash
 cp .env.example .env
 # set OPENROUTER_API_KEY
-docker compose -f docker-compose.stack.yml up --build
+docker compose -f docker-compose.editor.yml up --build
 ```
 
 - Open WebUI: http://localhost:8081

@@ -1,11 +1,11 @@
-# Editor stack: Open WebUI + cms-api + preview routing (no nginx).
-# Pair with a remote live site via docker-compose.stack.sftp.yml (STORAGE_BACKEND=sftp).
+# Editor: Open WebUI + cms-api + preview routing (no nginx).
+# Pair with a remote live site via docker-compose.editor.sftp.yml (STORAGE_BACKEND=sftp).
 # Plugin-only and multi-service demos remain in docker-compose.plugin.yml / docker-compose.yml.
 services:
-  stack:
+  editor:
     build:
       context: .
-      dockerfile: Dockerfile.stack
+      dockerfile: Dockerfile.editor
     ports:
       - "8081:8081"
     env_file: .env
@@ -36,8 +36,8 @@ services:
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
       WEBUI_URL: ${WEBUI_URL:-http://localhost:8081}
     volumes:
-      - stack-data:/app/data
-      # For SFTP publish to a remote site: also use docker-compose.stack.sftp.yml
+      - editor-data:/app/data
+      # For SFTP publish to a remote site: also use docker-compose.editor.sftp.yml
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/"]
       interval: 30s
@@ -46,4 +46,4 @@ services:
       start_period: 120s
 
 volumes:
-  stack-data:
+  editor-data:

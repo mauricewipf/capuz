@@ -1,13 +1,12 @@
 # Optional override: mount an SSH private key for STORAGE_BACKEND=sftp.
-# Use with the local editor stack when publishing to a remote nginx root
-# (remote nginx / SFTP backend example).
+# Use with the editor compose when publishing to a remote nginx root.
 #
 #   # Set STORAGE_BACKEND=sftp and SFTP_* in .env
-#   docker compose -f docker-compose.stack.yml -f docker-compose.stack.sftp.yml up --build
+#   docker compose -f docker-compose.editor.yml -f docker-compose.editor.sftp.yml up --build
 #
 # Requires SFTP_KEY_HOST_PATH in .env (absolute path to an existing private key file).
 
 services:
-  stack:
+  editor:
     volumes:
       - ${SFTP_KEY_HOST_PATH:?Set SFTP_KEY_HOST_PATH in .env to your SSH private key file}:${SFTP_KEY_PATH:-/keys/id_ed25519}:ro

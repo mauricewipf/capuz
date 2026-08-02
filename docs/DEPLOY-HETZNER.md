@@ -1,6 +1,6 @@
 # Deploy Capuz on Hetzner Cloud
 
-Production on Hetzner uses the **reference stack**: `docker-compose.yml` plus `deploy/hetzner/docker-compose.reference.production.yml`. Four containers (`nginx`, `cms-api`, `openwebui`, `edge-router`) share a `site-data` volume. In-compose Caddy (`edge-router`) terminates TLS on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`).
+Production on Hetzner uses the **multi-service stack**: `docker-compose.yml` plus `deploy/hetzner/docker-compose.production.yml`. Four containers (`nginx`, `cms-api`, `openwebui`, `edge-router`) share a `site-data` volume. In-compose Caddy (`edge-router`) terminates TLS on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`).
 
 Compared to Render, you control TLS and DNS yourself — no custom-domain slot limits.
 
@@ -116,12 +116,12 @@ Never run `docker compose down -v` on production — that deletes `site-data` an
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.reference.production.yml` | edge-router `:80`/`:443`, `CAPUZ_SEED`, production env, `caddy_data` |
+| `docker-compose.production.yml` | edge-router `:80`/`:443`, `CAPUZ_SEED`, production env, `caddy_data` |
 | `../Caddyfile.prod` | In-compose TLS + hostname routing (repo root) |
 | `create-server.sh` | Optional `hcloud server create` + cloud-init |
 | `cloud-init.yaml` | Docker + UFW bootstrap (no secrets) |
 | `deploy-from-local.sh` | SCP `.env` + rsync repo + remote `install-on-server.sh` |
-| `install-on-server.sh` | Swap, Docker bootstrap, disables host Caddy, starts reference stack |
+| `install-on-server.sh` | Swap, Docker bootstrap, disables host Caddy, starts multi-service stack |
 | `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
 | `env.production.example` | Production template incl. `ACME_EMAIL` and lean Open WebUI flags |
 
@@ -134,9 +134,9 @@ Root: **`seed-data.sh`** uses `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`;
 ## Operations
 
 ```bash
-ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml ps'
-ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f openwebui'
-ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f edge-router'
+ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml ps'
+ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f openwebui'
+ssh root@YOUR_VPS 'cd /opt/capuz/app && docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f edge-router'
 ssh root@YOUR_VPS 'docker stats --no-stream'
 ```
 
@@ -146,7 +146,7 @@ Firewall: **80**, **443** public. Only **edge-router** publishes those ports; ng
 
 ## Migrating from Render
 
-1. Deploy the reference stack on a Hetzner VPS (steps above).
+1. Deploy the multi-service stack on a Hetzner VPS (steps above).
 2. Copy site data if needed (export disk / republish via API).
 3. Update DNS from Render to the VPS IP.
 4. Suspend Render when satisfied.

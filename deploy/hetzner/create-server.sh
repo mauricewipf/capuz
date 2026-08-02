@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Create a Hetzner Cloud VPS with Docker preinstalled (cloud-init).
-# Reference stack: in-compose edge-router handles TLS.
+# Multi-service stack: in-compose edge-router handles TLS.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

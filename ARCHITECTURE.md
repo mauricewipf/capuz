@@ -105,7 +105,7 @@ curl → cms-api:3000/api/pages → /app/data → JSON Response
 
 ## Shared Storage
 
-All reference-stack app services mount the same Docker volume:
+All multi-service stack app services mount the same Docker volume:
 - **Volume Name**: `site-data`
 - **Mount Point**: `/app/data`
 - **Contents**:
@@ -183,11 +183,11 @@ One image (`Dockerfile.bundled`, `start-bundled.sh`) runs Open WebUI, cms-api, a
 
 Caddy config is generated at startup (`prepare_caddy_config` in `start-bundled.sh`). When `CAPUZ_SERVE_SITE=true`, routes `SITE_HOST` → nginx, `EDITOR_HOST` → Open WebUI, `PREVIEW_HOST` → cms-api. When `false`, only editor/preview hosts plus a catch-all to Open WebUI.
 
-Remote-site mode: `docker-compose.bundled.yml` + `docker-compose.bundled.sftp.yml` (for SFTP). For a full VPS deploy, use the reference stack below.
+Remote-site mode: `docker-compose.bundled.yml` + `docker-compose.bundled.sftp.yml` (for SFTP). For a full VPS deploy, use the multi-service stack below.
 
 **Render:** deploy via `render.bundled.yaml`. Custom domains are required for `SITE_HOST`, `EDITOR_HOST`, and `PREVIEW_HOST` (nested `*.onrender.com` subdomains do not resolve).
 
-### Reference stack on Hetzner VPS
+### Multi-service stack on Hetzner VPS
 Deploy the same four-service layout as local (`docker-compose.yml` + override). Local and prod both use in-compose **edge-router** (Caddy). Production publishes `:80`/`:443` with auto-HTTPS via `Caddyfile.prod` and `ACME_EMAIL`; local publishes `:8080` with `Caddyfile.dev`.
 
 | Component | Role |
@@ -197,7 +197,7 @@ Deploy the same four-service layout as local (`docker-compose.yml` + override). 
 | `cms-api` | API, MCP, preview vhost (Docker network only) |
 | `openwebui` | Chat UI on shared `site-data` |
 
-No host systemd Caddy for the reference stack. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
+No host systemd Caddy for the multi-service stack. See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
 Plugin-only deployment remains `Dockerfile.api` + `docker-compose.plugin.yml`.
 
@@ -209,7 +209,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 ```
 
 ### Production Considerations
-1. **Reference stack**: in-compose edge-router handles Let's Encrypt (`ACME_EMAIL`, `caddy_data` volume)
+1. **Multi-service stack**: in-compose edge-router handles Let's Encrypt (`ACME_EMAIL`, `caddy_data` volume)
 2. **Separate the data volume** backup strategy — never `docker compose down -v` in prod
 3. **Environment-specific configs** using compose overrides
 4. **Health checks** are already configured

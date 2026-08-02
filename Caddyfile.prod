@@ -1,5 +1,5 @@
-# Production reference stack — automatic HTTPS + Let's Encrypt.
-# Mounted by deploy/hetzner/docker-compose.reference.production.yml into edge-router.
+# Production multi-service stack — automatic HTTPS + Let's Encrypt.
+# Mounted by deploy/hetzner/docker-compose.production.yml into edge-router.
 
 {
 	email {$ACME_EMAIL}

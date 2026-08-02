@@ -172,7 +172,7 @@ SFTP_KEY_PATH=/keys/id_ed25519
 docker compose -f docker-compose.bundled.yml -f docker-compose.bundled.sftp.yml up --build
 ```
 
-For Hetzner VPS deploys, see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (reference stack).
+For Hetzner VPS deploys, see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** (multi-service stack).
 
 #### 6. Verify cms-api
 
@@ -267,7 +267,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `discard_draft` | Delete a draft without publishing |
 | `delete_page` | Delete a published page |
 | `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |
-| `import_chat_file` | Copy a chat-attached Open WebUI file into site assets (shared `site-data` volume — bundled, stack, or reference production); returns `url` with file extension for `<img src>` |
+| `import_chat_file` | Copy a chat-attached Open WebUI file into site assets (shared `site-data` volume — bundled or multi-service stack); returns `url` with file extension for `<img src>` |
 | `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` |
 | `insert_component` | Embed a tagged component block into a page draft |
 | `sync_component` | Propagate updated component HTML to all tagged page drafts |
@@ -331,7 +331,7 @@ curl -H "Authorization: Bearer $CMS_API_KEY" \
 
 Draft pages are previewed on a separate host (subdomain). cms-api serves preview HTML when the HTTP `Host` matches `PREVIEW_HOST`. Assets load from the published site tree.
 
-| Variable | Default (reference stack) | Description |
+| Variable | Default (multi-service stack) | Description |
 |----------|---------------------------|-------------|
 | `PREVIEW_HOST` | `preview.localhost` | Hostname for preview vhost |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Base URL returned in draft write responses |
@@ -340,7 +340,7 @@ Draft pages are previewed on a separate host (subdomain). cms-api serves preview
 | `SITE_BASE_URL` | `http://localhost:8080` | Base URL for sitemap generation (use HTTPS in prod) |
 | `SCREENSHOT_RENDERER_URL` | — | Optional POST endpoint `{ url }` → PNG bytes for `render_preview` |
 
-Reference stack (multi-container) URLs:
+Multi-service stack URLs:
 
 - Live site: http://localhost:8080
 - Open WebUI: http://chat.localhost:8080
@@ -367,7 +367,7 @@ Plugin-only deployments: point `PREVIEW_BASE_URL` at wherever preview traffic re
 - MCP and write endpoints require bearer auth.
 - Path validation blocks traversal and restricts extensions to `.html` and `.xml`.
 
-## Reference stack (this repo)
+## Multi-service stack (this repo)
 
 This repository includes a full demo with nginx + cms-api + Open WebUI + edge-router (Caddy):
 
@@ -382,7 +382,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 - Preview: http://preview.localhost:8080
 - CMS API: not published on the host (optional: add `-f docker-compose.local-debug.yml` for `127.0.0.1:3000`)
 
-Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.reference.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
+Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
 
 ### Bundled monolith (single container)
 
@@ -415,7 +415,7 @@ Set `OPENROUTER_API_KEY` in the Render dashboard. Attach custom domains for `SIT
 
 ### Hetzner VPS
 
-Deploy the **reference stack** on a single VPS (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`):
+Deploy the **multi-service stack** on a single VPS (`docker-compose.yml` + `deploy/hetzner/docker-compose.production.yml`):
 
 ```bash
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
@@ -444,7 +444,7 @@ See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for server sizing, DNS,
 | `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
-| `ACME_EMAIL` | — | Let's Encrypt contact email for Hetzner reference prod (edge-router TLS) |
+| `ACME_EMAIL` | — | Let's Encrypt contact email for Hetzner stack prod (edge-router TLS) |
 | `CAPUZ_SERVE_SITE` | `true` | Bundled monolith: serve live site from nginx (`fs` only). Set `false` for remote-site mode (`sftp`/`git`/`s3`) |
 | `CAPUZ_SEED` | `SKIP` | nginx seed mode when `CAPUZ_SERVE_SITE=true`: `SKIP`, `SEED`, or `FORCE_OVERWRITE` |
 | `SFTP_HOST` | — | SFTP server hostname |

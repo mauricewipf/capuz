@@ -1,5 +1,5 @@
 #cloud-config
-# First-boot bootstrap for Capuz on Hetzner Cloud (reference stack).
+# First-boot bootstrap for Capuz on Hetzner Cloud (multi-service stack).
 # TLS is handled by in-compose edge-router on :80/:443 after deploy.
 # Secrets are NOT passed here — upload .env after the server is up (see docs/DEPLOY-HETZNER.md).
 

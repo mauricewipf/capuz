@@ -1,4 +1,4 @@
-# Local override for the reference stack (HTTP on :8080).
+# Local override for the multi-service stack (HTTP on :8080).
 # Usage: docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 # With SFTP: add -f docker-compose.local.sftp.yml
 services:

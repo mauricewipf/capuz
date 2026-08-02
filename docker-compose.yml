@@ -1,7 +1,7 @@
-# Reference stack base (nginx + cms-api + openwebui + edge-router).
+# Multi-service stack base (nginx + cms-api + openwebui + edge-router).
 # Not runnable alone — use an override:
 #   Local:  docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
-#   Prod:   docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml up -d --build
+#   Prod:   docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml up -d --build
 services:
   nginx:
     restart: unless-stopped

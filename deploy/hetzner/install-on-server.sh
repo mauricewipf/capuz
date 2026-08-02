@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run on the VPS after /opt/capuz/.env exists. Idempotent.
-# Deploys the reference stack (nginx + cms-api + openwebui + edge-router).
+# Deploys the multi-service stack (nginx + cms-api + openwebui + edge-router).
 set -euo pipefail
 
 APP_DIR="${CAPUZ_APP_DIR:-/opt/capuz/app}"
@@ -52,7 +52,7 @@ ensure_docker() {
 disable_host_caddy() {
   # Free :80/:443 for in-compose edge-router.
   if command -v caddy >/dev/null 2>&1 || systemctl list-unit-files caddy.service >/dev/null 2>&1; then
-    echo "Disabling host Caddy (reference stack uses Docker edge-router)..."
+    echo "Disabling host Caddy (multi-service stack uses Docker edge-router)..."
     systemctl disable --now caddy 2>/dev/null || true
   fi
 }
@@ -101,7 +101,7 @@ ensure_swap
 stop_native_nginx
 cd "$APP_DIR"
 
-COMPOSE=(docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml)
+COMPOSE=(docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml)
 
 echo "Preflight: validating merged compose config..."
 "${COMPOSE[@]}" config >/dev/null
@@ -124,7 +124,7 @@ disable_host_caddy
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
 echo ""
-echo "Reference stack started (nginx + cms-api + openwebui + edge-router)."
+echo "Multi-service stack started (nginx + cms-api + openwebui + edge-router)."
 echo "In-compose Caddy (edge-router) serves TLS for:"
 echo "  https://${SITE_HOST} (live site — empty until publish)"
 echo "  https://www.${SITE_HOST}"
@@ -132,5 +132,5 @@ echo "  https://${EDITOR_HOST} (Open WebUI)"
 echo "  https://${PREVIEW_HOST} (draft preview)"
 echo ""
 echo "First Open WebUI boot can take several minutes. Check:"
-echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f openwebui"
-echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.reference.production.yml logs -f edge-router"
+echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f openwebui"
+echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f edge-router"

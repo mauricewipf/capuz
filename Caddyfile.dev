@@ -1,4 +1,4 @@
-# Local reference stack — HTTP only on :8080 (no TLS / ACME).
+# Local multi-service stack — HTTP only on :8080 (no TLS / ACME).
 # Mounted by docker-compose.local.yml into edge-router.
 
 {

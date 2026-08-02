@@ -1,4 +1,4 @@
-# Optional override: mount SSH key for STORAGE_BACKEND=sftp (local reference stack).
+# Optional override: mount SSH key for STORAGE_BACKEND=sftp (local multi-service stack).
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.local.sftp.yml up --build -d
 #

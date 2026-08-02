@@ -5,7 +5,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 ## Unreleased
 
 ### Removed
-- Removed Hetzner bundled and minimal deploy modes; Hetzner VPS uses reference stack only.
+- Removed Hetzner bundled and minimal deploy modes; Hetzner VPS uses multi-service stack only.
 - Removed separate editor deploy (`Dockerfile.editor`, `docker-compose.editor.yml`, `render.yaml`); merged into bundled monolith via `CAPUZ_SERVE_SITE`.
 
 ### Changed
@@ -13,10 +13,10 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - **Bundled monolith:** single `Dockerfile.bundled` + `start-bundled.sh` for both local site mode (`CAPUZ_SERVE_SITE=true`, `STORAGE_BACKEND=fs`) and remote-site mode (`CAPUZ_SERVE_SITE=false`, `sftp`/`git`/`s3`). Caddy config generated at runtime.
 - **Render:** one blueprint (`render.bundled.yaml`); custom domains required for `SITE_HOST`, `EDITOR_HOST`, `PREVIEW_HOST` (nested `*.onrender.com` subdomains do not resolve).
 - Renamed editor deploy files: `docker-compose.editor.yml`, `docker-compose.editor.sftp.yml`, `Dockerfile.editor`, `start-editor.sh`, `Caddyfile.editor` (was `*.stack.*`) — superseded by bundled monolith merge above.
-- **Reference stack:** single in-compose Caddy (`edge-router`) for local and prod. Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml` (HTTP `:8080`, hostnames `localhost` / `chat.localhost` / `preview.localhost`). Prod: edge-router on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`, `caddy_data`). Host systemd Caddy removed from reference deploy (bundled still uses host Caddy).
-- cms-api / nginx / openwebui no longer publish host ports in the reference stack; optional `docker-compose.local-debug.yml` exposes `127.0.0.1:3000`.
-- Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the reference base compose (same as prod).
-- `install-on-server.sh` reference path: preflight validate, disable host Caddy, never `down -v`.
+- **Multi-service stack:** single in-compose Caddy (`edge-router`) for local and prod. Local: `docker compose -f docker-compose.yml -f docker-compose.local.yml` (HTTP `:8080`, hostnames `localhost` / `chat.localhost` / `preview.localhost`). Prod: edge-router on `:80`/`:443` with Let's Encrypt (`ACME_EMAIL`, `Caddyfile.prod`, `caddy_data`). Host systemd Caddy removed from stack deploy (bundled still uses host Caddy).
+- cms-api / nginx / openwebui no longer publish host ports in the multi-service stack; optional `docker-compose.local-debug.yml` exposes `127.0.0.1:3000`.
+- Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the stack base compose (same as prod).
+- `install-on-server.sh` stack path: preflight validate, disable host Caddy, never `down -v`.
 - Replace `CAPUZ_SKIP_SEED` with `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`). `FORCE_OVERWRITE` wipes `/app/data/assets` and copies `public/` seed again.
 
 ### Fixed
@@ -29,8 +29,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Added
 
-- Hetzner **reference stack** production deploy (`docker-compose.yml` + `deploy/hetzner/docker-compose.reference.production.yml`) with `CAPUZ_SKIP_SEED` for empty live site (TLS via in-compose edge-router — see Changed above)
-- `CAPUZ_STACK` env (`reference` | `bundled`) in `install-on-server.sh` and `deploy-from-local.sh`
+- Hetzner **multi-service stack** production deploy (`docker-compose.yml` + `deploy/hetzner/docker-compose.production.yml`) with `CAPUZ_SKIP_SEED` for empty live site (TLS via in-compose edge-router — see Changed above)
 - `import_chat_file` MCP tool and `POST /api/assets/import-chat` — copy chat-attached Open WebUI files into site assets via shared disk (bundled/stack; uses existing `DATA_DIR` or `${DATA_ROOT}/.open-webui`, no new env vars)
 - Bundled setup (`Dockerfile.bundled`, `docker-compose.bundled.yml`, `render.bundled.yaml`) — one port with host-based routing:
   - `SITE_HOST` → nginx (published pages)
@@ -71,7 +70,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - `GET /api/pages?detail=status` and `list_pages(detail: "status")` for merged page listing
 - Preview vhost in cms-api (`PREVIEW_HOST`, `PREVIEW_BASE_URL`, `DRAFTS_DIR`)
 - Draft-or-fallback preview browsing with extensionless URL resolution
-- Caddy `editor-router` on port 8081 for `preview.localhost` + Open WebUI in reference stack
+- Caddy `editor-router` on port 8081 for `preview.localhost` + Open WebUI in multi-service stack
 
 ### Changed
 
@@ -94,7 +93,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 ### Changed
 
 - Refactored page operations behind a `Storage` interface
-- Open WebUI reference stack now uses bearer auth for MCP connection
+- Open WebUI multi-service stack now uses bearer auth for MCP connection
 
 ### Security
 

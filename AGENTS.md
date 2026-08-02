@@ -9,7 +9,7 @@ Capuz CMS API is an **Open WebUI plugin** — a publishable MCP / OpenAPI tool s
 This repo contains two things:
 
 1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `ghcr.io/mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
-2. **A reference demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
+2. **A multi-service demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
 
 The site content lives in `public/` (seed HTML/XML and `public/assets/`). nginx seeds into a shared Docker volume at runtime (HTML/XML to `/app/data/`, assets to `/app/data/assets/`). The API only manages HTML/XML; nginx serves static assets.
 
@@ -78,8 +78,8 @@ nginx.conf        # Static server config (extensionless URLs)
 Caddyfile.dev     # Local edge-router: site + chat + preview on :8080
 Caddyfile.prod    # Prod edge-router: auto-HTTPS + Let's Encrypt
 deploy/hetzner/
-  docker-compose.reference.production.yml
-docker-compose.yml          # Reference stack base (nginx + cms-api + openwebui + edge-router)
+  docker-compose.production.yml
+docker-compose.yml          # Multi-service stack base (nginx + cms-api + openwebui + edge-router)
 docker-compose.local.yml    # Local override (publish :8080, Caddyfile.dev)
 docker-compose.local-debug.yml  # Optional: expose cms-api on 127.0.0.1:3000
 docker-compose.bundled.yml  # Monolith: site + chat + preview (CAPUZ_SERVE_SITE)
@@ -91,7 +91,7 @@ seed-data.sh                # Seeds demo public/ into nginx volume; CAPUZ_SEED=S
 
 ## Commands
 
-### Local demo stack (reference — uses `fs` backend, no extra config)
+### Local demo stack (multi-service — uses `fs` backend, no extra config)
 
 ```bash
 cp .env.example .env   # set OPENROUTER_API_KEY
@@ -122,7 +122,7 @@ cd api && bun install && bun run start
 
 Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`).
 
-### Hetzner VPS (reference stack)
+### Hetzner VPS (multi-service stack)
 
 Production deploy of `docker-compose.yml` + prod override — four containers including in-compose `edge-router` (Caddy) for TLS; no demo seed:
 
@@ -161,8 +161,8 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 ### Docker / config
 
 - API image builds from `Dockerfile.api` (context: repo root, copies `api/`).
-- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) per `CAPUZ_SEED` (production reference deploy uses `SKIP`).
-- Reference local stack always uses `-f docker-compose.yml -f docker-compose.local.yml`.
+- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) per `CAPUZ_SEED` (production stack deploy uses `SKIP`).
+- Multi-service local stack always uses `-f docker-compose.yml -f docker-compose.local.yml`.
 - Environment variables are documented in `.env.example` and `README.md`.
 
 ## Guardrails

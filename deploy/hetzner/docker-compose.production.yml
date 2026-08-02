@@ -1,4 +1,4 @@
-# Production overrides for reference stack (docker-compose.yml on Hetzner VPS).
+# Production overrides for multi-service stack (docker-compose.yml on Hetzner VPS).
 # edge-router (in-compose Caddy) terminates TLS on :80/:443. No host Caddy.
 services:
   edge-router:

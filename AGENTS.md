@@ -136,6 +136,8 @@ See `docs/DEPLOY-HETZNER.md`.
 
 ### Publish cms-api plugin image
 
+Before tagging: bump `api/src/version.js`, `api/package.json`, and move `CHANGELOG.md` Unreleased entries into a dated `## [x.y.z]` section.
+
 Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/capuz-cms-api` (multi-arch `linux/amd64`, `linux/arm64`).
 
 ## Coding conventions

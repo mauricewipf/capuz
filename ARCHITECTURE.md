@@ -200,7 +200,7 @@ Deploy the same four-service layout as local (`docker-compose.yml` + override). 
 | Component | Role |
 |-----------|------|
 | `edge-router` | TLS (prod) / HTTP (local); routes by `SITE_HOST` / `EDITOR_HOST` / `PREVIEW_HOST` |
-| `nginx` | Live published pages; **`CAPUZ_SEED=SKIP`** in prod — no demo seed from `public/` |
+| `nginx` | Live published pages; **`CAPUZ_SEED` defaults to `SKIP`** — no demo seed from `public/` unless overridden |
 | `cms-api` | API, MCP, preview vhost (Docker network only) |
 | `openwebui` | Chat UI on shared `site-data` |
 

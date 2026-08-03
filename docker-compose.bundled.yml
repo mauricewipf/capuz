@@ -40,6 +40,7 @@ services:
       DEFAULT_MODEL_PARAMS: '${DEFAULT_MODEL_PARAMS:-{"function_calling":"native"}}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
       WEBUI_URL: ${WEBUI_URL:-http://chat.localhost:8081}
+      DEFAULT_PROMPT_SUGGESTIONS: '[{"title":["Audit","agent readiness"],"content":"Use agent-ready_scan_site to scan ${SITE_HOST:-localhost} with profile content. Summarize the readiness level, failing checks, and suggest concrete fixes for this site."},{"title":["Show","unpublished changes"],"content":"Use list_pages with changedOnly true. Summarize each draft or modified page and what differs from the published version."},{"title":["SEO audit","homepage"],"content":"Run audit_seo on index.html. List issues and suggestions, then offer to apply metadata fixes to the draft."},{"title":["Check","broken links"],"content":"Run check_links across the site. Report broken internal links and missing assets with the source pages."},{"title":["Review","drafts to publish"],"content":"Use list_drafts, summarize each pending page, and ask which drafts I should publish."}]'
       RAG_EMBEDDING_ENGINE: ${RAG_EMBEDDING_ENGINE:-openai}
     volumes:
       - bundled-data:/app/data

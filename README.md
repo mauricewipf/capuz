@@ -279,7 +279,9 @@ In **Admin → Settings → Integrations → Tool Servers**, add an MCP connecti
 ]
 ```
 
-The demo stack and bundled monolith include both connections via `TOOL_SERVER_CONNECTIONS` in `docker-compose.yml` / `start-bundled.sh`. Enable **Agent Readiness Scanner** in chat to call `scan_site` against a public URL (e.g. your `SITE_BASE_URL`).
+The demo stack and bundled monolith include both connections via `TOOL_SERVER_CONNECTIONS` in `docker-compose.yml` / `start-bundled.sh`. Enable **Agent Readiness Scanner** in chat to call `scan_site` against a public URL (e.g. your `SITE_HOST`).
+
+New-chat prompt chips are set via `DEFAULT_PROMPT_SUGGESTIONS` in `docker-compose.yml` (uses `${SITE_HOST}` for the agent-readiness suggestion; external scans need a public hostname).
 
 Replace the URL with wherever cms-api is reachable from Open WebUI (e.g. `https://cms.example.com/mcp`).
 

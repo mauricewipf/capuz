@@ -116,7 +116,7 @@ Never run `docker compose down -v` on production — that deletes `site-data` an
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.production.yml` | edge-router `:80`/`:443`, `CAPUZ_SEED`, production env, `caddy_data` |
+| `docker-compose.production.yml` | edge-router `:80`/`:443`, production env, `caddy_data` |
 | `../Caddyfile.prod` | In-compose TLS + hostname routing (repo root) |
 | `create-server.sh` | Optional `hcloud server create` + cloud-init |
 | `cloud-init.yaml` | Docker + UFW bootstrap (no secrets) |
@@ -125,7 +125,7 @@ Never run `docker compose down -v` on production — that deletes `site-data` an
 | `configure-dns.sh` | Optional `hcloud zone rrset` for web records |
 | `env.production.example` | Production template incl. `ACME_EMAIL` and lean Open WebUI flags |
 
-Root: **`seed-data.sh`** uses `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`; production uses `SKIP`).
+Root: **`seed-data.sh`** uses `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`; default `SKIP` in `docker-compose.yml`).
 
 **Shared disk for `import_chat_file`:** Open WebUI mounts `site-data` at `/app/data` with `DATA_DIR=/app/data/.open-webui` so cms-api can read `webui.db` and chat uploads.
 

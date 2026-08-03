@@ -163,7 +163,7 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 ### Docker / config
 
 - API image builds from `Dockerfile.api` (context: repo root, copies `api/`).
-- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) per `CAPUZ_SEED` (production stack deploy uses `SKIP`).
+- nginx image seeds `public/` into the volume on first run (`seed-data.sh`) per `CAPUZ_SEED` (default `SKIP` in `docker-compose.yml`; local `.env` often sets `SEED`).
 - Multi-service local stack always uses `-f docker-compose.yml -f docker-compose.local.yml`.
 - Environment variables are documented in `.env.example` and `README.md`.
 

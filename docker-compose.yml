@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile.nginx
     environment:
       PORT: 80
-      CAPUZ_SEED: ${CAPUZ_SEED:-SEED}
+      CAPUZ_SEED: ${CAPUZ_SEED:-SKIP}
     volumes:
       - site-data:/app/data
     depends_on:
@@ -68,6 +68,8 @@ services:
       DEFAULT_MODEL_PARAMS: '{"function_calling":"native"}'
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-dev-secret-change-me}
       WEBUI_URL: ${WEBUI_URL:-http://chat.localhost:8080}
+      # Prod-oriented chips (${SITE_HOST} has no scheme; agent-readiness scan needs a public host).
+      DEFAULT_PROMPT_SUGGESTIONS: '[{"title":["Audit","agent readiness"],"content":"Use agent-ready_scan_site to scan ${SITE_HOST:-localhost} with profile content. Summarize the readiness level, failing checks, and suggest concrete fixes for this site."},{"title":["Show","unpublished changes"],"content":"Use list_pages with changedOnly true. Summarize each draft or modified page and what differs from the published version."},{"title":["SEO audit","homepage"],"content":"Run audit_seo on index.html. List issues and suggestions, then offer to apply metadata fixes to the draft."},{"title":["Check","broken links"],"content":"Run check_links across the site. Report broken internal links and missing assets with the source pages."},{"title":["Review","drafts to publish"],"content":"Use list_drafts, summarize each pending page, and ask which drafts I should publish."}]'
       TOOL_SERVER_CONNECTIONS: '[{"type":"mcp","url":"http://cms-api:3000/mcp","path":"/mcp","auth_type":"bearer","key":"${CMS_API_KEY}","config":{"enable":true},"info":{"id":"cms-pages","name":"CMS Pages","description":"Read and write HTML files on the site"}},{"type":"mcp","url":"https://isitagentready.com/mcp","path":"","auth_type":"none","config":{"enable":true},"info":{"id":"agent-ready","name":"Agent Readiness Scanner","description":"Scan websites for AI agent readiness"}}]'
     volumes:
       - site-data:/app/data

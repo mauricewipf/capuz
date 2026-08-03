@@ -61,10 +61,9 @@ This application uses a microservices architecture with separate Docker services
 - `PREVIEW_HOST` → cms-api:3000 (preview vhost)
 
 #### 4. openwebui (AI Editor)
-- **Image**: `openwebui/open-webui`
+- **Image**: `openwebui/open-webui` (pinned in `docker-compose.yml`)
 - **Internal port**: 8080 (exposed via edge-router)
 - **Purpose**: AI-powered content editor
-- **Dockerfile**: `Dockerfile.openwebui`
 - **Volume**: shared `site-data:/app/data` with `DATA_DIR=/app/data/.open-webui`
 
 **Responsibilities**:

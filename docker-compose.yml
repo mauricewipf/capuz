@@ -54,9 +54,7 @@ services:
 
   openwebui:
     restart: unless-stopped
-    build:
-      context: .
-      dockerfile: Dockerfile.openwebui
+    image: openwebui/open-webui:latest
     env_file: .env
     environment:
       # Internal listen port (edge-router → openwebui:8080). Override .env PORT=8081 (bundled monolith edge port).

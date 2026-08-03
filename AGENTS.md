@@ -85,7 +85,7 @@ docker-compose.local-debug.yml  # Optional: expose cms-api on 127.0.0.1:3000
 docker-compose.bundled.yml  # Monolith: site + chat + preview (CAPUZ_SERVE_SITE)
 docker-compose.bundled.sftp.yml  # SFTP key mount for CAPUZ_SERVE_SITE=false
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
-Dockerfile.api | Dockerfile.nginx | Dockerfile.openwebui | Dockerfile.bundled
+Dockerfile.api | Dockerfile.nginx | Dockerfile.bundled
 seed-data.sh                # Seeds demo public/ into nginx volume; CAPUZ_SEED=SKIP|SEED|FORCE_OVERWRITE
 ```
 

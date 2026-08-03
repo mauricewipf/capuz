@@ -200,7 +200,7 @@ After HTML or asset changes in `public/`, rebuild nginx or restart compose so se
 
 ## MCP / integration context
 
-Open WebUI connects to `http://cms-api:3000/mcp` with bearer auth (`CMS_API_KEY`). Tool server config is in `docker-compose.yml` (`TOOL_SERVER_CONNECTIONS`). External users configure the same JSON in their own Open WebUI instance, pointing at wherever they host cms-api.
+Open WebUI connects to `http://cms-api:3000/mcp` with bearer auth (`CMS_API_KEY`) and to `https://isitagentready.com/mcp` for agent-readiness scans (`scan_site`). Tool server config is in `docker-compose.yml` (`TOOL_SERVER_CONNECTIONS`). External users configure the same JSON in their own Open WebUI instance, pointing at wherever they host cms-api.
 
 The API is also consumable as an OpenAPI tool server at `/openapi.json`.
 

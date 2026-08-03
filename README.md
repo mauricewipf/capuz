@@ -263,9 +263,23 @@ In **Admin → Settings → Integrations → Tool Servers**, add an MCP connecti
       "name": "CMS Pages",
       "description": "Read and write HTML files on the site"
     }
+  },
+  {
+    "type": "mcp",
+    "url": "https://isitagentready.com/mcp",
+    "path": "",
+    "auth_type": "none",
+    "config": { "enable": true },
+    "info": {
+      "id": "agent-ready",
+      "name": "Agent Readiness Scanner",
+      "description": "Scan websites for AI agent readiness"
+    }
   }
 ]
 ```
+
+The demo stack and bundled monolith include both connections via `TOOL_SERVER_CONNECTIONS` in `docker-compose.yml` / `start-bundled.sh`. Enable **Agent Readiness Scanner** in chat to call `scan_site` against a public URL (e.g. your `SITE_BASE_URL`).
 
 Replace the URL with wherever cms-api is reachable from Open WebUI (e.g. `https://cms.example.com/mcp`).
 
@@ -296,6 +310,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `audit_seo` / `apply_seo` / `regenerate_sitemap` | SEO audit, metadata updates, sitemap draft generation |
 | `check_links` | Scan for broken internal links and missing assets |
 | `render_preview` | Screenshot a draft via external renderer (`SCREENSHOT_RENDERER_URL`) |
+| `scan_site` | *(Agent Readiness Scanner)* Scan a public URL for AI agent readiness via [isitagentready.com](https://isitagentready.com) |
 
 ## REST API
 

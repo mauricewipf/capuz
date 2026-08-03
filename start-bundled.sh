@@ -89,7 +89,7 @@ if [ -z "$WEBUI_URL" ]; then
 fi
 
 if [ -z "$TOOL_SERVER_CONNECTIONS" ] && [ -n "$CMS_API_KEY" ]; then
-  export TOOL_SERVER_CONNECTIONS="[{\"type\":\"mcp\",\"url\":\"http://127.0.0.1:${CMS_API_PORT}/mcp\",\"path\":\"/mcp\",\"auth_type\":\"bearer\",\"key\":\"${CMS_API_KEY}\",\"config\":{\"enable\":true},\"info\":{\"id\":\"cms-pages\",\"name\":\"CMS Pages\",\"description\":\"Read and write HTML files on the site\"}}]"
+  export TOOL_SERVER_CONNECTIONS="[{\"type\":\"mcp\",\"url\":\"http://127.0.0.1:${CMS_API_PORT}/mcp\",\"path\":\"/mcp\",\"auth_type\":\"bearer\",\"key\":\"${CMS_API_KEY}\",\"config\":{\"enable\":true},\"info\":{\"id\":\"cms-pages\",\"name\":\"CMS Pages\",\"description\":\"Read and write HTML files on the site\"}},{\"type\":\"mcp\",\"url\":\"https://isitagentready.com/mcp\",\"path\":\"\",\"auth_type\":\"none\",\"config\":{\"enable\":true},\"info\":{\"id\":\"agent-ready\",\"name\":\"Agent Readiness Scanner\",\"description\":\"Scan websites for AI agent readiness\"}}]"
 fi
 
 NGINX_PID=""

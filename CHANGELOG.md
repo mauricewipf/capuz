@@ -4,6 +4,13 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+## [0.4.3] - 2026-08-06
+
+### Added
+
+- `v2/diff` component: touch-draggable daisyUI image comparison slider (pointer events; `v1/diff` unchanged)
+- Component seed library from daisyUI docs: steps (2), cards (20, including per-size `card-xs`–`card-xl`), navbars (12), collapses (12), accordions (5), heroes (5), footers (11), masks (15), joins (6)
+
 ## [0.4.2] - 2026-08-06
 
 ### Changed

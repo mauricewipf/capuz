@@ -4,6 +4,8 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+## [0.4.0] - 2026-08-06
+
 ### Removed
 - Removed Hetzner bundled and minimal deploy modes; Hetzner VPS uses multi-service stack only.
 - Removed separate editor deploy (`Dockerfile.editor`, `docker-compose.editor.yml`, `render.yaml`); merged into bundled monolith via `CAPUZ_SERVE_SITE`.

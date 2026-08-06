@@ -294,7 +294,7 @@ export const openApiDocument = {
           },
         },
         responses: {
-          "200": { description: "Component created" },
+          "200": { description: "Component created (name, path, html)" },
           "409": { description: "Component already exists and cannot be edited" },
         },
       },

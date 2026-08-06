@@ -4,6 +4,13 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+## [0.4.1] - 2026-08-06
+
+### Changed
+
+- `write_component` / `PUT /api/components/{name}` response now includes saved `html` alongside `name` and `path`.
+- MCP `write_component` returns metadata and raw saved HTML as separate content blocks so the model can surface markup to the user.
+
 ## [0.4.0] - 2026-08-06
 
 ### Removed

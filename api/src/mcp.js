@@ -48,6 +48,28 @@ function jsonResult(payload) {
   };
 }
 
+function writeComponentResult({ name, path, html }) {
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(
+          {
+            ok: true,
+            name,
+            path,
+            note:
+              "Component saved. Show the saved markup from the next content block to the user in a ```html fenced code block.",
+          },
+          null,
+          2,
+        ),
+      },
+      { type: "text", text: html },
+    ],
+  };
+}
+
 function registerSuggestComponentsTools(server, storage) {
   const schema = {
     minMatches: z.number().int().min(2).optional().describe("Minimum pages a pattern must appear on"),
@@ -453,14 +475,14 @@ export function createMcpServer() {
 
   server.tool(
     "write_component",
-    "Create a NEW reusable HTML component only. Fails with 409 if the name already exists — existing components are immutable and must never be overwritten. To add an existing component (e.g. v1/table) to a page and fill in data, use insert_component then edit_page/write_page on that page.",
+    "Create a NEW reusable HTML component only. Fails with 409 if the name already exists — existing components are immutable and must never be overwritten. To add an existing component (e.g. v1/table) to a page and fill in data, use insert_component then edit_page/write_page on that page. On success, metadata is in the first content block and saved HTML in the second; include that HTML in your reply inside a ```html code fence.",
     {
       name: z.string().describe("New component name such as navbar (must not already exist)"),
       html: z.string().describe("Component HTML with a single root element"),
     },
     async ({ name, html }) => {
       try {
-        return jsonResult(await writeComponent(storage, name, html));
+        return writeComponentResult(await writeComponent(storage, name, html));
       } catch (error) {
         return errorResult(error);
       }

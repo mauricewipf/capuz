@@ -30,7 +30,7 @@ export async function writeComponent(storage, name, html) {
     );
   }
   const saved = await storage.writeComponent(normalized, html);
-  return { name: saved, path: componentPathFromName(saved) };
+  return { name: saved, path: componentPathFromName(saved), html };
 }
 
 async function componentExists(storage, name) {

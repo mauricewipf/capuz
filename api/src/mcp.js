@@ -33,6 +33,12 @@ import { getStatusInfo } from "./status.js";
 import { getStorage, listPagesWithStatus } from "./storage/index.js";
 import { VERSION } from "./version.js";
 
+const MCP_INSTRUCTIONS = `Draft-first CMS for static HTML/XML pages.
+
+Page edits (write_page, edit_page, insert_component, apply_seo, move_page, copy_page) save drafts for preview only — they do not go live.
+NEVER call publish_page unless the user explicitly asks to publish, go live, deploy, or make changes public.
+After saving a draft, share the previewUrl with the user and wait for explicit approval before publishing.`;
+
 function errorResult(error) {
   const message =
     error && typeof error.message === "string" ? error.message : String(error);
@@ -102,6 +108,7 @@ export function createMcpServer() {
   const server = new McpServer({
     name: "cms-pages",
     version: VERSION,
+    instructions: MCP_INSTRUCTIONS,
   });
 
   server.tool(
@@ -119,7 +126,7 @@ export function createMcpServer() {
 
   server.tool(
     "list_pages",
-    "List HTML/XML pages with publish state. Always returns {path, status} where status is published (live only), draft (new unpublished page), or modified (live page with unpublished draft). For \"pages with changes\" / unpublished work, set changedOnly=true (or call list_drafts), then publish_page to go live.",
+    "List HTML/XML pages with publish state. Always returns {path, status} where status is published (live only), draft (new unpublished page), or modified (live page with unpublished draft). For pages with unpublished work, set changedOnly=true or call list_drafts. Use publish_page only if the user explicitly asks to publish.",
     {
       changedOnly: z
         .boolean()
@@ -151,7 +158,7 @@ export function createMcpServer() {
 
   server.tool(
     "list_drafts",
-    "List page paths that have unpublished drafts (same set as list_pages with changedOnly=true, paths only). Prefer this or list_pages(changedOnly=true) before publish_page.",
+    "List page paths that have unpublished drafts (same set as list_pages with changedOnly=true, paths only). Use before publish_page only when the user explicitly asks to publish.",
     {},
     async () => {
       try {
@@ -192,7 +199,7 @@ export function createMcpServer() {
 
   server.tool(
     "write_page",
-    "Save HTML content as a draft. Call publish_page to make it live.",
+    "Save HTML content as a draft for preview. Do not call publish_page unless the user explicitly asks to publish or go live.",
     {
       path: z.string().describe("Relative page path such as index.html"),
       html: z.string().describe("Full HTML content to save"),
@@ -210,7 +217,7 @@ export function createMcpServer() {
 
   server.tool(
     "edit_page",
-    "Apply a find/replace patch to a page draft without rewriting the full HTML.",
+    "Apply a find/replace patch to a page draft without rewriting the full HTML. Saves for preview only — do not call publish_page unless the user explicitly asks to publish or go live.",
     {
       path: z.string().describe("Relative page path such as index.html"),
       find: z.string().describe("Exact string to find in the page HTML"),
@@ -315,7 +322,7 @@ export function createMcpServer() {
 
   server.tool(
     "publish_page",
-    "Publish a draft to the live site",
+    "Publish a draft to the live site. ONLY call when the user explicitly requests publishing — never call automatically after write_page, edit_page, or other draft saves.",
     { path: z.string().describe("Relative page path such as index.html") },
     async ({ path }) => {
       try {

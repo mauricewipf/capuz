@@ -4,6 +4,13 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+## [0.4.2] - 2026-08-06
+
+### Changed
+
+- MCP server `instructions` tell models to save edits as drafts and never call `publish_page` unless the user explicitly asks to publish.
+- Tightened MCP descriptions for `write_page`, `edit_page`, `publish_page`, `list_pages`, and `list_drafts` to reinforce draft-first workflow.
+
 ## [0.4.1] - 2026-08-06
 
 ### Changed

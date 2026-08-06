@@ -1,0 +1,91 @@
+<figure class="diff aspect-16/9" tabindex="0" data-comp="v2/diff">
+  <div class="diff-item-1" role="img" tabindex="0">
+    <img alt="daisy" src="https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp" />
+  </div>
+  <div class="diff-item-2" role="img">
+    <img
+      alt="daisy"
+      src="https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a-blur.webp" />
+  </div>
+  <div class="diff-resizer"></div>
+  <style>
+    /* Unlayered rules, so they override daisyUI's cascade layers. Only active once
+       the script below takes over the divider, keeping the CSS-only fallback intact. */
+    .diff[data-diff-drag="on"] {
+      cursor: ew-resize;
+      touch-action: pan-y;
+    }
+    .diff[data-diff-drag="on"] .diff-resizer {
+      resize: none;
+      min-width: 0;
+      max-width: none;
+      transition: none;
+    }
+    /* daisyUI hides the handle on Safari because it falls back to tap-to-toggle there. */
+    .diff[data-diff-drag="on"] .diff-item-2::after {
+      content: "";
+    }
+  </style>
+  <script>
+    (function () {
+      var figure = document.currentScript.parentElement;
+      var resizer = figure.querySelector(".diff-resizer");
+      if (!resizer || !window.PointerEvent) return;
+      figure.dataset.diffDrag = "on";
+
+      var position = 50;
+      var drag = null;
+
+      function setPosition(percent) {
+        position = Math.min(Math.max(percent, 0), 100);
+        resizer.style.width = position + "cqi";
+      }
+
+      function setPositionFromPointer(clientX) {
+        var rect = figure.getBoundingClientRect();
+        if (rect.width) setPosition(((clientX - rect.left) / rect.width) * 100);
+      }
+
+      function endDrag(event) {
+        if (!drag || event.pointerId !== drag.id) return;
+        if (figure.hasPointerCapture(drag.id)) figure.releasePointerCapture(drag.id);
+        drag = null;
+      }
+
+      figure.addEventListener("pointerdown", function (event) {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        drag = {
+          id: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          active: event.pointerType === "mouse",
+        };
+        figure.setPointerCapture(drag.id);
+        if (drag.active) setPositionFromPointer(event.clientX);
+      });
+
+      figure.addEventListener("pointermove", function (event) {
+        if (!drag || event.pointerId !== drag.id) return;
+        if (!drag.active) {
+          // A touch counts as a drag only once it moves sideways, so that vertical
+          // swipes over the image stay page scrolls.
+          var dx = event.clientX - drag.x;
+          var dy = event.clientY - drag.y;
+          if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
+          drag.active = true;
+        }
+        setPositionFromPointer(event.clientX);
+      });
+
+      figure.addEventListener("pointerup", endDrag);
+      figure.addEventListener("pointercancel", endDrag);
+
+      figure.addEventListener("keydown", function (event) {
+        var steps = { ArrowLeft: -5, ArrowRight: 5, Home: -100, End: 100 };
+        if (!(event.key in steps)) return;
+        event.preventDefault();
+        setPosition(position + steps[event.key]);
+      });
+    })();
+  </script>
+</figure>

@@ -426,8 +426,8 @@ export function createMcpServer() {
 
   server.tool(
     "read_component",
-    "Read a reusable HTML component by name.",
-    { name: z.string().describe("Component name such as navbar or footer") },
+    "Read a reusable HTML component by name (library markup only). Do not modify existing components; after insert_component, edit the tagged instance on the target page.",
+    { name: z.string().describe("Component name such as navbar, footer, or v1/table") },
     async ({ name }) => {
       try {
         return jsonResult(await readComponent(storage, name));
@@ -439,9 +439,9 @@ export function createMcpServer() {
 
   server.tool(
     "write_component",
-    "Create or update a reusable HTML component.",
+    "Create a NEW reusable HTML component only. Fails with 409 if the name already exists — existing components are immutable and must never be overwritten. To add an existing component (e.g. v1/table) to a page and fill in data, use insert_component then edit_page/write_page on that page.",
     {
-      name: z.string().describe("Component name such as navbar"),
+      name: z.string().describe("New component name such as navbar (must not already exist)"),
       html: z.string().describe("Component HTML with a single root element"),
     },
     async ({ name, html }) => {
@@ -455,7 +455,7 @@ export function createMcpServer() {
 
   server.tool(
     "delete_component",
-    "Delete a reusable HTML component.",
+    "Delete a reusable HTML component from the library.",
     { name: z.string().describe("Component name to delete") },
     async ({ name }) => {
       try {
@@ -468,10 +468,10 @@ export function createMcpServer() {
 
   server.tool(
     "insert_component",
-    "Embed a component into a page as tagged HTML and save a draft.",
+    "Embed an existing component into a page as tagged HTML and save a draft. Preferred workflow for \"add component X to page Y\": insert_component, then edit_page/write_page to populate instance data (tables, text, etc.) on that page — never write_component on an existing component.",
     {
-      path: z.string().describe("Target page path"),
-      component: z.string().describe("Component name to insert"),
+      path: z.string().describe("Target page path such as abc.html"),
+      component: z.string().describe("Existing component name such as v1/table"),
       position: z
         .enum(["after_body_start", "before_body_end"])
         .optional()
@@ -490,7 +490,7 @@ export function createMcpServer() {
 
   server.tool(
     "sync_component",
-    "Update all pages tagged with a component to the latest component HTML (saves drafts).",
+    "Replace all page instances tagged with a component with the current library HTML (saves drafts). Overwrites page-specific instance data. Prefer editing the target page instead of syncing when only one page needs data changes.",
     { name: z.string().describe("Component name to sync") },
     async ({ name }) => {
       try {

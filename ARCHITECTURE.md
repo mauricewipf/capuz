@@ -110,7 +110,7 @@ All multi-service stack app services mount the same Docker volume:
 - **Contents**:
   - HTML pages (root level and subdirectories)
   - `.drafts/` - unpublished page drafts (cms-api only; hidden from published listings)
-  - `.components/` - reusable HTML component library (hidden from published listings; blocked by nginx)
+  - `.components/` - reusable HTML component library (hidden from published listings; blocked by nginx; create-only via API — existing components are immutable)
   - `.open-webui/` - Open WebUI data (chat DB, uploads)
   - CSS, JS, images under `assets/`, etc.
 - **Seed source** (repo): `public/` → `/app/data/` via `seed-data.sh` on nginx start (`.open-webui/` on the volume is never touched)

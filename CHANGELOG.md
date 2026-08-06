@@ -18,6 +18,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - Open WebUI shares `site-data` with `DATA_DIR=/app/data/.open-webui` in the stack base compose (same as prod).
 - `install-on-server.sh` stack path: preflight validate, disable host Caddy, never `down -v`.
 - Replace `CAPUZ_SKIP_SEED` with `CAPUZ_SEED` (`SKIP` | `SEED` | `FORCE_OVERWRITE`). `FORCE_OVERWRITE` wipes `/app/data/assets` and copies `public/` seed again.
+- `write_component` / `PUT /api/components/{name}` is create-only: existing components are immutable (409). To add a library component to a page and fill data, use `insert_component` then `edit_page` / `write_page` on that page.
 
 ### Fixed
 

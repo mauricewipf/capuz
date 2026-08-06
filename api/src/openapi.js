@@ -231,7 +231,9 @@ export const openApiDocument = {
         responses: { "200": { description: "Component HTML" } },
       },
       put: {
-        summary: "Write component",
+        summary: "Create component (immutable; fails if name exists)",
+        description:
+          "Creates a new reusable HTML component. Returns 409 if the component already exists — existing components cannot be edited. To use an existing component on a page, POST insert then edit the page draft.",
         operationId: "writeComponent",
         security: bearerSecurity,
         parameters: [{ name: "name", in: "path", required: true, schema: { type: "string" } }],
@@ -247,7 +249,10 @@ export const openApiDocument = {
             },
           },
         },
-        responses: { "200": { description: "Component saved" } },
+        responses: {
+          "200": { description: "Component created" },
+          "409": { description: "Component already exists and cannot be edited" },
+        },
       },
       delete: {
         summary: "Delete component",
@@ -260,6 +265,8 @@ export const openApiDocument = {
     "/api/components/{name}/insert": {
       post: {
         summary: "Insert component into page draft",
+        description:
+          "Embeds an existing library component into a page draft. Edit the tagged instance on the page to populate data; do not overwrite the library component.",
         operationId: "insertComponent",
         security: bearerSecurity,
         parameters: [{ name: "name", in: "path", required: true, schema: { type: "string" } }],

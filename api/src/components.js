@@ -21,8 +21,28 @@ export async function readComponent(storage, name) {
 
 export async function writeComponent(storage, name, html) {
   const normalized = normalizeComponentName(name);
+  if (await componentExists(storage, normalized)) {
+    throw new PathError(
+      `Component "${normalized}" already exists and cannot be edited. ` +
+        "Existing components are immutable. To use one on a page, call insert_component, " +
+        "then edit the tagged instance data on that page with edit_page or write_page.",
+      409,
+    );
+  }
   const saved = await storage.writeComponent(normalized, html);
   return { name: saved, path: componentPathFromName(saved) };
+}
+
+async function componentExists(storage, name) {
+  try {
+    await storage.readComponent(name);
+    return true;
+  } catch (error) {
+    if (error instanceof PathError && error.status === 404) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 export async function deleteComponent(storage, name) {
@@ -81,7 +101,8 @@ export async function suggestComponents(storage, options = {}) {
     scannedPages: pagesWithHtml.length,
     candidateCount: candidates.length,
     candidates,
-    note: "Read-only report. Save approved blocks with write_component. Existing pages are not modified.",
+    note:
+      "Read-only report. Save new approved blocks with write_component (create only; existing components are immutable). Existing pages are not modified.",
   };
 }
 

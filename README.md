@@ -305,9 +305,9 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `delete_page` | Delete a published page |
 | `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |
 | `import_chat_file` | Copy a chat-attached Open WebUI file into site assets (shared `site-data` volume — bundled or multi-service stack); returns `url` with file extension for `<img src>` |
-| `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` |
-| `insert_component` | Embed a tagged component block into a page draft |
-| `sync_component` | Propagate updated component HTML to all tagged page drafts |
+| `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` (`write_component` creates only; existing components are immutable) |
+| `insert_component` | Embed a tagged component block into a page draft (then edit instance data on the page) |
+| `sync_component` | Propagate library component HTML to all tagged page drafts (overwrites instance data) |
 | `suggest_components` / `reverse_engineer` | Read-only analysis: cluster recurring UI blocks from existing pages |
 | `audit_seo` / `apply_seo` / `regenerate_sitemap` | SEO audit, metadata updates, sitemap draft generation |
 | `check_links` | Scan for broken internal links and missing assets |
@@ -342,7 +342,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET/PUT/DELETE | `/api/assets/{path}` | PUT/DELETE: Bearer | Read/upload/delete asset |
 | GET | `/api/components` | — | List components |
 | GET | `/api/components/suggest` | — | Suggest components from existing pages |
-| GET/PUT/DELETE | `/api/components/{name}` | PUT/DELETE: Bearer | Read/write/delete component |
+| GET/PUT/DELETE | `/api/components/{name}` | PUT/DELETE: Bearer | Read/create/delete component (PUT creates only; 409 if name exists) |
 | POST | `/api/components/{name}/insert` | Bearer | Insert component into page draft |
 | POST | `/api/components/{name}/sync` | Bearer | Sync component into tagged page drafts |
 | POST | `/api/sitemap/regenerate` | Bearer | Regenerate `sitemap.xml` draft |

@@ -74,6 +74,31 @@ export const openApiDocument = {
         properties: { error: { type: "string" } },
         required: ["error"],
       },
+      StatusResponse: {
+        type: "object",
+        properties: {
+          ok: { type: "boolean" },
+          version: { type: "string" },
+          commit: { type: ["string", "null"] },
+          builtAt: { type: ["string", "null"] },
+          storageBackend: { type: "string" },
+          dataRoot: { type: "string" },
+          draftsDir: { type: "string" },
+          previewHost: { type: "string" },
+          previewBaseUrl: { type: "string" },
+          apiPort: { type: "integer" },
+          uptimeSeconds: { type: "integer" },
+          runtime: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              version: { type: "string" },
+            },
+            required: ["name", "version"],
+          },
+        },
+        required: ["ok", "version", "storageBackend"],
+      },
     },
   },
   paths: {
@@ -82,6 +107,25 @@ export const openApiDocument = {
         summary: "Health check",
         operationId: "health",
         responses: { "200": { description: "Service is healthy" } },
+      },
+    },
+    "/status": {
+      get: {
+        summary: "Service status",
+        description:
+          "Version, deployed commit, storage backend, preview URL, and uptime.",
+        operationId: "getStatus",
+        responses: {
+          "200": {
+            description: "Service status",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StatusResponse" },
+              },
+            },
+          },
+          "500": errorResponse,
+        },
       },
     },
     "/api/pages": {

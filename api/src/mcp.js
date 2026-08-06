@@ -29,6 +29,7 @@ import {
 } from "./page-ops.js";
 import { applyPageSeo, auditPageSeo, regenerateSitemap } from "./seo.js";
 import { renderPreviewScreenshot } from "./screenshot.js";
+import { getStatusInfo } from "./status.js";
 import { getStorage, listPagesWithStatus } from "./storage/index.js";
 import { VERSION } from "./version.js";
 
@@ -80,6 +81,19 @@ export function createMcpServer() {
     name: "cms-pages",
     version: VERSION,
   });
+
+  server.tool(
+    "get_status",
+    "Return cms-api version, deployed commit, storage backend, preview URL, and uptime. Read-only.",
+    {},
+    async () => {
+      try {
+        return jsonResult(getStatusInfo());
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
 
   server.tool(
     "list_pages",

@@ -291,6 +291,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 
 | Tool | Description |
 |------|-------------|
+| `get_status` | Version, deployed commit, storage backend, preview URL, and uptime |
 | `list_pages` | List pages with `{path, status}` (`published` / `draft` / `modified`). Use `changedOnly: true` for unpublished changes only; `detail: "paths"` for legacy path strings |
 | `list_drafts` | List paths with unpublished drafts |
 | `read_page` | Read **published** page content by path |
@@ -318,7 +319,8 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/health` | — | Health check |
+| GET | `/health` | — | Minimal health check (`{ok: true}`) |
+| GET | `/status` | — | Version, commit, storage backend, preview URL, uptime |
 | GET | `/openapi.json` | — | OpenAPI spec |
 | GET | `/api/pages` | — | List pages with `published` / `draft` / `modified` status (default) |
 | GET | `/api/pages?changedOnly=true` | — | List only draft and modified pages |

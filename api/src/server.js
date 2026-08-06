@@ -32,6 +32,7 @@ import {
 import { previewMiddleware } from "./preview.js";
 import { applyPageSeo, auditPageSeo, regenerateSitemap } from "./seo.js";
 import { renderPreviewScreenshot } from "./screenshot.js";
+import { getStatusInfo } from "./status.js";
 import { getStorage, listPagesWithStatus } from "./storage/index.js";
 
 const app = new Hono();
@@ -44,6 +45,7 @@ function pathFromRequest(c, prefix) {
 app.use("*", previewMiddleware());
 
 app.get("/health", (c) => c.json({ ok: true }));
+app.get("/status", (c) => c.json(getStatusInfo()));
 app.get("/openapi.json", (c) => c.json(openApiDocument));
 app.all("/mcp", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 app.all("/mcp/*", requireAuth, async (c) => handleMcpRequest(c.req.raw));

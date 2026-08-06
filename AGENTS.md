@@ -25,7 +25,7 @@ Read `README.md` for plugin install, storage backends, and Open WebUI configurat
 | OpenAPI tool server | `GET /openapi.json` | Bearer on write/delete |
 | REST API | `/api/pages/*` | Bearer on PUT/DELETE |
 
-**MCP tools:** `list_pages`, `list_drafts`, `read_page`, `read_draft`, `write_page`, `publish_page`, `discard_draft`, `delete_page`
+**MCP tools:** `get_status`, `list_pages`, `list_drafts`, `read_page`, `read_draft`, `write_page`, `publish_page`, `discard_draft`, `delete_page`
 
 Writes save **drafts** only; call `publish_page` to go live. Preview is served by cms-api when `Host` matches `PREVIEW_HOST`.
 

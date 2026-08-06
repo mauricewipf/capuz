@@ -30,6 +30,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ### Added
 
+- `get_status` MCP tool and `GET /status` — cms-api version, deployed commit (`COMMIT_SHA`), build time, storage backend, preview URL, and uptime (`/health` stays a minimal probe)
 - Hetzner **multi-service stack** production deploy (`docker-compose.yml` + `deploy/hetzner/docker-compose.production.yml`) with `CAPUZ_SKIP_SEED` for empty live site (TLS via in-compose edge-router — see Changed above)
 - `import_chat_file` MCP tool and `POST /api/assets/import-chat` — copy chat-attached Open WebUI files into site assets via shared disk (bundled/stack; uses existing `DATA_DIR` or `${DATA_ROOT}/.open-webui`, no new env vars)
 - Bundled setup (`Dockerfile.bundled`, `docker-compose.bundled.yml`, `render.bundled.yaml`) — one port with host-based routing:

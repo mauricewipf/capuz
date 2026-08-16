@@ -15,10 +15,10 @@ import {
 import { config } from "./config.js";
 import { identityFromRequest, isAuthorized, isSameOrigin } from "./lib/auth.js";
 import { createCsrfToken, verifyCsrfToken } from "./lib/csrf.js";
-import { applySecurityHeaders } from "./lib/security-headers.js";
+import { applyComponentPreviewHeaders, applySecurityHeaders } from "./lib/security-headers.js";
 import { layout, forbiddenPage, errorPage } from "./views/layout.js";
 import { pagesPage } from "./views/pages.js";
-import { componentsPage } from "./views/components.js";
+import { componentsPage, componentPreviewPage } from "./views/components.js";
 import { statusPage } from "./views/status.js";
 
 const rootDir = join(fileURLToPath(new URL(".", import.meta.url)), "..");
@@ -201,21 +201,90 @@ const app = new Elysia()
     }
   })
 
+  .get("/components/preview/*", async ({ request, set, params }) => {
+    const auth = requireIdentity(request, set);
+    if (auth.error) return htmlResponse(set, auth.error, 401);
+    if (auth.forbidden) return htmlResponse(set, forbiddenPage(auth.forbidden), 403);
+
+    const name = pathFromWildcard(params["*"]);
+    if (!name) {
+      return htmlResponse(set, "Missing component name", 400);
+    }
+
+    try {
+      const selectedHtml = await getComponent(name);
+      applyComponentPreviewHeaders(set);
+      set.headers["Content-Type"] = "text/html; charset=utf-8";
+      set.status = 200;
+      return componentPreviewPage({ html: selectedHtml.html });
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Failed to load component.";
+      return htmlResponse(set, message, error instanceof ApiError ? error.status : 500);
+    }
+  })
+
+  .get("/components/*", async ({ request, set, params, query }) => {
+    const auth = requireIdentity(request, set);
+    if (auth.error) return htmlResponse(set, auth.error, 401);
+    if (auth.forbidden) return htmlResponse(set, forbiddenPage(auth.forbidden), 403);
+
+    const csrfToken = createCsrfToken();
+    const selected = pathFromWildcard(params["*"]);
+
+    try {
+      const components = await listComponents();
+      let selectedHtml = null;
+      let selectedError = null;
+      if (selected) {
+        try {
+          selectedHtml = await getComponent(selected);
+        } catch (error) {
+          selectedError =
+            error instanceof ApiError ? error.message : "Failed to load component.";
+        }
+      }
+      const content = componentsPage({
+        components,
+        selected,
+        selectedHtml,
+        selectedError,
+      });
+      return htmlResponse(
+        set,
+        layout({
+          title: "Components",
+          active: "components",
+          identity: auth.identity,
+          csrfToken,
+          flash: parseFlash(query),
+          content,
+        }),
+      );
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Failed to load components.";
+      return htmlResponse(
+        set,
+        errorPage("Components", message, auth.identity, csrfToken),
+        error instanceof ApiError ? error.status : 500,
+      );
+    }
+  })
+
   .get("/components", async ({ request, set, query }) => {
     const auth = requireIdentity(request, set);
     if (auth.error) return htmlResponse(set, auth.error, 401);
     if (auth.forbidden) return htmlResponse(set, forbiddenPage(auth.forbidden), 403);
 
     const csrfToken = createCsrfToken();
-    const selected = typeof query.name === "string" ? query.name : "";
 
     try {
       const components = await listComponents();
-      let selectedHtml = null;
-      if (selected) {
-        selectedHtml = await getComponent(selected);
-      }
-      const content = componentsPage({ components, selected, selectedHtml });
+      const content = componentsPage({
+        components,
+        selected: "",
+        selectedHtml: null,
+        selectedError: null,
+      });
       return htmlResponse(
         set,
         layout({

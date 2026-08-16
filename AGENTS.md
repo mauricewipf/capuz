@@ -75,7 +75,7 @@ api/src/
 console/
   package.json
   src/server.js   # Elysia SSR routes
-  static/         # console.css, console.js
+  static/         # console.js
   test/           # bun test
 public/
   index.html      # Seed site root

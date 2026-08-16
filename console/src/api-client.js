@@ -93,5 +93,5 @@ export async function listComponents() {
 }
 
 export async function getComponent(name) {
-  return apiFetch(`/api/components/${encodeURIComponent(name)}`);
+  return apiFetch(`/api/components/${encodePagePath(name)}`);
 }

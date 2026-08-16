@@ -7,11 +7,19 @@ MODE="${CAPUZ_SEED:-SKIP}"
 
 fix_permissions() {
   [ -d /app/data/assets ] && chmod -R a+rX /app/data/assets
+  [ -d /app/data/.components ] && chmod -R a+rX /app/data/.components
   find /app/data -path /app/data/.open-webui -prune -o -type f -exec chmod a+r {} + 2>/dev/null || true
 }
 
 wipe_site_data() {
   find /app/data -mindepth 1 -maxdepth 1 ! -name '.open-webui' -exec rm -rf {} +
+}
+
+seed_components() {
+  if [ -d /app/seed/.components ]; then
+    mkdir -p /app/data/.components
+    cp -a /app/seed/.components/. /app/data/.components/
+  fi
 }
 
 seed_site() {
@@ -25,6 +33,8 @@ case "$MODE" in
   ;;
   SEED)
     if [ -f /app/data/index.html ]; then
+      seed_components
+      fix_permissions
       exit 0
     fi
     seed_site

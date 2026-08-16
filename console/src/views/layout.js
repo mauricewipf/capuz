@@ -9,7 +9,7 @@ const NAV = [
 
 export function layout({ title, active, identity, csrfToken, flash, content }) {
   const nav = NAV.map((item) => {
-    const activeClass = item.id === active ? "active" : "";
+    const activeClass = item.id === active ? "menu-active" : "";
     return `<li><a class="${activeClass}" href="${escapeHtml(item.href)}">${escapeHtml(item.label)}</a></li>`;
   }).join("");
 
@@ -24,7 +24,6 @@ export function layout({ title, active, identity, csrfToken, flash, content }) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)} — ${escapeHtml(config.appName)}</title>
   <link rel="stylesheet" href="/static/css/daisyui.css">
-  <link rel="stylesheet" href="/static/css/console.css">
 </head>
 <body class="bg-base-200 min-h-screen">
   <div class="drawer lg:drawer-open">

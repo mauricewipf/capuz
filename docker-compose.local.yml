@@ -2,6 +2,10 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 # With SFTP: add -f docker-compose.local.sftp.yml
 services:
+  nginx:
+    environment:
+      CAPUZ_SEED: SEED
+
   cms-api:
     environment:
       SITE_BASE_URL: http://localhost:8080

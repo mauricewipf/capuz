@@ -4,6 +4,7 @@ import { createCsrfToken, verifyCsrfToken } from "../src/lib/csrf.js";
 import { isAuthorized, identityFromRequest, isSameOrigin } from "../src/lib/auth.js";
 import { encodePagePath } from "../src/api-client.js";
 import { pagesPage } from "../src/views/pages.js";
+import { componentsPage } from "../src/views/components.js";
 
 describe("escapeHtml", () => {
   test("escapes script tags", () => {
@@ -95,5 +96,21 @@ describe("pages view", () => {
     });
     expect(html).not.toContain("dev-local-key");
     expect(html).not.toContain("Bearer");
+  });
+});
+
+describe("components view", () => {
+  test("renders all components in a table", () => {
+    const html = componentsPage({
+      components: ["v1/card", "v1/diff", "v2/diff"],
+      selected: "",
+      selectedHtml: null,
+      selectedError: null,
+    });
+    expect(html).toContain('class="table table-zebra"');
+    expect(html).toContain("v1/card");
+    expect(html).toContain("v2/diff");
+    expect(html).toContain("/components/v1/diff");
+    expect(html).toContain("/components/preview/v1/diff");
   });
 });

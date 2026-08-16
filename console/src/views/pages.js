@@ -83,7 +83,7 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
         <div class="card-body">
           <h2 class="card-title text-lg">Diff: ${escapeHtml(diffPath)}</h2>
           <p class="text-sm text-base-content/60">Unified diff between published and current draft.</p>
-          <pre class="bg-base-200 p-4 rounded-lg text-xs overflow-x-auto max-h-96">${escapeHtml(diff.diff || "")}</pre>
+          <pre class="bg-base-200 p-4 rounded-lg text-xs overflow-x-auto max-h-96 whitespace-pre-wrap break-words">${escapeHtml(diff.diff || "")}</pre>
         </div>
       </div>`
       : "";

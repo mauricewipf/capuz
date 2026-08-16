@@ -2,7 +2,7 @@
 
 ## Multi-Service Design
 
-This application uses a microservices architecture with separate Docker services (nginx, cms-api, openwebui, and an in-compose Caddy **edge-router**).
+This application uses a microservices architecture with separate Docker services (nginx, cms-api, cms-console, openwebui, oauth2-proxy in production, and an in-compose Caddy **edge-router**).
 
 ### Services
 
@@ -56,9 +56,31 @@ This application uses a microservices architecture with separate Docker services
 - **Config**: `Caddyfile.dev` (local) or `Caddyfile.prod` (production)
 
 **Routing**:
-- `SITE_HOST` / `www` → nginx:80
-- `EDITOR_HOST` → openwebui:8080
-- `PREVIEW_HOST` → cms-api:3000 (preview vhost)
+- `SITE_HOST` / `www` → nginx:80 (public; cookies stripped)
+- `EDITOR_HOST` → openwebui:8080 (production: GitHub OAuth via forward_auth)
+- `PREVIEW_HOST` → cms-api:3000 (preview vhost; `/api*`, `/mcp*`, `/openapi.json` blocked at edge)
+- `CONSOLE_HOST` → cms-console:3000 (production: shared OAuth session)
+- `AUTH_HOST` → oauth2-proxy:4180 (production OAuth callback only)
+
+#### 5. cms-console (Admin UI)
+- **Image**: built from `Dockerfile.console` (Bun + Elysia SSR)
+- **Internal port**: 3000 (not published; edge-router only)
+- **Purpose**: Server-rendered DaisyUI admin shell for page status, publish/discard, diff, read-only components, and system status
+- **No `site-data` volume** — calls cms-api over the internal network with `CMS_API_KEY`
+
+**Responsibilities**:
+- List/filter pages (`published`, `modified`, `draft`)
+- Publish and discard drafts (CSRF-protected POST)
+- Read-only component catalogue with sandboxed preview
+- Trust identity headers from edge-router (dev: injected by Caddy; prod: oauth2-proxy via forward_auth)
+- Optional `CONSOLE_ALLOWED_GROUPS` restriction beyond GitHub allowlist
+
+Open WebUI remains the editing surface; the console does not edit page source or mutate components.
+
+#### 6. oauth2-proxy (production only)
+- **Image**: `quay.io/oauth2-proxy/oauth2-proxy:v7.7.1`
+- **Purpose**: GitHub OAuth for `EDITOR_HOST` and `CONSOLE_HOST` with shared parent-domain cookie
+- **Config**: `deploy/hetzner/docker-compose.production.yml`
 
 #### 4. openwebui (AI Editor)
 - **Image**: `openwebui/open-webui` (pinned in `docker-compose.yml`)
@@ -127,6 +149,7 @@ External access (local):
 - `localhost:8080` → edge-router → nginx (public site)
 - `chat.localhost:8080` → edge-router → Open WebUI
 - `preview.localhost:8080` → edge-router → cms-api preview
+- `console.localhost:8080` → edge-router → cms-console (dev identity headers)
 - cms-api is **not** published on the host unless `docker-compose.local-debug.yml` is used
 
 ## Advantages of This Architecture

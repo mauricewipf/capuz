@@ -7,13 +7,96 @@
 }
 
 {$SITE_HOST}, www.{$SITE_HOST} {
-	reverse_proxy nginx:80
-}
-
-{$EDITOR_HOST} {
-	reverse_proxy openwebui:8080
+	reverse_proxy nginx:80 {
+		header_up -Cookie
+	}
 }
 
 {$PREVIEW_HOST} {
-	reverse_proxy cms-api:3000
+	handle /api {
+		respond 403
+	}
+	handle /api/* {
+		respond 403
+	}
+	handle /openapi.json {
+		respond 403
+	}
+	handle /mcp {
+		respond 403
+	}
+	handle /mcp/* {
+		respond 403
+	}
+	reverse_proxy cms-api:3000 {
+		header_up -Cookie
+	}
+}
+
+{$AUTH_HOST} {
+	handle /oauth2/* {
+		reverse_proxy oauth2-proxy:4180 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+		}
+	}
+	handle {
+		reverse_proxy oauth2-proxy:4180 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+		}
+	}
+}
+
+{$EDITOR_HOST} {
+	handle /oauth2/* {
+		reverse_proxy oauth2-proxy:4180 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+		}
+	}
+	handle {
+		forward_auth oauth2-proxy:4180 {
+			uri /oauth2/auth
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+			copy_headers X-Auth-Request-User X-Auth-Request-Email X-Auth-Request-Groups
+			@unauth status 401
+			handle_response @unauth {
+				redir https://{$AUTH_HOST}/oauth2/sign_in?rd={scheme}://{host}{uri}
+			}
+		}
+		reverse_proxy openwebui:8080 {
+			header_up X-Auth-Request-Email {http.auth.X-Auth-Request-Email}
+			header_up X-Auth-Request-User {http.auth.X-Auth-Request-User}
+			header_up X-Auth-Request-Groups {http.auth.X-Auth-Request-Groups}
+			header_up X-Auth-Request-Role admin
+		}
+	}
+}
+
+{$CONSOLE_HOST} {
+	handle /oauth2/* {
+		reverse_proxy oauth2-proxy:4180 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+		}
+	}
+	handle {
+		forward_auth oauth2-proxy:4180 {
+			uri /oauth2/auth
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+			copy_headers X-Auth-Request-User X-Auth-Request-Email X-Auth-Request-Groups
+			@unauth status 401
+			handle_response @unauth {
+				redir https://{$AUTH_HOST}/oauth2/sign_in?rd={scheme}://{host}{uri}
+			}
+		}
+		reverse_proxy cms-console:3000 {
+			header_up X-Auth-Request-Email {http.auth.X-Auth-Request-Email}
+			header_up X-Auth-Request-User {http.auth.X-Auth-Request-User}
+			header_up X-Auth-Request-Groups {http.auth.X-Auth-Request-Groups}
+		}
+	}
 }

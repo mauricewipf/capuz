@@ -9,7 +9,7 @@ Capuz CMS API is an **Open WebUI plugin** — a publishable MCP / OpenAPI tool s
 This repo contains three deployment modes: **plugin-only** (cms-api alone), **multi-service stack** (nginx + cms-api + openwebui), and **bundled monolith** (single container). See README [§ Choose a deployment mode](README.md#choose-a-deployment-mode).
 
 1. **The plugin** — `cms-api` (`api/`), distributable as the Docker image `ghcr.io/mauricewipf/capuz-cms-api`. Users run it standalone and connect their own Open WebUI instance.
-2. **A multi-service demo stack** — nginx + cms-api + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
+2. **A multi-service demo stack** — nginx + cms-api + cms-console + openwebui via `docker-compose.yml`, showing local AI editing with the default `fs` backend.
 
 The site content lives in `public/` (seed HTML/XML and `public/assets/`). nginx seeds into a shared Docker volume at runtime (HTML/XML to `/app/data/`, assets to `/app/data/assets/`). The API only manages HTML/XML; nginx serves static assets.
 
@@ -55,8 +55,9 @@ When changing plugin behavior, keep MCP tools, REST routes, and OpenAPI spec in 
 | Storage | fs, sftp, git, or s3 (env-driven) |
 | Static site | Hand-written HTML + Bootstrap 5 |
 | Orchestration | Docker Compose |
+| Console | Bun + Elysia SSR (multi-service stack only) |
 
-There is no frontend build step, no TypeScript, and no test runner configured.
+The repo has `bun test` for `console/`; cms-api has no test runner.
 
 ## Repository layout
 
@@ -71,21 +72,26 @@ api/src/
   auth.js         # Bearer token middleware
   openapi.js      # OpenAPI spec
   storage/        # Backend implementations (fs, sftp, git, s3)
+console/
+  package.json
+  src/server.js   # Elysia SSR routes
+  static/         # console.css, console.js
+  test/           # bun test
 public/
   index.html      # Seed site root
   assets/         # CSS, JS, favicon
 nginx.conf        # Static server config (extensionless URLs)
-Caddyfile.dev     # Local edge-router: site + chat + preview on :8080
-Caddyfile.prod    # Prod edge-router: auto-HTTPS + Let's Encrypt
+Caddyfile.dev     # Local edge-router: site + chat + preview + console on :8080
+Caddyfile.prod    # Prod edge-router: auto-HTTPS + Let's Encrypt + forward_auth
 deploy/hetzner/
   docker-compose.production.yml
-docker-compose.yml          # Multi-service stack base (nginx + cms-api + openwebui + edge-router)
+docker-compose.yml          # Multi-service stack base (nginx + cms-api + cms-console + openwebui + edge-router)
 docker-compose.local.yml    # Local override (publish :8080, Caddyfile.dev)
 docker-compose.local-debug.yml  # Optional: expose cms-api on 127.0.0.1:3000
 docker-compose.bundled.yml  # Monolith: site + chat + preview (CAPUZ_SERVE_SITE)
 docker-compose.bundled.sftp.yml  # SFTP key mount for CAPUZ_SERVE_SITE=false
 docker-compose.plugin.yml   # Plugin-only (cms-api standalone)
-Dockerfile.api | Dockerfile.nginx | Dockerfile.bundled
+Dockerfile.api | Dockerfile.nginx | Dockerfile.console | Dockerfile.bundled
 seed-data.sh                # Seeds demo public/ into nginx volume; CAPUZ_SEED=SKIP|SEED|FORCE_OVERWRITE
 ```
 
@@ -105,13 +111,21 @@ The demo uses `STORAGE_BACKEND=fs`, shared volume `site-data`, and `CMS_API_KEY=
 | Public site | http://localhost:8080 |
 | Open WebUI | http://chat.localhost:8080 |
 | Preview | http://preview.localhost:8080 |
+| CMS Console | http://console.localhost:8080 |
 | CMS API | not published (use `docker-compose.local-debug.yml` for `127.0.0.1:3000`) |
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.local.yml logs -f cms-api
 docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api
+docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-console
 docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api sh
 docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health
+```
+
+### Console (Bun locally)
+
+```bash
+cd console && bun install && bun test && bun run start
 ```
 
 ### API (inside container or with Bun locally)
@@ -124,11 +138,11 @@ Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`
 
 ### Hetzner VPS (multi-service stack)
 
-Production deploy of `docker-compose.yml` + prod override — four containers including in-compose `edge-router` (Caddy) for TLS; no demo seed:
+Production deploy of `docker-compose.yml` + prod override — six containers including `cms-console`, `oauth2-proxy`, and in-compose `edge-router` (Caddy) for TLS; no demo seed:
 
 ```bash
 cp deploy/hetzner/env.production.example deploy/hetzner/.env.production
-# secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST / ACME_EMAIL
+# secrets, SITE_HOST / EDITOR_HOST / PREVIEW_HOST / CONSOLE_HOST / AUTH_HOST / ACME_EMAIL / GitHub OAuth
 ./deploy/hetzner/deploy-from-local.sh root@YOUR_HOST deploy/hetzner/.env.production
 ```
 
@@ -188,7 +202,7 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 
 ## Verification
 
-There are no automated tests. After API changes:
+After API changes:
 
 1. Rebuild: `docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api edge-router && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
 2. `docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health` → `{"ok":true}`
@@ -197,6 +211,13 @@ There are no automated tests. After API changes:
 5. Preview at http://preview.localhost:8080/agent-test (draft only until publish)
 6. Publish: `POST /api/pages/agent-test.html/publish`
 7. Confirm live at http://localhost:8080/agent-test.html, then delete the test page.
+
+After console changes:
+
+1. `cd console && bun test`
+2. Rebuild: `docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-console && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
+3. Open http://console.localhost:8080/pages — list, diff, publish/discard flows
+4. Confirm preview host blocks API: `curl -sI http://preview.localhost:8080/api/pages` → 403
 
 After HTML or asset changes in `public/`, rebuild nginx or restart compose so seed/volume reflects updates.
 

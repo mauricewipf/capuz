@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run on the VPS after /opt/capuz/.env exists. Idempotent.
-# Deploys the multi-service stack (nginx + cms-api + openwebui + edge-router).
+# Deploys the multi-service stack (nginx + cms-api + cms-console + openwebui + oauth2-proxy + edge-router).
 set -euo pipefail
 
 APP_DIR="${CAPUZ_APP_DIR:-/opt/capuz/app}"
@@ -20,12 +20,21 @@ fi
 SITE_HOST="$(read_env SITE_HOST)"
 EDITOR_HOST="$(read_env EDITOR_HOST)"
 PREVIEW_HOST="$(read_env PREVIEW_HOST)"
+CONSOLE_HOST="$(read_env CONSOLE_HOST)"
+AUTH_HOST="$(read_env AUTH_HOST)"
 OPENROUTER_API_KEY="$(read_env OPENROUTER_API_KEY)"
 CMS_API_KEY="$(read_env CMS_API_KEY)"
 WEBUI_SECRET_KEY="$(read_env WEBUI_SECRET_KEY)"
 ACME_EMAIL="$(read_env ACME_EMAIL)"
+GITHUB_OAUTH_CLIENT_ID="$(read_env GITHUB_OAUTH_CLIENT_ID)"
+GITHUB_OAUTH_CLIENT_SECRET="$(read_env GITHUB_OAUTH_CLIENT_SECRET)"
+GITHUB_ALLOWED_USERS="$(read_env GITHUB_ALLOWED_USERS)"
+OAUTH2_PROXY_COOKIE_SECRET="$(read_env OAUTH2_PROXY_COOKIE_SECRET)"
+OAUTH2_PROXY_COOKIE_DOMAIN="$(read_env OAUTH2_PROXY_COOKIE_DOMAIN)"
+OAUTH2_PROXY_WHITELIST_DOMAIN="$(read_env OAUTH2_PROXY_WHITELIST_DOMAIN)"
+CONSOLE_CSRF_SECRET="$(read_env CONSOLE_CSRF_SECRET)"
 
-for var in SITE_HOST EDITOR_HOST PREVIEW_HOST OPENROUTER_API_KEY CMS_API_KEY WEBUI_SECRET_KEY ACME_EMAIL; do
+for var in SITE_HOST EDITOR_HOST PREVIEW_HOST CONSOLE_HOST AUTH_HOST OPENROUTER_API_KEY CMS_API_KEY WEBUI_SECRET_KEY ACME_EMAIL GITHUB_OAUTH_CLIENT_ID GITHUB_OAUTH_CLIENT_SECRET GITHUB_ALLOWED_USERS OAUTH2_PROXY_COOKIE_SECRET OAUTH2_PROXY_COOKIE_DOMAIN OAUTH2_PROXY_WHITELIST_DOMAIN CONSOLE_CSRF_SECRET; do
   eval "val=\$$var"
   if [ -z "$val" ]; then
     echo "Set $var in $ENV_FILE before running install." >&2
@@ -33,7 +42,14 @@ for var in SITE_HOST EDITOR_HOST PREVIEW_HOST OPENROUTER_API_KEY CMS_API_KEY WEB
   fi
 done
 
-export SITE_HOST EDITOR_HOST PREVIEW_HOST ACME_EMAIL
+cookie_len="${#OAUTH2_PROXY_COOKIE_SECRET}"
+if [ "$cookie_len" -ne 16 ] && [ "$cookie_len" -ne 24 ] && [ "$cookie_len" -ne 32 ]; then
+  echo "OAUTH2_PROXY_COOKIE_SECRET must be exactly 16, 24, or 32 bytes (got length $cookie_len)." >&2
+  echo "Generate with: openssl rand -hex 16" >&2
+  exit 1
+fi
+
+export SITE_HOST EDITOR_HOST PREVIEW_HOST CONSOLE_HOST AUTH_HOST ACME_EMAIL
 
 ensure_docker() {
   export DEBIAN_FRONTEND=noninteractive
@@ -111,6 +127,8 @@ docker run --rm \
   -e SITE_HOST="$SITE_HOST" \
   -e EDITOR_HOST="$EDITOR_HOST" \
   -e PREVIEW_HOST="$PREVIEW_HOST" \
+  -e CONSOLE_HOST="$CONSOLE_HOST" \
+  -e AUTH_HOST="$AUTH_HOST" \
   -e ACME_EMAIL="$ACME_EMAIL" \
   -v "$APP_DIR/Caddyfile.prod:/etc/caddy/Caddyfile:ro" \
   caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
@@ -124,13 +142,19 @@ disable_host_caddy
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
 echo ""
-echo "Multi-service stack started (nginx + cms-api + openwebui + edge-router)."
+echo "Multi-service stack started (nginx + cms-api + cms-console + openwebui + oauth2-proxy + edge-router)."
 echo "In-compose Caddy (edge-router) serves TLS for:"
 echo "  https://${SITE_HOST} (live site — empty until publish)"
 echo "  https://www.${SITE_HOST}"
-echo "  https://${EDITOR_HOST} (Open WebUI)"
-echo "  https://${PREVIEW_HOST} (draft preview)"
+echo "  https://${EDITOR_HOST} (Open WebUI — GitHub OAuth)"
+echo "  https://${CONSOLE_HOST} (CMS Console — shared OAuth session)"
+echo "  https://${PREVIEW_HOST} (draft preview — public read)"
+echo "  https://${AUTH_HOST} (oauth2-proxy callback)"
 echo ""
-echo "First Open WebUI boot can take several minutes. Check:"
+echo "GitHub OAuth App callback URL: https://${AUTH_HOST}/oauth2/callback"
+echo ""
+echo "First Open WebUI boot can take several minutes. After SSO cutover, send a chat message to confirm streaming."
+echo "Check:"
 echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f openwebui"
 echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f edge-router"
+echo "  docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml logs -f oauth2-proxy"

@@ -17,18 +17,20 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 open http://localhost:8080          # Public site
 open http://chat.localhost:8080     # AI Editor
 open http://preview.localhost:8080  # Draft preview
+open http://console.localhost:8080  # CMS Console (pages, components, status)
 ```
 
-On Linux, ensure `chat.localhost` and `preview.localhost` resolve (macOS usually does via `*.localhost`).
+On Linux, ensure `chat.localhost`, `preview.localhost`, and `console.localhost` resolve (macOS usually does via `*.localhost`).
 
 ## URLs
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| **edge-router** | http://localhost:8080 | In-compose Caddy — only published port |
+| **edge-router** | http://localhost:8080 | In-compose Caddy — only published port (bound to 127.0.0.1 locally) |
 | **nginx** (via edge) | http://localhost:8080 | Public website |
 | **openwebui** (via edge) | http://chat.localhost:8080 | AI editor |
 | **preview** (via edge) | http://preview.localhost:8080 | Draft page preview |
+| **cms-console** (via edge) | http://console.localhost:8080 | Admin console (publish/discard, diff, components) |
 | **cms-api** | (not published) | Internal only; optional debug override below |
 
 Optional API on localhost:
@@ -92,6 +94,9 @@ With the debug override (or from inside the cms-api container):
 ```bash
 # List all pages
 curl http://127.0.0.1:3000/api/pages
+
+# Preview host blocks public API (edge hardening)
+curl -sI http://preview.localhost:8080/api/pages | head -3   # expect 403
 
 # Health check
 curl http://127.0.0.1:3000/health

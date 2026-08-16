@@ -7,12 +7,19 @@ services:
       SITE_BASE_URL: http://localhost:8080
       PREVIEW_BASE_URL: http://preview.localhost:8080
 
+  cms-console:
+    environment:
+      SITE_BASE_URL: http://localhost:8080
+      PREVIEW_BASE_URL: http://preview.localhost:8080
+
   openwebui:
     environment:
       WEBUI_URL: http://chat.localhost:8080
 
   edge-router:
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+    environment:
+      CONSOLE_HOST: ${CONSOLE_HOST:-console.localhost}
     volumes:
       - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro

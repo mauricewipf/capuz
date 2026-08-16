@@ -1,4 +1,4 @@
-# Multi-service stack base (nginx + cms-api + openwebui + edge-router).
+# Multi-service stack base (nginx + cms-api + cms-console + openwebui + edge-router).
 # Not runnable alone — use an override:
 #   Local:  docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 #   Prod:   docker compose -f docker-compose.yml -f deploy/hetzner/docker-compose.production.yml up -d --build
@@ -52,6 +52,28 @@ services:
       timeout: 5s
       retries: 3
 
+  cms-console:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.console
+    environment:
+      CONSOLE_PORT: 3000
+      CMS_API_URL: http://cms-api:3000
+      CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
+      SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8080}
+      PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8080}
+      CONSOLE_CSRF_SECRET: ${CONSOLE_CSRF_SECRET:-dev-console-csrf-change-me}
+      CONSOLE_ALLOWED_GROUPS: ${CONSOLE_ALLOWED_GROUPS:-}
+    depends_on:
+      cms-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   openwebui:
     restart: unless-stopped
     image: openwebui/open-webui:latest
@@ -83,10 +105,12 @@ services:
       SITE_HOST: ${SITE_HOST:-localhost}
       EDITOR_HOST: ${EDITOR_HOST:-chat.localhost}
       PREVIEW_HOST: ${PREVIEW_HOST:-preview.localhost}
+      CONSOLE_HOST: ${CONSOLE_HOST:-console.localhost}
       ACME_EMAIL: ${ACME_EMAIL:-hello@example.com}
     depends_on:
       - nginx
       - cms-api
+      - cms-console
       - openwebui
     # ports + Caddyfile mount + caddy_data/caddy_config: defined in local/prod overrides
 

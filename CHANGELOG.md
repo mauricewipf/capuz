@@ -4,6 +4,24 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+### Added
+
+- **CMS Console** (`cms-console`) — optional multi-service admin UI at `CONSOLE_HOST` (local: `console.localhost:8080`). Bun/Elysia SSR with DaisyUI: page list/filter, diff, publish/discard, read-only component catalogue, and system status. Open WebUI remains the editing surface.
+- **GitHub OAuth cutover** (production multi-service stack) — shared `oauth2-proxy` session for `EDITOR_HOST` and `CONSOLE_HOST` via Caddy `forward_auth`; `AUTH_HOST` for OAuth callback; required `GITHUB_ALLOWED_USERS`; optional `CONSOLE_ALLOWED_GROUPS`.
+- **Preview edge hardening** — block `/api*`, `/openapi.json`, and `/mcp*` on `PREVIEW_HOST` at Caddy; strip cookies on site and preview routes.
+- `console/bun test` — unit tests for auth, CSRF, escaping, and API error handling.
+
+### Changed
+
+- Multi-service Hetzner production stack now runs six containers (`nginx`, `cms-api`, `cms-console`, `openwebui`, `oauth2-proxy`, `edge-router`). Size VPS accordingly (2 GB swap minimum).
+- Production Open WebUI: trusted-header auth from oauth2-proxy; local login/signup disabled; sign-out redirects through oauth2-proxy.
+- Local edge port bound to `127.0.0.1:8080` to prevent forged dev identity headers from the LAN.
+
+### Note
+
+- Plugin-only (`docker-compose.plugin.yml`) and bundled monolith deployments are unchanged — no console or oauth2-proxy.
+- Console image is repo-built only (`Dockerfile.console`); not published to GHCR.
+
 ## [0.4.3] - 2026-08-06
 
 ### Added

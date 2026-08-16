@@ -385,6 +385,7 @@ Multi-service stack URLs:
 - Live site: http://localhost:8080
 - Open WebUI: http://chat.localhost:8080
 - Preview: http://preview.localhost:8080 (via edge-router)
+- CMS Console: http://console.localhost:8080 (dev identity headers; production uses shared GitHub OAuth)
 
 Bundled monolith (`docker-compose.bundled.yml` / Render) host routing when `CAPUZ_SERVE_SITE=true`:
 
@@ -413,7 +414,7 @@ Compose files and commands for each branch of the [deployment mode](#choose-a-de
 
 ### Multi-service stack
 
-nginx + cms-api + Open WebUI + edge-router (Caddy):
+nginx + cms-api + cms-console + Open WebUI + edge-router (Caddy):
 
 ```bash
 cp .env.example .env
@@ -424,6 +425,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 - Public site: http://localhost:8080
 - Open WebUI: http://chat.localhost:8080
 - Preview: http://preview.localhost:8080
+- CMS Console: http://console.localhost:8080
 - CMS API: not published on the host (optional: add `-f docker-compose.local-debug.yml` for `127.0.0.1:3000`)
 
 Production on Hetzner uses the same base compose with `deploy/hetzner/docker-compose.production.yml` — in-compose `edge-router` handles TLS (Let's Encrypt via `ACME_EMAIL`). See [docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md).
@@ -488,6 +490,15 @@ See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for server sizing, DNS,
 | `SCREENSHOT_RENDERER_URL` | — | Optional screenshot renderer for preview feedback |
 | `PREVIEW_HOST` | `preview.localhost` | Preview vhost hostname |
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
+| `CONSOLE_HOST` | `console.localhost` | CMS Console hostname (multi-service stack) |
+| `CONSOLE_CSRF_SECRET` | — | HMAC secret for console publish/discard CSRF tokens |
+| `CONSOLE_ALLOWED_GROUPS` | — | Optional console group allowlist (empty = any GitHub allowlisted user) |
+| `AUTH_HOST` | — | oauth2-proxy hostname (production multi-service stack) |
+| `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` | — | GitHub OAuth App credentials (production) |
+| `GITHUB_ALLOWED_USERS` | — | GitHub logins allowed through oauth2-proxy |
+| `OAUTH2_PROXY_COOKIE_SECRET` | — | oauth2-proxy session cookie secret (16, 24, or 32 bytes) |
+| `OAUTH2_PROXY_COOKIE_DOMAIN` | — | Parent-domain cookie scope (e.g. `.example.com`) |
+| `OAUTH2_PROXY_WHITELIST_DOMAIN` | — | Cross-subdomain redirect allowlist for oauth2-proxy |
 | `ACME_EMAIL` | — | Let's Encrypt contact email for Hetzner stack prod (edge-router TLS) |
 | `CAPUZ_SERVE_SITE` | `true` | Bundled monolith: serve live site from nginx (`fs` only). Set `false` for remote-site mode (`sftp`/`git`/`s3`) |
 | `CAPUZ_SEED` | `SKIP` | nginx seed mode when `CAPUZ_SERVE_SITE=true`: `SKIP`, `SEED`, or `FORCE_OVERWRITE` |

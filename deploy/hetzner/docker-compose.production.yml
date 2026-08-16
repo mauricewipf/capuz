@@ -5,10 +5,52 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      AUTH_HOST: ${AUTH_HOST}
+      CONSOLE_HOST: ${CONSOLE_HOST}
     volumes:
       - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    depends_on:
+      - oauth2-proxy
+      - cms-console
+
+  cms-console:
+    environment:
+      CONSOLE_CSRF_SECRET: ${CONSOLE_CSRF_SECRET}
+      CONSOLE_ALLOWED_GROUPS: ${CONSOLE_ALLOWED_GROUPS:-}
+
+  oauth2-proxy:
+    restart: unless-stopped
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
+    environment:
+      OAUTH2_PROXY_PROVIDER: github
+      OAUTH2_PROXY_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_DOMAINS: ${OAUTH2_PROXY_COOKIE_DOMAIN}
+      OAUTH2_PROXY_WHITELIST_DOMAINS: ${OAUTH2_PROXY_WHITELIST_DOMAIN}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_GITHUB_USERS: ${GITHUB_ALLOWED_USERS}
+      OAUTH2_PROXY_REDIRECT_URL: https://${AUTH_HOST}/oauth2/callback
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_UPSTREAMS: static://202
+      OAUTH2_PROXY_SCOPE: user:email read:org
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SAMESITE: lax
+      OAUTH2_PROXY_COOKIE_HTTPONLY: "true"
+
+  openwebui:
+    environment:
+      ENABLE_SIGNUP: "false"
+      ENABLE_LOGIN_FORM: "false"
+      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: X-Auth-Request-Email
+      WEBUI_AUTH_TRUSTED_NAME_HEADER: X-Auth-Request-User
+      WEBUI_AUTH_TRUSTED_ROLE_HEADER: X-Auth-Request-Role
+      WEBUI_AUTH_SIGNOUT_REDIRECT_URL: https://${AUTH_HOST}/oauth2/sign_out?rd=https://${EDITOR_HOST}
 
 volumes:
   caddy_data:

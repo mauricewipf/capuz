@@ -1,0 +1,14 @@
+/* Console layout tweaks */
+.menu a.active {
+  font-weight: 600;
+  background-color: oklch(var(--b3));
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+iframe.ds-frame {
+  min-height: 12rem;
+}

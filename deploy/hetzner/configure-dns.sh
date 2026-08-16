@@ -16,12 +16,14 @@ if ! command -v hcloud >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Setting A records on ${ZONE} -> ${IP} (@, www, chat, preview)..."
+echo "Setting A records on ${ZONE} -> ${IP} (@, www, chat, preview, console, auth)..."
 echo "MX/mail records are not changed."
 
 hcloud zone rrset set-records "$ZONE" @ A --record "$IP"
 hcloud zone rrset set-records "$ZONE" www A --record "$IP"
 hcloud zone rrset set-records "$ZONE" chat A --record "$IP"
 hcloud zone rrset set-records "$ZONE" preview A --record "$IP"
+hcloud zone rrset set-records "$ZONE" console A --record "$IP"
+hcloud zone rrset set-records "$ZONE" auth A --record "$IP"
 
 echo "Done. TLS certificates issue after DNS propagates (edge-router / Let's Encrypt)."

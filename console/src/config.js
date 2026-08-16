@@ -10,12 +10,37 @@ function envInt(name, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function parseList(value) {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** Public Open WebUI URL from EDITOR_HOST + scheme/port of SITE_BASE_URL. */
+function resolveEditorUrl() {
+  const editorHost = env("EDITOR_HOST", "chat.localhost")
+    .replace(/^https?:\/\//, "")
+    .split("/")[0];
+  const siteBase = env("SITE_BASE_URL", "http://localhost:8080");
+  try {
+    const site = new URL(siteBase);
+    const port =
+      site.port && !["80", "443"].includes(site.port) ? `:${site.port}` : "";
+    return `${site.protocol}//${editorHost}${port}`.replace(/\/+$/, "");
+  } catch {
+    return `http://${editorHost}:8080`;
+  }
+}
+
 export const config = {
   port: envInt("CONSOLE_PORT", 3000),
   cmsApiUrl: env("CMS_API_URL", "http://cms-api:3000").replace(/\/+$/, ""),
   cmsApiKey: env("CMS_API_KEY", ""),
   siteBaseUrl: env("SITE_BASE_URL", "http://localhost:8080").replace(/\/+$/, ""),
   previewBaseUrl: env("PREVIEW_BASE_URL", "http://preview.localhost:8080").replace(/\/+$/, ""),
+  editorUrl: resolveEditorUrl(),
   csrfSecret: env("CONSOLE_CSRF_SECRET", "dev-console-csrf-change-me"),
   allowedGroups: parseList(env("CONSOLE_ALLOWED_GROUPS", "")),
   authEmailHeader: env("CONSOLE_AUTH_EMAIL_HEADER", "X-Auth-Request-Email"),
@@ -24,14 +49,6 @@ export const config = {
   upstreamTimeoutMs: envInt("CONSOLE_UPSTREAM_TIMEOUT_MS", 30000),
   appName: env("CONSOLE_APP_NAME", "Capuz Console"),
 };
-
-function parseList(value) {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 export function livePageUrl(pagePath) {
   const normalized = pagePath.replace(/^\/+/, "");

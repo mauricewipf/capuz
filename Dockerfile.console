@@ -7,7 +7,6 @@ RUN bun install --frozen-lockfile --production
 
 COPY console/src ./src
 COPY console/static ./static
-COPY public/assets/css/daisyui@5.css ./static/css/daisyui.css
 
 ENV CONSOLE_PORT=3000
 

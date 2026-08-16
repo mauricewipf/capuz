@@ -63,6 +63,7 @@ services:
       CMS_API_KEY: ${CMS_API_KEY:-dev-local-key}
       SITE_BASE_URL: ${SITE_BASE_URL:-http://localhost:8080}
       PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-http://preview.localhost:8080}
+      EDITOR_HOST: ${EDITOR_HOST:-chat.localhost}
       CONSOLE_CSRF_SECRET: ${CONSOLE_CSRF_SECRET:-dev-console-csrf-change-me}
       CONSOLE_ALLOWED_GROUPS: ${CONSOLE_ALLOWED_GROUPS:-}
     depends_on:

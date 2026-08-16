@@ -147,7 +147,19 @@ const app = new Elysia()
     }
   })
 
-  .post("/pages/*/publish", async ({ request, set, params }) => {
+  // Elysia only supports "*" as the final path segment, so publish/discard
+  // share one wildcard route and the action is parsed off the end of the path.
+  .post("/pages/*", async ({ request, set, params }) => {
+    const wild = String(params["*"] || "").replace(/^\/+/, "");
+    const separator = wild.lastIndexOf("/");
+    const action = separator === -1 ? "" : wild.slice(separator + 1);
+    const pagePath = separator === -1 ? "" : decodeURIComponent(wild.slice(0, separator));
+    if ((action !== "publish" && action !== "discard") || !pagePath) {
+      applySecurityHeaders(set);
+      set.status = 404;
+      return "Not found";
+    }
+
     const auth = requireMutation(request, set);
     if (auth.error) return htmlResponse(set, auth.error, auth.httpStatus || 401);
     if (auth.forbidden) return htmlResponse(set, forbiddenPage(auth.forbidden), 403);
@@ -160,41 +172,19 @@ const app = new Elysia()
       return "Invalid CSRF token";
     }
 
-    const pagePath = pathFromWildcard(params["*"]);
     try {
-      await publishPage(pagePath);
+      if (action === "publish") {
+        await publishPage(pagePath);
+        set.headers.Location = `/pages?flash=success:Published ${encodeURIComponent(pagePath)}`;
+      } else {
+        await discardDraft(pagePath);
+        set.headers.Location = `/pages?flash=success:Discarded draft for ${encodeURIComponent(pagePath)}`;
+      }
       set.status = 302;
-      set.headers.Location = `/pages?flash=success:Published ${encodeURIComponent(pagePath)}`;
       return "";
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Publish failed.";
-      set.status = 302;
-      set.headers.Location = `/pages?flash=error:${encodeURIComponent(message)}`;
-      return "";
-    }
-  })
-
-  .post("/pages/*/discard", async ({ request, set, params }) => {
-    const auth = requireMutation(request, set);
-    if (auth.error) return htmlResponse(set, auth.error, auth.httpStatus || 401);
-    if (auth.forbidden) return htmlResponse(set, forbiddenPage(auth.forbidden), 403);
-
-    const form = await request.formData();
-    const csrf = form.get("_csrf");
-    if (!verifyCsrfToken(String(csrf || ""))) {
-      set.status = 403;
-      applySecurityHeaders(set);
-      return "Invalid CSRF token";
-    }
-
-    const pagePath = pathFromWildcard(params["*"]);
-    try {
-      await discardDraft(pagePath);
-      set.status = 302;
-      set.headers.Location = `/pages?flash=success:Discarded draft for ${encodeURIComponent(pagePath)}`;
-      return "";
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Discard failed.";
+      const fallback = action === "publish" ? "Publish failed." : "Discard failed.";
+      const message = error instanceof ApiError ? error.message : fallback;
       set.status = 302;
       set.headers.Location = `/pages?flash=error:${encodeURIComponent(message)}`;
       return "";

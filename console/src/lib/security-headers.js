@@ -1,5 +1,6 @@
+// style-src needs 'unsafe-inline' because the Tailwind browser engine injects a <style> element at runtime.
 const SHELL_CSP =
-  "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'";
+  "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'";
 
 export function applySecurityHeaders(set) {
   set.headers = set.headers || {};
@@ -17,5 +18,5 @@ export function applyComponentPreviewHeaders(set) {
   set.headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
   set.headers["X-Frame-Options"] = "DENY";
   set.headers["Content-Security-Policy"] =
-    "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https://img.daisyui.com; font-src 'self'";
+    "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.daisyui.com; font-src 'self'";
 }

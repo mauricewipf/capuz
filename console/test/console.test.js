@@ -100,14 +100,14 @@ describe("pages view", () => {
 });
 
 describe("components view", () => {
-  test("renders all components in a table", () => {
+  test("renders all components in a list", () => {
     const html = componentsPage({
       components: ["v1/card", "v1/diff", "v2/diff"],
       selected: "",
       selectedHtml: null,
       selectedError: null,
     });
-    expect(html).toContain('class="table table-zebra"');
+    expect(html).toContain("data-component-list");
     expect(html).toContain("v1/card");
     expect(html).toContain("v2/diff");
     expect(html).toContain("/components/v1/diff");

@@ -4,6 +4,8 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+## [0.4.4] - 2026-08-19
+
 ### Added
 
 - **CMS Console** (`cms-console`) — optional multi-service admin UI at `CONSOLE_HOST` (local: `console.localhost:8080`). Bun/Elysia SSR with DaisyUI: page list/filter, diff, publish/discard, read-only component catalogue, and system status. Open WebUI remains the editing surface.
@@ -16,6 +18,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - Multi-service Hetzner production stack now runs six containers (`nginx`, `cms-api`, `cms-console`, `openwebui`, `oauth2-proxy`, `edge-router`). Size VPS accordingly (2 GB swap minimum).
 - Production Open WebUI: trusted-header auth from oauth2-proxy; local login/signup disabled; sign-out redirects through oauth2-proxy.
 - Local edge port bound to `127.0.0.1:8080` to prevent forged dev identity headers from the LAN.
+- CMS Console: DaisyUI-only styling (no custom CSS), drawer layout with theme switcher, components table with path-based routes and tab preview, and local stack sync of `.components` from seed on restart.
 
 ### Note
 

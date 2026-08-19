@@ -67,9 +67,6 @@
 			}
 		}
 		reverse_proxy openwebui:8080 {
-			header_up X-Auth-Request-Email {http.auth.X-Auth-Request-Email}
-			header_up X-Auth-Request-User {http.auth.X-Auth-Request-User}
-			header_up X-Auth-Request-Groups {http.auth.X-Auth-Request-Groups}
 			header_up X-Auth-Request-Role admin
 		}
 	}
@@ -93,10 +90,6 @@
 				redir https://{$AUTH_HOST}/oauth2/sign_in?rd={scheme}://{host}{uri}
 			}
 		}
-		reverse_proxy cms-console:3000 {
-			header_up X-Auth-Request-Email {http.auth.X-Auth-Request-Email}
-			header_up X-Auth-Request-User {http.auth.X-Auth-Request-User}
-			header_up X-Auth-Request-Groups {http.auth.X-Auth-Request-Groups}
-		}
+		reverse_proxy cms-console:3000
 	}
 }

@@ -87,6 +87,10 @@ export async function discardDraft(path) {
   return apiFetch(`/api/drafts/${encodePagePath(path)}`, { method: "DELETE" });
 }
 
+export async function deletePage(path) {
+  return apiFetch(`/api/pages/${encodePagePath(path)}`, { method: "DELETE" });
+}
+
 export async function listComponents() {
   const data = await apiFetch("/api/components");
   return data.components || [];

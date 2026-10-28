@@ -16,7 +16,7 @@ function statusBadge(status) {
   }
 }
 
-function hasDraft(status) {
+export function hasDraft(status) {
   return status === "draft" || status === "modified";
 }
 
@@ -62,6 +62,13 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
             <button type="submit" class="btn btn-ghost btn-xs text-error">Discard</button>
           </form>`
         : "";
+      // Delete only after any draft is discarded — avoids wiping live while a draft still exists.
+      const del = draft
+        ? ""
+        : `<form method="post" action="/pages/${escapeAttr(path)}/delete" class="inline" data-confirm-delete data-page="${escapeAttr(path)}">
+            <input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}" />
+            <button type="submit" class="btn btn-ghost btn-xs text-error">Delete</button>
+          </form>`;
       return `<tr data-page-row data-path="${escapeAttr(path)}" class="hover:bg-base-200/60">
         <td>
           <a class="link link-hover font-mono text-sm inline-flex items-center gap-1.5" href="${escapeAttr(previewPageUrl(path))}" target="_blank" rel="noopener noreferrer" title="Open preview">
@@ -76,6 +83,7 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
             <a class="btn btn-ghost btn-xs ${diffPath === path ? "btn-active" : ""}" href="/pages?diff=${escapeAttr(path)}">Diff</a>
             ${publish}
             ${discard}
+            ${del}
           </div>
         </td>
       </tr>`;
@@ -111,7 +119,7 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="text-2xl font-bold">Pages</h1>
-          <p class="mt-1 text-sm text-base-content/60">Publish and discard drafts. Edit pages in Open WebUI chat.</p>
+          <p class="mt-1 text-sm text-base-content/60">Publish, discard drafts, and delete pages. Edit pages in Open WebUI chat.</p>
         </div>
         <div role="tablist" class="tabs tabs-box tabs-sm bg-base-100 shadow-sm">${filterTabs}</div>
       </div>
@@ -132,6 +140,6 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
         </div>
       </div>
       ${diffPanel}
-      <p class="text-xs text-base-content/50">Publish and discard apply to the latest server-side draft. Open WebUI may have newer unsaved edits in chat.</p>
+      <p class="text-xs text-base-content/50">Publish and discard apply to the latest server-side draft. Discard a draft before Delete appears. Open WebUI may have newer unsaved edits in chat.</p>
     </div>`;
 }

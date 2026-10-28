@@ -97,6 +97,36 @@ describe("pages view", () => {
     expect(html).not.toContain("dev-local-key");
     expect(html).not.toContain("Bearer");
   });
+
+  test("shows delete for published pages without a draft", () => {
+    const html = pagesPage({
+      pages: [{ path: "index.html", status: "published" }],
+      filter: "",
+      diffPath: null,
+      diff: null,
+      csrfToken: createCsrfToken(),
+    });
+    expect(html).toContain("/pages/index.html/delete");
+    expect(html).toContain("data-confirm-delete");
+    expect(html).not.toContain("/pages/index.html/discard");
+  });
+
+  test("shows discard instead of delete when a draft exists", () => {
+    const html = pagesPage({
+      pages: [
+        { path: "threeui.html", status: "draft" },
+        { path: "models.html", status: "modified" },
+      ],
+      filter: "",
+      diffPath: null,
+      diff: null,
+      csrfToken: createCsrfToken(),
+    });
+    expect(html).toContain("/pages/threeui.html/discard");
+    expect(html).toContain("/pages/models.html/discard");
+    expect(html).not.toContain("/pages/threeui.html/delete");
+    expect(html).not.toContain("/pages/models.html/delete");
+  });
 });
 
 describe("components view", () => {

@@ -43,26 +43,41 @@
     });
   }
 
-  /* --- Confirm dialogs for publish/discard --- */
+  /* --- Confirm dialogs for publish/discard/delete --- */
   const dialog = document.getElementById("confirm-dialog");
   const acceptButton = dialog?.querySelector("[data-confirm-accept]");
   let pendingForm = null;
 
   document.addEventListener("submit", (event) => {
-    const form = event.target.closest("form[data-confirm-publish], form[data-confirm-discard]");
+    const form = event.target.closest(
+      "form[data-confirm-publish], form[data-confirm-discard], form[data-confirm-delete]",
+    );
     if (!form || !dialog || !acceptButton) return;
     event.preventDefault();
     pendingForm = form;
 
     const page = form.getAttribute("data-page") || "this page";
     const isPublish = form.hasAttribute("data-confirm-publish");
-    dialog.querySelector("[data-confirm-title]").textContent = isPublish
-      ? "Publish draft?"
-      : "Discard draft?";
-    dialog.querySelector("[data-confirm-message]").textContent = isPublish
-      ? `Publish the latest server-side draft of ${page} to the live site?`
-      : `Discard the draft of ${page}? The live published page remains unchanged.`;
-    acceptButton.textContent = isPublish ? "Publish" : "Discard";
+    const isDelete = form.hasAttribute("data-confirm-delete");
+    let title;
+    let message;
+    let acceptLabel;
+    if (isPublish) {
+      title = "Publish draft?";
+      message = `Publish the latest server-side draft of ${page} to the live site?`;
+      acceptLabel = "Publish";
+    } else if (isDelete) {
+      title = "Delete page?";
+      message = `Permanently delete ${page} from the live site? This cannot be undone.`;
+      acceptLabel = "Delete";
+    } else {
+      title = "Discard draft?";
+      message = `Discard the draft of ${page}? The live published page remains unchanged.`;
+      acceptLabel = "Discard";
+    }
+    dialog.querySelector("[data-confirm-title]").textContent = title;
+    dialog.querySelector("[data-confirm-message]").textContent = message;
+    acceptButton.textContent = acceptLabel;
     acceptButton.classList.toggle("btn-primary", isPublish);
     acceptButton.classList.toggle("btn-error", !isPublish);
     dialog.showModal();

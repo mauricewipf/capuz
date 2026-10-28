@@ -43,6 +43,11 @@ function pathFromRequest(c, prefix) {
   return c.req.path.replace(new RegExp(`^${prefix}/?`), "");
 }
 
+/** Nested page paths (e.g. impressum/index.html). Hono `*` only matches one segment. */
+function nestedPathParam(c, name = "path") {
+  return c.req.param(name);
+}
+
 app.use("*", previewMiddleware());
 
 app.get("/health", (c) => c.json({ ok: true }));
@@ -221,9 +226,9 @@ app.delete("/api/components/*", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/components/*/insert", requireAuth, async (c) => {
+app.post("/api/components/:name{.+}/insert", requireAuth, async (c) => {
   try {
-    const name = c.req.path.replace(/^\/api\/components\/?/, "").replace(/\/insert$/, "");
+    const name = nestedPathParam(c, "name");
     const body = await c.req.json();
     const result = await insertComponent(
       storage,
@@ -239,9 +244,9 @@ app.post("/api/components/*/insert", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/components/*/sync", requireAuth, async (c) => {
+app.post("/api/components/:name{.+}/sync", requireAuth, async (c) => {
   try {
-    const name = c.req.path.replace(/^\/api\/components\/?/, "").replace(/\/sync$/, "");
+    const name = nestedPathParam(c, "name");
     const result = await syncComponent(storage, name);
     invalidateLinkGraph();
     return c.json({ ok: true, ...result });
@@ -251,10 +256,8 @@ app.post("/api/components/*/sync", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/drafts/*/publish", requireAuth, async (c) => {
-  const path = c.req.path
-    .replace(/^\/api\/drafts\/?/, "")
-    .replace(/\/publish$/, "");
+app.post("/api/drafts/:path{.+}/publish", requireAuth, async (c) => {
+  const path = nestedPathParam(c);
   try {
     const saved = await storage.publishDraft(path);
     invalidateLinkGraph();
@@ -265,10 +268,8 @@ app.post("/api/drafts/*/publish", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/pages/*/publish", requireAuth, async (c) => {
-  const path = c.req.path
-    .replace(/^\/api\/pages\/?/, "")
-    .replace(/\/publish$/, "");
+app.post("/api/pages/:path{.+}/publish", requireAuth, async (c) => {
+  const path = nestedPathParam(c);
   try {
     const saved = await storage.publishDraft(path);
     invalidateLinkGraph();
@@ -279,10 +280,8 @@ app.post("/api/pages/*/publish", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/pages/*/unpublish", requireAuth, async (c) => {
-  const path = c.req.path
-    .replace(/^\/api\/pages\/?/, "")
-    .replace(/\/unpublish$/, "");
+app.post("/api/pages/:path{.+}/unpublish", requireAuth, async (c) => {
+  const path = nestedPathParam(c);
   try {
     const warning = await warnInboundLinks(storage, path);
     const saved = await unpublishPage(storage, path);
@@ -294,8 +293,8 @@ app.post("/api/pages/*/unpublish", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/pages/*/edit", requireAuth, async (c) => {
-  const path = c.req.path.replace(/^\/api\/pages\/?/, "").replace(/\/edit$/, "");
+app.post("/api/pages/:path{.+}/edit", requireAuth, async (c) => {
+  const path = nestedPathParam(c);
   try {
     const body = await c.req.json();
     const result = await editPage(
@@ -313,8 +312,8 @@ app.post("/api/pages/*/edit", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/pages/*/diff", async (c) => {
-  const path = c.req.path.replace(/^\/api\/pages\/?/, "").replace(/\/diff$/, "");
+app.get("/api/pages/:path{.+}/diff", async (c) => {
+  const path = nestedPathParam(c);
   try {
     const result = await diffPage(storage, path);
     return c.json(result);
@@ -324,8 +323,8 @@ app.get("/api/pages/*/diff", async (c) => {
   }
 });
 
-app.get("/api/pages/*/seo", async (c) => {
-  const path = c.req.path.replace(/^\/api\/pages\/?/, "").replace(/\/seo$/, "");
+app.get("/api/pages/:path{.+}/seo", async (c) => {
+  const path = nestedPathParam(c);
   try {
     const result = await auditPageSeo(storage, path);
     return c.json(result);
@@ -335,8 +334,8 @@ app.get("/api/pages/*/seo", async (c) => {
   }
 });
 
-app.post("/api/pages/*/seo", requireAuth, async (c) => {
-  const path = c.req.path.replace(/^\/api\/pages\/?/, "").replace(/\/seo$/, "");
+app.post("/api/pages/:path{.+}/seo", requireAuth, async (c) => {
+  const path = nestedPathParam(c);
   try {
     const body = await c.req.json();
     const result = await applyPageSeo(storage, path, body);
@@ -348,8 +347,8 @@ app.post("/api/pages/*/seo", requireAuth, async (c) => {
   }
 });
 
-app.post("/api/pages/*/preview-screenshot", requireAuth, async (c) => {
-  const path = c.req.path.replace(/^\/api\/pages\/?/, "").replace(/\/preview-screenshot$/, "");
+app.post("/api/pages/:path{.+}/preview-screenshot", requireAuth, async (c) => {
+  const path = nestedPathParam(c);
   try {
     const result = await renderPreviewScreenshot(storage, path);
     return c.json(result);
@@ -485,6 +484,8 @@ const backend = process.env.STORAGE_BACKEND || "fs";
 
 warnIfInsecureApiKey();
 console.log(`CMS API listening on :${port} (STORAGE_BACKEND=${backend})`);
+
+export { app };
 
 export default {
   port,

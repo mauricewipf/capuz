@@ -8,10 +8,12 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 - `unpublish_page` / `POST /api/pages/{path}/unpublish` — remove a live page and leave it as a draft (keeps an existing draft; otherwise copies live → draft first).
 - CMS Console page actions: Unpublish for live pages; Delete only for draft-only pages; Diff only for Changes.
+- `list_assets` / `GET /api/assets` now include `pageHead` and `pageHeadHtml` — suggested favicon/CSS/JS `<head>` tags derived from site assets (hashed filenames preferred). MCP instructions tell agents to use these when creating new pages and to avoid inventing CSS/JS without user approval.
 
 ### Changed
 
 - CMS Console: Discard is limited to **Changes** (keeps live). Draft-only pages use Delete instead of Discard. Published pages no longer show Diff or Delete.
+- MCP `list_assets` response shape is now `{ assets, pageHead, pageHeadHtml }` (was a bare path array). REST already returned `{ assets }` and gains the same head fields.
 
 ## [0.4.4] - 2026-08-19
 

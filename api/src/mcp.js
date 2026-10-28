@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
 import {
+  assetsListPayload,
   deleteAsset,
   importChatFile,
   listAssets,
@@ -45,7 +46,9 @@ const MCP_INSTRUCTIONS = `Draft-first CMS for static HTML/XML pages.
 
 Page edits (write_page, edit_page, insert_component, apply_seo, move_page, copy_page) save drafts for preview only — they do not go live.
 NEVER call publish_page unless the user explicitly asks to publish, go live, deploy, or make changes public.
-After saving a draft, share the previewUrl with the user and wait for explicit approval before publishing.`;
+After saving a draft, share the previewUrl with the user and wait for explicit approval before publishing.
+
+New pages: before write_page for a path that does not exist yet, call list_assets with no prefix (or only assets/) so pageHead covers the full site CSS/JS/favicon — a narrow prefix like assets/images/ yields an empty pageHead. Put every pageHead entry into <head> using the returned href/src exactly (root-absolute /assets/…, keep file extensions). Prefer existing site assets and daisyUI/utility classes those assets enable. Do not invent CDN CSS/JS, omit site CSS/JS, upload new .css/.js via upload_asset, or add substantial new inline <style>/<script> for site chrome unless the user explicitly approved it. If custom CSS or JS seems necessary, ask or clearly tell the user first and wait for confirmation. When editing an existing page, keep its existing head assets — do not strip them.`;
 
 function errorResult(error) {
   const message =
@@ -191,7 +194,7 @@ export function createMcpServer() {
 
   server.tool(
     "write_page",
-    "Save HTML content as a draft for preview. Do not call publish_page unless the user explicitly asks to publish or go live.",
+    "Save HTML content as a draft for preview. For a NEW page, call list_assets first with no narrow prefix (omit prefix or use assets/) and include every pageHead tag in <head> (exact /assets/… href/src). Reuse existing assets/daisyUI classes; do not invent CDN or new CSS/JS or substantial inline style/script unless the user approved. Keep existing head assets when editing. Do not call publish_page unless the user explicitly asks to publish or go live.",
     writePageInput,
     async ({ path, html }) => {
       try {
@@ -364,13 +367,19 @@ export function createMcpServer() {
 
   server.tool(
     "list_assets",
-    "List static assets (images, CSS, JS, fonts) stored on the site.",
+    "List static assets (images, CSS, JS, fonts). Returns assets plus pageHead/pageHeadHtml — suggested favicon/CSS/JS tags for new pages. Before creating a new page, call with no prefix (or only assets/) so pageHead is complete; a narrow prefix like assets/images/ yields an empty pageHead. Put every pageHead entry into <head> exactly; prefer these existing assets over inventing CSS/JS.",
     {
-      prefix: z.string().optional().describe("Optional path prefix filter such as assets/"),
+      prefix: z
+        .string()
+        .optional()
+        .describe(
+          "Optional path prefix filter. Omit or use assets/ when scaffolding a new page head; narrower prefixes (e.g. assets/images/) exclude CSS/JS from pageHead.",
+        ),
     },
     async ({ prefix }) => {
       try {
-        return jsonResult(await listAssets(storage, prefix || ""));
+        const assets = await listAssets(storage, prefix || "");
+        return jsonResult(assetsListPayload(assets));
       } catch (error) {
         return errorResult(error);
       }
@@ -379,7 +388,7 @@ export function createMcpServer() {
 
   server.tool(
     "upload_asset",
-    "Upload a static asset as base64-encoded content.",
+    "Upload a static asset as base64-encoded content (images, fonts, etc.). Do not upload new CSS/JS for page styling unless the user explicitly approved custom CSS or JS; reuse list_assets pageHead and existing assets instead.",
     {
       path: z.string().describe("Asset path such as assets/images/logo.png"),
       contentBase64: z.string().describe("Base64-encoded file content"),

@@ -206,6 +206,106 @@ function publicAssetUrl(path) {
   return `/${String(path).replace(/^\/+/, "")}`;
 }
 
+const HEAD_ASSET_EXTENSIONS = new Set([".css", ".js", ".ico"]);
+const CONTENT_HASH_RE = /\.[a-f0-9]{8}(?=\.[^.]+$)/i;
+
+function isHeadAssetPath(path) {
+  const cleaned = String(path).replace(/^\/+/, "");
+  if (!cleaned.startsWith("assets/")) return false;
+  if (cleaned.endsWith(".br")) return false;
+  return HEAD_ASSET_EXTENSIONS.has(extname(cleaned));
+}
+
+function logicalAssetKey(path) {
+  const cleaned = String(path).replace(/^\/+/, "");
+  const slash = cleaned.lastIndexOf("/");
+  const dir = slash === -1 ? "" : cleaned.slice(0, slash + 1);
+  const base = slash === -1 ? cleaned : cleaned.slice(slash + 1);
+  return `${dir}${base.replace(CONTENT_HASH_RE, "")}`.toLowerCase();
+}
+
+function hasContentHash(path) {
+  const cleaned = String(path).replace(/^\/+/, "");
+  const slash = cleaned.lastIndexOf("/");
+  const base = slash === -1 ? cleaned : cleaned.slice(slash + 1);
+  return CONTENT_HASH_RE.test(base);
+}
+
+function headSortKey(path) {
+  const cleaned = String(path).replace(/^\/+/, "").toLowerCase();
+  const base = basename(cleaned);
+  const ext = extname(cleaned);
+  if (ext === ".ico") return [0, cleaned];
+  if (ext === ".css" && base.includes("daisyui")) return [1, cleaned];
+  if (ext === ".js" && base.includes("browser")) return [2, cleaned];
+  if (ext === ".css" && base.includes("theme")) return [3, cleaned];
+  if (ext === ".css") return [4, cleaned];
+  if (ext === ".js") return [5, cleaned];
+  return [6, cleaned];
+}
+
+function compareHeadAssets(a, b) {
+  const [rankA, keyA] = headSortKey(a);
+  const [rankB, keyB] = headSortKey(b);
+  if (rankA !== rankB) return rankA - rankB;
+  return keyA.localeCompare(keyB);
+}
+
+function pageHeadEntryForPath(path) {
+  const href = publicAssetUrl(path);
+  const ext = extname(path);
+  if (ext === ".ico") {
+    return { tag: "link", rel: "icon", href, type: "image/x-icon" };
+  }
+  if (ext === ".css") {
+    return { tag: "link", rel: "stylesheet", href };
+  }
+  return { tag: "script", src: href };
+}
+
+function pageHeadEntryToHtml(entry) {
+  if (entry.tag === "script") {
+    return `<script src="${entry.src}"></script>`;
+  }
+  const typeAttr = entry.type ? ` type="${entry.type}"` : "";
+  return `<link rel="${entry.rel}" href="${entry.href}"${typeAttr} />`;
+}
+
+/**
+ * Pick favicon/CSS/JS head tags from a list_assets path list.
+ * Deduplicates logical names (stripping 8-hex content hashes) and prefers hashed filenames.
+ */
+export function buildPageHeadFromAssets(paths = []) {
+  const bestByKey = new Map();
+  for (const path of paths) {
+    if (!isHeadAssetPath(path)) continue;
+    const cleaned = String(path).replace(/^\/+/, "");
+    const key = logicalAssetKey(cleaned);
+    const existing = bestByKey.get(key);
+    if (!existing) {
+      bestByKey.set(key, cleaned);
+      continue;
+    }
+    const preferNew =
+      (hasContentHash(cleaned) && !hasContentHash(existing)) ||
+      (hasContentHash(cleaned) === hasContentHash(existing) &&
+        cleaned.length > existing.length);
+    if (preferNew) {
+      bestByKey.set(key, cleaned);
+    }
+  }
+
+  const selected = [...bestByKey.values()].sort(compareHeadAssets);
+  const pageHead = selected.map(pageHeadEntryForPath);
+  const pageHeadHtml = pageHead.map(pageHeadEntryToHtml).join("\n");
+  return { pageHead, pageHeadHtml };
+}
+
+export function assetsListPayload(assets) {
+  const { pageHead, pageHeadHtml } = buildPageHeadFromAssets(assets);
+  return { assets, pageHead, pageHeadHtml };
+}
+
 export async function listAssets(storage, prefix = "") {
   if (typeof storage.listAssets !== "function") {
     throw new Error("Asset listing is not supported by this storage backend");

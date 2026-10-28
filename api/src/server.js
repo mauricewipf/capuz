@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireAuth, warnIfInsecureApiKey } from "./auth.js";
 import {
+  assetsListPayload,
   deleteAsset,
   importChatFile,
   listAssets,
@@ -111,7 +112,7 @@ app.get("/api/assets", async (c) => {
   try {
     const prefix = c.req.query("prefix") || "";
     const assets = await listAssets(storage, prefix);
-    return c.json({ assets });
+    return c.json(assetsListPayload(assets));
   } catch (error) {
     const { message, status } = handlePathError(error);
     return c.json({ error: message }, status);

@@ -177,8 +177,47 @@ export const openApiDocument = {
       get: {
         summary: "List assets",
         operationId: "listAssets",
+        description:
+          "Returns asset paths plus pageHead/pageHeadHtml — suggested favicon/CSS/JS tags for new pages. Prefer these existing assets over inventing CSS/JS.",
         parameters: [{ name: "prefix", in: "query", schema: { type: "string" } }],
-        responses: { "200": { description: "Asset paths" } },
+        responses: {
+          "200": {
+            description: "Asset paths and suggested page head tags",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    assets: {
+                      type: "array",
+                      items: { type: "string" },
+                      description: "Relative asset paths such as assets/css/themes.css",
+                    },
+                    pageHead: {
+                      type: "array",
+                      description:
+                        "Suggested <head> tags (favicon, stylesheets, scripts) derived from assets",
+                      items: {
+                        type: "object",
+                        properties: {
+                          tag: { type: "string", enum: ["link", "script"] },
+                          rel: { type: "string" },
+                          href: { type: "string" },
+                          type: { type: "string" },
+                          src: { type: "string" },
+                        },
+                      },
+                    },
+                    pageHeadHtml: {
+                      type: "string",
+                      description: "pageHead rendered as HTML ready to paste into <head>",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
     "/api/assets/import-chat": {

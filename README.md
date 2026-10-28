@@ -305,7 +305,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `unpublish_page` | Remove a live page and leave it as a draft |
 | `discard_draft` | Delete a draft without publishing |
 | `delete_page` | Delete a published page |
-| `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |
+| `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts). `list_assets` also returns `pageHead` / `pageHeadHtml` for new-page scaffolding |
 | `import_chat_file` | Copy a chat-attached Open WebUI file into site assets (shared `site-data` volume — bundled or multi-service stack); returns `url` with file extension for `<img src>` |
 | `list_components` / `read_component` / `write_component` / `delete_component` | Reusable HTML component library under `.components/` (`write_component` creates only; existing components are immutable) |
 | `insert_component` | Embed a tagged component block into a page draft (then edit instance data on the page) |
@@ -340,7 +340,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | DELETE | `/api/pages/{path}` | Bearer | Delete published page |
 | GET | `/api/search?q=` | — | Search page HTML |
 | GET | `/api/links/check` | — | Broken link report |
-| GET | `/api/assets` | — | List assets |
+| GET | `/api/assets` | — | List assets (`assets` + suggested `pageHead` / `pageHeadHtml`) |
 | POST | `/api/assets/import-chat` | Bearer | Import chat-attached Open WebUI file into assets (bundled/stack) |
 | GET/PUT/DELETE | `/api/assets/{path}` | PUT/DELETE: Bearer | Read/upload/delete asset |
 | GET | `/api/components` | — | List components |

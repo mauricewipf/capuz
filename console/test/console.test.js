@@ -114,7 +114,7 @@ describe("pages view", () => {
     expect(html).not.toContain("/pages/index.html/publish");
   });
 
-  test("modified pages show live, diff, publish, discard, and unpublish", () => {
+  test("modified pages put actions in a dropdown", () => {
     const html = pagesPage({
       pages: [{ path: "models.html", status: "modified" }],
       filter: "",
@@ -122,12 +122,17 @@ describe("pages view", () => {
       diff: null,
       csrfToken: createCsrfToken(),
     });
-    expect(html).toContain(">Live<");
+    expect(html).toContain('class="menu menu-horizontal menu-xs p-0"');
+    expect(html).toContain(">Actions</summary>");
+    expect(html).toContain("end-0 start-auto");
+    expect(html).toContain(">Live</a>");
     expect(html).toContain("/pages?diff=models.html");
     expect(html).toContain("/pages/models.html/publish");
     expect(html).toContain("/pages/models.html/discard");
     expect(html).toContain("/pages/models.html/unpublish");
     expect(html).not.toContain("/pages/models.html/delete");
+    expect(html).not.toContain('class="dropdown dropdown-end"');
+    expect(html).not.toContain('class="btn btn-ghost btn-xs">Live</a>');
   });
 
   test("draft pages show publish and delete, not live, diff, discard, or unpublish", () => {

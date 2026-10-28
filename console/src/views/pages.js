@@ -23,6 +23,35 @@ function actionForm(path, action, label, confirmAttr, csrfToken, buttonClass) {
           </form>`;
 }
 
+function actionMenuForm(path, action, label, confirmAttr, csrfToken, buttonClass = "") {
+  const classes = ["w-full", "justify-start", "font-normal", buttonClass].filter(Boolean).join(" ");
+  return `<li>
+            <form method="post" action="/pages/${escapeAttr(path)}/${action}" ${confirmAttr} data-page="${escapeAttr(path)}">
+              <input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}" />
+              <button type="submit" class="${classes}">${label}</button>
+            </form>
+          </li>`;
+}
+
+/** Changes-status actions use the v1/dropdown-animated menu pattern (compact + end-aligned for the table). */
+function changesActionsDropdown({ path, diffPath, csrfToken }) {
+  const diffActive = diffPath === path ? "menu-active" : "";
+  return `<ul class="menu menu-horizontal menu-xs p-0">
+            <li>
+              <details>
+                <summary>Actions</summary>
+                <ul class="p-2 bg-base-100 w-40 z-1 shadow end-0 start-auto">
+                  <li><a href="${escapeAttr(livePageUrl(path))}" target="_blank" rel="noopener noreferrer">Live</a></li>
+                  <li><a class="${diffActive}" href="/pages?diff=${escapeAttr(path)}">Diff</a></li>
+                  ${actionMenuForm(path, "publish", "Publish", "data-confirm-publish", csrfToken)}
+                  ${actionMenuForm(path, "unpublish", "Unpublish", "data-confirm-unpublish", csrfToken)}
+                  ${actionMenuForm(path, "discard", "Discard", "data-confirm-discard", csrfToken, "text-error")}
+                </ul>
+              </details>
+            </li>
+          </ul>`;
+}
+
 export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
   const counts = {
     all: pages.length,
@@ -58,14 +87,14 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
       const isDraft = status === "draft";
       const isLive = isPublished || isModified;
 
-      const live = isLive
-        ? `<a class="btn btn-ghost btn-xs" href="${escapeAttr(livePageUrl(path))}" target="_blank" rel="noopener noreferrer">Live</a>`
-        : "";
-      const diffLink = isModified
-        ? `<a class="btn btn-ghost btn-xs ${diffPath === path ? "btn-active" : ""}" href="/pages?diff=${escapeAttr(path)}">Diff</a>`
-        : "";
-      const publish =
-        isDraft || isModified
+      let actions;
+      if (isModified) {
+        actions = changesActionsDropdown({ path, diffPath, csrfToken });
+      } else {
+        const live = isLive
+          ? `<a class="btn btn-ghost btn-xs" href="${escapeAttr(livePageUrl(path))}" target="_blank" rel="noopener noreferrer">Live</a>`
+          : "";
+        const publish = isDraft
           ? actionForm(
               path,
               "publish",
@@ -75,38 +104,29 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
               "btn btn-primary btn-xs",
             )
           : "";
-      // Discard only for Changes — keeps live, drops draft.
-      const discard = isModified
-        ? actionForm(
-            path,
-            "discard",
-            "Discard",
-            "data-confirm-discard",
-            csrfToken,
-            "btn btn-ghost btn-xs text-error",
-          )
-        : "";
-      const unpublish = isLive
-        ? actionForm(
-            path,
-            "unpublish",
-            "Unpublish",
-            "data-confirm-unpublish",
-            csrfToken,
-            "btn btn-ghost btn-xs",
-          )
-        : "";
-      // Delete only for unpublished (draft-only) pages.
-      const del = isDraft
-        ? actionForm(
-            path,
-            "delete",
-            "Delete",
-            "data-confirm-delete",
-            csrfToken,
-            "btn btn-ghost btn-xs text-error",
-          )
-        : "";
+        const unpublish = isPublished
+          ? actionForm(
+              path,
+              "unpublish",
+              "Unpublish",
+              "data-confirm-unpublish",
+              csrfToken,
+              "btn btn-ghost btn-xs",
+            )
+          : "";
+        // Delete only for unpublished (draft-only) pages.
+        const del = isDraft
+          ? actionForm(
+              path,
+              "delete",
+              "Delete",
+              "data-confirm-delete",
+              csrfToken,
+              "btn btn-ghost btn-xs text-error",
+            )
+          : "";
+        actions = `${live}${publish}${unpublish}${del}`;
+      }
 
       return `<tr data-page-row data-path="${escapeAttr(path)}" data-status="${escapeAttr(status)}" class="hover:bg-base-200/60">
         <td>
@@ -118,12 +138,7 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
         <td>${statusBadge(status)}</td>
         <td>
           <div class="flex flex-wrap items-center justify-end gap-1">
-            ${live}
-            ${diffLink}
-            ${publish}
-            ${discard}
-            ${unpublish}
-            ${del}
+            ${actions}
           </div>
         </td>
       </tr>`;
@@ -163,21 +178,19 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
         </div>
         <div role="tablist" class="tabs tabs-box tabs-sm bg-base-100 shadow-sm">${filterTabs}</div>
       </div>
-      <div class="card bg-base-100 border border-base-300 shadow-sm">
-        <div class="overflow-x-auto">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Page</th>
-                <th>Status</th>
-                <th class="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.length ? rows : emptyRow}
-            </tbody>
-          </table>
-        </div>
+      <div class="card bg-base-100 border border-base-300 shadow-sm overflow-visible">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Page</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows : emptyRow}
+          </tbody>
+        </table>
       </div>
       ${diffPanel}
       <p class="text-xs text-base-content/50">Discard drops a draft and keeps the live page. Unpublish moves a live page to draft. Delete removes draft-only pages. Open WebUI may have newer unsaved edits in chat.</p>

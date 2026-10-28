@@ -2,7 +2,7 @@ import { config } from "../config.js";
 import { escapeHtml, escapeAttr } from "../lib/escape.js";
 
 // Bump when static assets change so cached copies (max-age=86400) are refreshed.
-export const ASSET_VERSION = "4";
+export const ASSET_VERSION = "5";
 
 const ICONS = {
   pages: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4 shrink-0"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path><path d="M15 2v5h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>`,
@@ -64,7 +64,7 @@ export function layout({ title, active, identity, csrfToken, flash, content }) {
 <body class="bg-base-200 min-h-screen">
   <div class="drawer lg:drawer-open">
     <input id="app-drawer" type="checkbox" class="drawer-toggle inline" />
-    <div class="drawer-content flex min-h-screen flex-col">
+    <div class="drawer-content flex min-h-screen flex-col overflow-x-clip overflow-y-visible">
       <header class="navbar sticky top-0 z-10 border-b border-base-300 bg-base-100 min-h-14 px-3 gap-1">
         <label for="app-drawer" class="btn btn-square btn-ghost btn-sm drawer-button" aria-label="Toggle sidebar" title="Toggle sidebar">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg>

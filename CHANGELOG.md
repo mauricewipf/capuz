@@ -4,6 +4,15 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 ## Unreleased
 
+### Added
+
+- `unpublish_page` / `POST /api/pages/{path}/unpublish` — remove a live page and leave it as a draft (keeps an existing draft; otherwise copies live → draft first).
+- CMS Console page actions: Unpublish for live pages; Delete only for draft-only pages; Diff only for Changes.
+
+### Changed
+
+- CMS Console: Discard is limited to **Changes** (keeps live). Draft-only pages use Delete instead of Discard. Published pages no longer show Diff or Delete.
+
 ## [0.4.4] - 2026-08-19
 
 ### Added

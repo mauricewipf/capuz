@@ -28,6 +28,7 @@ import {
   movePage,
   renamePage,
   searchPages,
+  unpublishPage,
 } from "./page-ops.js";
 import { previewMiddleware } from "./preview.js";
 import { applyPageSeo, auditPageSeo, regenerateSitemap } from "./seo.js";
@@ -272,6 +273,21 @@ app.post("/api/pages/*/publish", requireAuth, async (c) => {
     const saved = await storage.publishDraft(path);
     invalidateLinkGraph();
     return c.json({ ok: true, path: saved });
+  } catch (error) {
+    const { message, status } = handlePathError(error);
+    return c.json({ error: message }, status);
+  }
+});
+
+app.post("/api/pages/*/unpublish", requireAuth, async (c) => {
+  const path = c.req.path
+    .replace(/^\/api\/pages\/?/, "")
+    .replace(/\/unpublish$/, "");
+  try {
+    const warning = await warnInboundLinks(storage, path);
+    const saved = await unpublishPage(storage, path);
+    invalidateLinkGraph();
+    return c.json({ ok: true, path: saved, ...(warning ? { linkWarning: warning } : {}) });
   } catch (error) {
     const { message, status } = handlePathError(error);
     return c.json({ error: message }, status);

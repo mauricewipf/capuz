@@ -49,6 +49,24 @@ export async function renamePage(storage, from, to) {
   return movePage(storage, from, to);
 }
 
+/**
+ * Remove the live page and leave content as a draft.
+ * If a draft already exists (modified), keep it and only delete live.
+ * If no draft exists (published), copy live → draft first.
+ */
+export async function unpublishPage(storage, path) {
+  const hasDraft = await storage.hasDraft(path);
+  if (!hasDraft) {
+    const html = await storage.readPage(path);
+    await storage.writeDraft(path, html);
+  } else {
+    // Confirm a live page exists before removing it.
+    await storage.readPage(path);
+  }
+  await storage.deletePage(path);
+  return path;
+}
+
 export async function searchPages(storage, query, maxResults = 20) {
   const pages = await storage.listPages();
   const results = [];

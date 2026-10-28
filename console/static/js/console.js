@@ -43,43 +43,59 @@
     });
   }
 
-  /* --- Confirm dialogs for publish/discard/delete --- */
+  /* --- Confirm dialogs for publish/discard/unpublish/delete --- */
   const dialog = document.getElementById("confirm-dialog");
   const acceptButton = dialog?.querySelector("[data-confirm-accept]");
   let pendingForm = null;
 
+  const CONFIRM_COPY = {
+    publish: {
+      title: "Publish draft?",
+      message: (page) => `Publish the latest server-side draft of ${page} to the live site?`,
+      accept: "Publish",
+      primary: true,
+    },
+    discard: {
+      title: "Discard draft?",
+      message: (page) => `Discard the draft of ${page}? The live published page remains unchanged.`,
+      accept: "Discard",
+      primary: false,
+    },
+    unpublish: {
+      title: "Unpublish page?",
+      message: (page) =>
+        `Remove ${page} from the live site and keep it as a draft? You can publish again later or delete the draft.`,
+      accept: "Unpublish",
+      primary: false,
+    },
+    delete: {
+      title: "Delete page?",
+      message: (page) => `Permanently delete the draft of ${page}? This cannot be undone.`,
+      accept: "Delete",
+      primary: false,
+    },
+  };
+
   document.addEventListener("submit", (event) => {
     const form = event.target.closest(
-      "form[data-confirm-publish], form[data-confirm-discard], form[data-confirm-delete]",
+      "form[data-confirm-publish], form[data-confirm-discard], form[data-confirm-unpublish], form[data-confirm-delete]",
     );
     if (!form || !dialog || !acceptButton) return;
     event.preventDefault();
     pendingForm = form;
 
     const page = form.getAttribute("data-page") || "this page";
-    const isPublish = form.hasAttribute("data-confirm-publish");
-    const isDelete = form.hasAttribute("data-confirm-delete");
-    let title;
-    let message;
-    let acceptLabel;
-    if (isPublish) {
-      title = "Publish draft?";
-      message = `Publish the latest server-side draft of ${page} to the live site?`;
-      acceptLabel = "Publish";
-    } else if (isDelete) {
-      title = "Delete page?";
-      message = `Permanently delete ${page} from the live site? This cannot be undone.`;
-      acceptLabel = "Delete";
-    } else {
-      title = "Discard draft?";
-      message = `Discard the draft of ${page}? The live published page remains unchanged.`;
-      acceptLabel = "Discard";
-    }
-    dialog.querySelector("[data-confirm-title]").textContent = title;
-    dialog.querySelector("[data-confirm-message]").textContent = message;
-    acceptButton.textContent = acceptLabel;
-    acceptButton.classList.toggle("btn-primary", isPublish);
-    acceptButton.classList.toggle("btn-error", !isPublish);
+    let kind = "discard";
+    if (form.hasAttribute("data-confirm-publish")) kind = "publish";
+    else if (form.hasAttribute("data-confirm-unpublish")) kind = "unpublish";
+    else if (form.hasAttribute("data-confirm-delete")) kind = "delete";
+    const copy = CONFIRM_COPY[kind];
+
+    dialog.querySelector("[data-confirm-title]").textContent = copy.title;
+    dialog.querySelector("[data-confirm-message]").textContent = copy.message(page);
+    acceptButton.textContent = copy.accept;
+    acceptButton.classList.toggle("btn-primary", copy.primary);
+    acceptButton.classList.toggle("btn-error", !copy.primary);
     dialog.showModal();
   });
 

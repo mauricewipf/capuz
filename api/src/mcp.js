@@ -26,6 +26,7 @@ import {
   movePage,
   renamePage,
   searchPages,
+  unpublishPage,
 } from "./page-ops.js";
 import { applyPageSeo, auditPageSeo, regenerateSitemap } from "./seo.js";
 import { renderPreviewScreenshot } from "./screenshot.js";
@@ -336,8 +337,24 @@ export function createMcpServer() {
   );
 
   server.tool(
+    "unpublish_page",
+    "Remove a live page and leave it as a draft. If a draft already exists, keep it and only remove the published file; otherwise copy live content into a draft first. ONLY call when the user explicitly asks to unpublish.",
+    { path: z.string().describe("Relative page path such as index.html") },
+    async ({ path }) => {
+      try {
+        const warning = await warnInboundLinks(storage, path);
+        const saved = await unpublishPage(storage, path);
+        invalidateLinkGraph();
+        return jsonResult({ unpublished: saved, ...(warning ? { linkWarning: warning } : {}) });
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+
+  server.tool(
     "discard_draft",
-    "Discard an unpublished draft without publishing",
+    "Discard an unpublished draft without publishing. For modified pages this keeps the live page; for draft-only pages this removes the page entirely.",
     { path: z.string().describe("Relative page path such as index.html") },
     async ({ path }) => {
       try {
@@ -351,7 +368,7 @@ export function createMcpServer() {
 
   server.tool(
     "delete_page",
-    "Delete a published page by path",
+    "Delete a published page by path. Prefer unpublish_page first when the user wants a reversible take-down; use delete_page to remove live content permanently.",
     { path: z.string().describe("Relative page path to delete") },
     async ({ path }) => {
       try {

@@ -364,6 +364,16 @@ export const openApiDocument = {
     "/api/pages/{path}/publish": {
       post: { summary: "Publish draft", operationId: "publishPage", security: bearerSecurity, responses: { "200": { description: "Draft published" } } },
     },
+    "/api/pages/{path}/unpublish": {
+      post: {
+        summary: "Unpublish page",
+        description:
+          "Remove the live page and leave content as a draft. Existing drafts are kept; otherwise the live HTML is copied to a draft first.",
+        operationId: "unpublishPage",
+        security: bearerSecurity,
+        responses: { "200": { description: "Page unpublished (now a draft)" } },
+      },
+    },
     "/api/pages/{path}/edit": {
       post: {
         summary: "Edit page via find/replace patch",

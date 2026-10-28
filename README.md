@@ -302,6 +302,7 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | `search_pages` | Grep page HTML for a substring |
 | `diff_page` | Unified diff of draft vs published |
 | `publish_page` | Promote a draft to the live site |
+| `unpublish_page` | Remove a live page and leave it as a draft |
 | `discard_draft` | Delete a draft without publishing |
 | `delete_page` | Delete a published page |
 | `list_assets` / `upload_asset` / `read_asset` / `delete_asset` | Manage static assets (images, CSS, JS, fonts) |

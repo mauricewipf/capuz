@@ -16,8 +16,11 @@ function statusBadge(status) {
   }
 }
 
-export function hasDraft(status) {
-  return status === "draft" || status === "modified";
+function actionForm(path, action, label, confirmAttr, csrfToken, buttonClass) {
+  return `<form method="post" action="/pages/${escapeAttr(path)}/${action}" class="inline" ${confirmAttr} data-page="${escapeAttr(path)}">
+            <input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}" />
+            <button type="submit" class="${buttonClass}">${label}</button>
+          </form>`;
 }
 
 export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
@@ -49,40 +52,77 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
   const rows = filtered
     .map((page) => {
       const path = page.path;
-      const draft = hasDraft(page.status);
-      const publish = draft
-        ? `<form method="post" action="/pages/${escapeAttr(path)}/publish" class="inline" data-confirm-publish data-page="${escapeAttr(path)}">
-            <input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}" />
-            <button type="submit" class="btn btn-primary btn-xs">Publish</button>
-          </form>`
+      const status = page.status;
+      const isPublished = status === "published";
+      const isModified = status === "modified";
+      const isDraft = status === "draft";
+      const isLive = isPublished || isModified;
+
+      const live = isLive
+        ? `<a class="btn btn-ghost btn-xs" href="${escapeAttr(livePageUrl(path))}" target="_blank" rel="noopener noreferrer">Live</a>`
         : "";
-      const discard = draft
-        ? `<form method="post" action="/pages/${escapeAttr(path)}/discard" class="inline" data-confirm-discard data-page="${escapeAttr(path)}">
-            <input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}" />
-            <button type="submit" class="btn btn-ghost btn-xs text-error">Discard</button>
-          </form>`
+      const diffLink = isModified
+        ? `<a class="btn btn-ghost btn-xs ${diffPath === path ? "btn-active" : ""}" href="/pages?diff=${escapeAttr(path)}">Diff</a>`
         : "";
-      // Delete only after any draft is discarded — avoids wiping live while a draft still exists.
-      const del = draft
-        ? ""
-        : `<form method="post" action="/pages/${escapeAttr(path)}/delete" class="inline" data-confirm-delete data-page="${escapeAttr(path)}">
-            <input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}" />
-            <button type="submit" class="btn btn-ghost btn-xs text-error">Delete</button>
-          </form>`;
-      return `<tr data-page-row data-path="${escapeAttr(path)}" class="hover:bg-base-200/60">
+      const publish =
+        isDraft || isModified
+          ? actionForm(
+              path,
+              "publish",
+              "Publish",
+              "data-confirm-publish",
+              csrfToken,
+              "btn btn-primary btn-xs",
+            )
+          : "";
+      // Discard only for Changes — keeps live, drops draft.
+      const discard = isModified
+        ? actionForm(
+            path,
+            "discard",
+            "Discard",
+            "data-confirm-discard",
+            csrfToken,
+            "btn btn-ghost btn-xs text-error",
+          )
+        : "";
+      const unpublish = isLive
+        ? actionForm(
+            path,
+            "unpublish",
+            "Unpublish",
+            "data-confirm-unpublish",
+            csrfToken,
+            "btn btn-ghost btn-xs",
+          )
+        : "";
+      // Delete only for unpublished (draft-only) pages.
+      const del = isDraft
+        ? actionForm(
+            path,
+            "delete",
+            "Delete",
+            "data-confirm-delete",
+            csrfToken,
+            "btn btn-ghost btn-xs text-error",
+          )
+        : "";
+
+      return `<tr data-page-row data-path="${escapeAttr(path)}" data-status="${escapeAttr(status)}" class="hover:bg-base-200/60">
         <td>
           <a class="link link-hover font-mono text-sm inline-flex items-center gap-1.5" href="${escapeAttr(previewPageUrl(path))}" target="_blank" rel="noopener noreferrer" title="Open preview">
             ${escapeHtml(path)}
             ${EXTERNAL_ICON}
           </a>
         </td>
-        <td>${statusBadge(page.status)}</td>
+        <td>${statusBadge(status)}</td>
         <td>
           <div class="flex flex-wrap items-center justify-end gap-1">
-            <a class="btn btn-ghost btn-xs" href="${escapeAttr(livePageUrl(path))}" target="_blank" rel="noopener noreferrer">Live</a>
-            <a class="btn btn-ghost btn-xs ${diffPath === path ? "btn-active" : ""}" href="/pages?diff=${escapeAttr(path)}">Diff</a>
+            ${live}
+            ${diffLink}
             ${publish}
             ${discard}
+            ${unpublish}
             ${del}
           </div>
         </td>
@@ -119,7 +159,7 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="text-2xl font-bold">Pages</h1>
-          <p class="mt-1 text-sm text-base-content/60">Publish, discard drafts, and delete pages. Edit pages in Open WebUI chat.</p>
+          <p class="mt-1 text-sm text-base-content/60">Publish, discard changes, unpublish, and delete drafts. Edit pages in Open WebUI chat.</p>
         </div>
         <div role="tablist" class="tabs tabs-box tabs-sm bg-base-100 shadow-sm">${filterTabs}</div>
       </div>
@@ -140,6 +180,6 @@ export function pagesPage({ pages, filter, diffPath, diff, csrfToken }) {
         </div>
       </div>
       ${diffPanel}
-      <p class="text-xs text-base-content/50">Publish and discard apply to the latest server-side draft. Discard a draft before Delete appears. Open WebUI may have newer unsaved edits in chat.</p>
+      <p class="text-xs text-base-content/50">Discard drops a draft and keeps the live page. Unpublish moves a live page to draft. Delete removes draft-only pages. Open WebUI may have newer unsaved edits in chat.</p>
     </div>`;
 }

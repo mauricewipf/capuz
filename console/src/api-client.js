@@ -83,12 +83,17 @@ export async function publishPage(path) {
   return apiFetch(`/api/pages/${encodePagePath(path)}/publish`, { method: "POST" });
 }
 
+export async function unpublishPage(path) {
+  return apiFetch(`/api/pages/${encodePagePath(path)}/unpublish`, { method: "POST" });
+}
+
 export async function discardDraft(path) {
   return apiFetch(`/api/drafts/${encodePagePath(path)}`, { method: "DELETE" });
 }
 
-export async function deletePage(path) {
-  return apiFetch(`/api/pages/${encodePagePath(path)}`, { method: "DELETE" });
+/** Delete a draft-only (unpublished) page by discarding its draft. */
+export async function deleteDraftPage(path) {
+  return discardDraft(path);
 }
 
 export async function listComponents() {

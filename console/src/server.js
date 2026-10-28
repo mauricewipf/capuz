@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  deletePage,
+  deleteDraftPage,
   discardDraft,
   getComponent,
   getHealth,
@@ -11,6 +11,7 @@ import {
   listComponents,
   listPagesWithStatus,
   publishPage,
+  unpublishPage,
   ApiError,
 } from "./api-client.js";
 import { config } from "./config.js";
@@ -18,7 +19,7 @@ import { identityFromRequest, isAuthorized, isSameOrigin } from "./lib/auth.js";
 import { createCsrfToken, verifyCsrfToken } from "./lib/csrf.js";
 import { applyComponentPreviewHeaders, applySecurityHeaders } from "./lib/security-headers.js";
 import { layout, forbiddenPage, errorPage } from "./views/layout.js";
-import { pagesPage, hasDraft } from "./views/pages.js";
+import { pagesPage } from "./views/pages.js";
 import { componentsPage, componentPreviewPage } from "./views/components.js";
 import { statusPage } from "./views/status.js";
 
@@ -148,14 +149,15 @@ const app = new Elysia()
     }
   })
 
-  // Elysia only supports "*" as the final path segment, so publish/discard/delete
+  // Elysia only supports "*" as the final path segment, so page actions
   // share one wildcard route and the action is parsed off the end of the path.
   .post("/pages/*", async ({ request, set, params }) => {
     const wild = String(params["*"] || "").replace(/^\/+/, "");
     const separator = wild.lastIndexOf("/");
     const action = separator === -1 ? "" : wild.slice(separator + 1);
     const pagePath = separator === -1 ? "" : decodeURIComponent(wild.slice(0, separator));
-    if ((action !== "publish" && action !== "discard" && action !== "delete") || !pagePath) {
+    const allowed = new Set(["publish", "discard", "unpublish", "delete"]);
+    if (!allowed.has(action) || !pagePath) {
       applySecurityHeaders(set);
       set.status = 404;
       return "Not found";
@@ -173,40 +175,55 @@ const app = new Elysia()
       return "Invalid CSRF token";
     }
 
+    const flashError = (message) => {
+      set.status = 302;
+      set.headers.Location = `/pages?flash=error:${encodeURIComponent(message)}`;
+      return "";
+    };
+
     try {
       if (action === "publish") {
         await publishPage(pagePath);
         set.headers.Location = `/pages?flash=success:Published ${encodeURIComponent(pagePath)}`;
       } else if (action === "discard") {
+        const pages = await listPagesWithStatus();
+        const page = pages.find((entry) => entry.path === pagePath);
+        if (!page) return flashError("Page not found.");
+        if (page.status !== "modified") {
+          return flashError("Discard is only available for pages with unpublished changes.");
+        }
         await discardDraft(pagePath);
         set.headers.Location = `/pages?flash=success:Discarded draft for ${encodeURIComponent(pagePath)}`;
+      } else if (action === "unpublish") {
+        const pages = await listPagesWithStatus();
+        const page = pages.find((entry) => entry.path === pagePath);
+        if (!page) return flashError("Page not found.");
+        if (page.status === "draft") {
+          return flashError("Page is already unpublished.");
+        }
+        await unpublishPage(pagePath);
+        set.headers.Location = `/pages?flash=success:Unpublished ${encodeURIComponent(pagePath)}`;
       } else {
         const pages = await listPagesWithStatus();
         const page = pages.find((entry) => entry.path === pagePath);
-        if (!page) {
-          set.status = 302;
-          set.headers.Location = `/pages?flash=error:${encodeURIComponent("Page not found.")}`;
-          return "";
+        if (!page) return flashError("Page not found.");
+        if (page.status !== "draft") {
+          return flashError("Unpublish the page before deleting it.");
         }
-        if (hasDraft(page.status)) {
-          set.status = 302;
-          set.headers.Location = `/pages?flash=error:${encodeURIComponent(
-            "Discard the draft before deleting this page.",
-          )}`;
-          return "";
-        }
-        await deletePage(pagePath);
+        await deleteDraftPage(pagePath);
         set.headers.Location = `/pages?flash=success:Deleted ${encodeURIComponent(pagePath)}`;
       }
       set.status = 302;
       return "";
     } catch (error) {
-      const fallback =
-        action === "publish" ? "Publish failed." : action === "discard" ? "Discard failed." : "Delete failed.";
-      const message = error instanceof ApiError ? error.message : fallback;
-      set.status = 302;
-      set.headers.Location = `/pages?flash=error:${encodeURIComponent(message)}`;
-      return "";
+      const fallbacks = {
+        publish: "Publish failed.",
+        discard: "Discard failed.",
+        unpublish: "Unpublish failed.",
+        delete: "Delete failed.",
+      };
+      const message = error instanceof ApiError ? error.message : fallbacks[action] || "Action failed.";
+      return flashError(message);
     }
   })
 

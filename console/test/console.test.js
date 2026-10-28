@@ -98,7 +98,7 @@ describe("pages view", () => {
     expect(html).not.toContain("Bearer");
   });
 
-  test("shows delete for published pages without a draft", () => {
+  test("published pages show live and unpublish, not diff or delete", () => {
     const html = pagesPage({
       pages: [{ path: "index.html", status: "published" }],
       filter: "",
@@ -106,26 +106,44 @@ describe("pages view", () => {
       diff: null,
       csrfToken: createCsrfToken(),
     });
-    expect(html).toContain("/pages/index.html/delete");
-    expect(html).toContain("data-confirm-delete");
+    expect(html).toContain(">Live<");
+    expect(html).toContain("/pages/index.html/unpublish");
+    expect(html).not.toContain("/pages?diff=index.html");
+    expect(html).not.toContain("/pages/index.html/delete");
     expect(html).not.toContain("/pages/index.html/discard");
+    expect(html).not.toContain("/pages/index.html/publish");
   });
 
-  test("shows discard instead of delete when a draft exists", () => {
+  test("modified pages show live, diff, publish, discard, and unpublish", () => {
     const html = pagesPage({
-      pages: [
-        { path: "threeui.html", status: "draft" },
-        { path: "models.html", status: "modified" },
-      ],
+      pages: [{ path: "models.html", status: "modified" }],
       filter: "",
       diffPath: null,
       diff: null,
       csrfToken: createCsrfToken(),
     });
-    expect(html).toContain("/pages/threeui.html/discard");
+    expect(html).toContain(">Live<");
+    expect(html).toContain("/pages?diff=models.html");
+    expect(html).toContain("/pages/models.html/publish");
     expect(html).toContain("/pages/models.html/discard");
-    expect(html).not.toContain("/pages/threeui.html/delete");
+    expect(html).toContain("/pages/models.html/unpublish");
     expect(html).not.toContain("/pages/models.html/delete");
+  });
+
+  test("draft pages show publish and delete, not live, diff, discard, or unpublish", () => {
+    const html = pagesPage({
+      pages: [{ path: "threeui.html", status: "draft" }],
+      filter: "",
+      diffPath: null,
+      diff: null,
+      csrfToken: createCsrfToken(),
+    });
+    expect(html).toContain("/pages/threeui.html/publish");
+    expect(html).toContain("/pages/threeui.html/delete");
+    expect(html).not.toContain(">Live<");
+    expect(html).not.toContain("/pages?diff=threeui.html");
+    expect(html).not.toContain("/pages/threeui.html/discard");
+    expect(html).not.toContain("/pages/threeui.html/unpublish");
   });
 });
 

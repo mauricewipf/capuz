@@ -133,13 +133,18 @@ docker run --rm \
   -v "$APP_DIR/Caddyfile.prod:/etc/caddy/Caddyfile:ro" \
   caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
+# Pre-built images (openwebui:latest, caddy, oauth2-proxy) are not rebuilt —
+# without an explicit pull, Docker reuses a stale local :latest tag forever.
+echo "Preflight: pulling published images..."
+"${COMPOSE[@]}" pull openwebui edge-router oauth2-proxy
+
 echo "Preflight: building images..."
 "${COMPOSE[@]}" build
 
 disable_host_caddy
 
 # Prefer up without volume wipe. Never use down -v here (site-data + caddy_data).
-"${COMPOSE[@]}" up -d --build --remove-orphans
+"${COMPOSE[@]}" up -d --build --pull always --remove-orphans
 
 echo ""
 echo "Multi-service stack started (nginx + cms-api + cms-console + openwebui + oauth2-proxy + edge-router)."

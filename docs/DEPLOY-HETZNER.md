@@ -64,8 +64,8 @@ If SSO misconfiguration locks you out of chat, see [Break-glass recovery](#break
 ### Migrating an existing VPS (host Caddy → edge-router)
 
 1. Deploy updated code with `ACME_EMAIL` set in `.env.production`.
-2. Install script preflights compose + `Caddyfile.prod`, builds images, then `systemctl disable --now caddy`.
-3. Starts all services with `up -d --build --remove-orphans` (no `down -v`).
+2. Install script preflights compose + `Caddyfile.prod`, pulls published images (`openwebui`, `edge-router`, `oauth2-proxy`), builds local images, then `systemctl disable --now caddy`.
+3. Starts all services with `up -d --build --pull always --remove-orphans` (no `down -v`).
 4. Expect one automatic ACME certificate issuance; later deploys reuse `caddy_data`.
 
 ---

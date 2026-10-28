@@ -33,6 +33,13 @@ import { renderPreviewScreenshot } from "./screenshot.js";
 import { getStatusInfo } from "./status.js";
 import { getStorage, listPagesWithStatus } from "./storage/index.js";
 import { VERSION } from "./version.js";
+import {
+  editPageInput,
+  listPagesInput,
+  searchPagesInput,
+  suggestComponentsInput,
+  writePageInput,
+} from "./mcp-schemas.js";
 
 const MCP_INSTRUCTIONS = `Draft-first CMS for static HTML/XML pages.
 
@@ -78,10 +85,7 @@ function writeComponentResult({ name, path, html }) {
 }
 
 function registerSuggestComponentsTools(server, storage) {
-  const schema = {
-    minMatches: z.number().int().min(2).optional().describe("Minimum pages a pattern must appear on"),
-    maxCandidates: z.number().int().min(1).max(50).optional().describe("Maximum candidates to return"),
-  };
+  const schema = suggestComponentsInput;
   const handler = async (args) => {
     try {
       return jsonResult(await suggestComponents(storage, args));
@@ -128,20 +132,7 @@ export function createMcpServer() {
   server.tool(
     "list_pages",
     "List HTML/XML pages with publish state. Always returns {path, status} where status is published (live only), draft (new unpublished page), or modified (live page with unpublished draft). For pages with unpublished work, set changedOnly=true or call list_drafts. Use publish_page only if the user explicitly asks to publish.",
-    {
-      changedOnly: z
-        .boolean()
-        .optional()
-        .describe(
-          "If true, only return draft and modified pages (unpublished changes). Use this when the user asks for pages with changes.",
-        ),
-      detail: z
-        .enum(["status", "paths"])
-        .optional()
-        .describe(
-          'Deprecated: status is the default. Use "paths" only if you need a bare path string array without draft state.',
-        ),
-    },
+    listPagesInput,
     async ({ changedOnly, detail }) => {
       try {
         if (detail === "paths") {
@@ -201,10 +192,7 @@ export function createMcpServer() {
   server.tool(
     "write_page",
     "Save HTML content as a draft for preview. Do not call publish_page unless the user explicitly asks to publish or go live.",
-    {
-      path: z.string().describe("Relative page path such as index.html"),
-      html: z.string().describe("Full HTML content to save"),
-    },
+    writePageInput,
     async ({ path, html }) => {
       try {
         const saved = await storage.writeDraft(path, html);
@@ -219,12 +207,7 @@ export function createMcpServer() {
   server.tool(
     "edit_page",
     "Apply a find/replace patch to a page draft without rewriting the full HTML. Saves for preview only — do not call publish_page unless the user explicitly asks to publish or go live.",
-    {
-      path: z.string().describe("Relative page path such as index.html"),
-      find: z.string().describe("Exact string to find in the page HTML"),
-      replace: z.string().describe("Replacement string"),
-      replaceAll: z.boolean().optional().describe("Replace all occurrences (default: first only)"),
-    },
+    editPageInput,
     async ({ path, find, replace, replaceAll }) => {
       try {
         const result = await editPage(storage, path, find, replace, Boolean(replaceAll));
@@ -295,10 +278,7 @@ export function createMcpServer() {
   server.tool(
     "search_pages",
     "Search page HTML for a substring and return matching lines.",
-    {
-      query: z.string().describe("Substring to search for"),
-      maxResults: z.number().int().min(1).max(100).optional().describe("Maximum matches to return"),
-    },
+    searchPagesInput,
     async ({ query, maxResults }) => {
       try {
         return jsonResult(await searchPages(storage, query, maxResults || 20));

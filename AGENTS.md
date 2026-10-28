@@ -57,7 +57,7 @@ When changing plugin behavior, keep MCP tools, REST routes, and OpenAPI spec in 
 | Orchestration | Docker Compose |
 | Console | Bun + Elysia SSR (multi-service stack only) |
 
-The repo has `bun test` for `console/`; cms-api has no test runner.
+The repo has `bun test` for `console/` and `api/` (MCP Zod schema tests).
 
 ## Repository layout
 
@@ -131,7 +131,7 @@ cd console && bun install && bun test && bun run start
 ### API (inside container or with Bun locally)
 
 ```bash
-cd api && bun install && bun run start
+cd api && bun install && bun test && bun run start
 ```
 
 Dev API key default: `dev-local-key` (from `docker-compose.yml` / `.env.example`).
@@ -204,13 +204,14 @@ Tag push triggers `.github/workflows/publish.yml` → GHCR `ghcr.io/mauricewipf/
 
 After API changes:
 
-1. Rebuild: `docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api edge-router && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
-2. `docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health` → `{"ok":true}`
-3. With debug override (or exec): list pages via `GET /api/pages`
-4. Save draft (debug override or exec): `PUT /api/pages/agent-test.html` with bearer `dev-local-key`
-5. Preview at http://preview.localhost:8080/agent-test (draft only until publish)
-6. Publish: `POST /api/pages/agent-test.html/publish`
-7. Confirm live at http://localhost:8080/agent-test.html, then delete the test page.
+1. `cd api && bun test`
+2. Rebuild: `docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api edge-router && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
+3. `docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health` → `{"ok":true}`
+4. With debug override (or exec): list pages via `GET /api/pages`
+5. Save draft (debug override or exec): `PUT /api/pages/agent-test.html` with bearer `dev-local-key`
+6. Preview at http://preview.localhost:8080/agent-test (draft only until publish)
+7. Publish: `POST /api/pages/agent-test.html/publish`
+8. Confirm live at http://localhost:8080/agent-test.html, then delete the test page.
 
 After console changes:
 

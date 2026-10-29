@@ -121,7 +121,8 @@ User Browser → PREVIEW_HOST → edge-router → cms-api:3000 (PREVIEW_HOST)
 ### Direct API Access
 ```
 # Optional local debug override publishes 127.0.0.1:3000
-curl → cms-api:3000/api/pages → /app/data → JSON Response
+# All /api routes require Authorization: Bearer <CMS_API_KEY>
+curl -H "Authorization: Bearer …" → cms-api:3000/api/pages → /app/data → JSON Response
 ```
 
 ## Shared Storage

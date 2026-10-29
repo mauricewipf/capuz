@@ -24,8 +24,7 @@ export const openApiDocument = {
       bearerAuth: {
         type: "http",
         scheme: "bearer",
-        description:
-          "CMS_API_KEY bearer token required for write/delete and for unpublished reads (drafts, diffs, asset content, changedOnly lists)",
+        description: "CMS_API_KEY bearer token required for all /api operations",
       },
     },
     schemas: {
@@ -135,6 +134,7 @@ export const openApiDocument = {
         description:
           "Defaults to {path, status} for each page (published, draft, or modified). Use changedOnly=true for unpublished changes only. Use detail=paths for a legacy path-only string array.",
         operationId: "listPages",
+        security: bearerSecurity,
         parameters: [
           {
             name: "detail",
@@ -146,8 +146,7 @@ export const openApiDocument = {
             name: "changedOnly",
             in: "query",
             schema: { type: "boolean" },
-            description:
-              "If true, only return draft and modified pages (requires bearer auth)",
+            description: "If true, only return draft and modified pages",
           },
         ],
         responses: {
@@ -162,6 +161,7 @@ export const openApiDocument = {
       get: {
         summary: "Search page HTML",
         operationId: "searchPages",
+        security: bearerSecurity,
         parameters: [
           { name: "q", in: "query", required: true, schema: { type: "string" } },
           { name: "limit", in: "query", schema: { type: "integer" } },
@@ -173,6 +173,7 @@ export const openApiDocument = {
       get: {
         summary: "Check internal links",
         operationId: "checkLinks",
+        security: bearerSecurity,
         responses: { "200": { description: "Broken link report" } },
       },
     },
@@ -180,6 +181,7 @@ export const openApiDocument = {
       get: {
         summary: "List assets",
         operationId: "listAssets",
+        security: bearerSecurity,
         description:
           "Returns asset paths plus pageHead/pageHeadHtml — suggested favicon/CSS/JS tags for new pages. Prefer these existing assets over inventing CSS/JS.",
         parameters: [{ name: "prefix", in: "query", schema: { type: "string" } }],
@@ -296,6 +298,7 @@ export const openApiDocument = {
       get: {
         summary: "List components",
         operationId: "listComponents",
+        security: bearerSecurity,
         responses: { "200": { description: "Component names" } },
       },
     },
@@ -303,6 +306,7 @@ export const openApiDocument = {
       get: {
         summary: "Suggest reusable components from existing pages",
         operationId: "suggestComponents",
+        security: bearerSecurity,
         parameters: [
           { name: "minMatches", in: "query", schema: { type: "integer" } },
           { name: "maxCandidates", in: "query", schema: { type: "integer" } },
@@ -314,6 +318,7 @@ export const openApiDocument = {
       get: {
         summary: "Read component",
         operationId: "readComponent",
+        security: bearerSecurity,
         parameters: [{ name: "name", in: "path", required: true, schema: { type: "string" } }],
         responses: { "200": { description: "Component HTML" } },
       },
@@ -406,7 +411,12 @@ export const openApiDocument = {
       post: { summary: "Publish draft", operationId: "publishDraft", security: bearerSecurity, responses: { "200": { description: "Draft published" } } },
     },
     "/api/pages/{path}": {
-      get: { summary: "Read published page", operationId: "readPage", responses: { "200": { description: "Published HTML" }, "404": errorResponse } },
+      get: {
+        summary: "Read published page",
+        operationId: "readPage",
+        security: bearerSecurity,
+        responses: { "200": { description: "Published HTML" }, "404": errorResponse },
+      },
       put: { summary: "Write draft", operationId: "writePage", security: bearerSecurity, responses: { "200": { description: "Draft saved" } } },
       delete: { summary: "Delete published page", operationId: "deletePage", security: bearerSecurity, responses: { "200": { description: "Page deleted" } } },
     },
@@ -456,7 +466,12 @@ export const openApiDocument = {
       },
     },
     "/api/pages/{path}/seo": {
-      get: { summary: "Audit SEO", operationId: "auditSeo", responses: { "200": { description: "SEO audit" } } },
+      get: {
+        summary: "Audit SEO",
+        operationId: "auditSeo",
+        security: bearerSecurity,
+        responses: { "200": { description: "SEO audit" } },
+      },
       post: { summary: "Apply SEO metadata to draft", operationId: "applySeo", security: bearerSecurity, responses: { "200": { description: "Draft saved" } } },
     },
     "/api/pages/{path}/preview-screenshot": {

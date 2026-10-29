@@ -15,7 +15,7 @@ All notable changes to the Capuz CMS API plugin are documented here.
 - CMS Console: Discard is limited to **Changes** (keeps live). Draft-only pages use Delete instead of Discard. Published pages no longer show Diff or Delete.
 - MCP `list_assets` response shape is now `{ assets, pageHead, pageHeadHtml }` (was a bare path array). REST already returned `{ assets }` and gains the same head fields.
 - `CMS_API_KEY` and incoming bearer tokens are trimmed before comparison, so a key read from a secret file with a trailing newline no longer rejects every write. Startup warns when the configured key has surrounding whitespace.
-- Unpublished REST reads now require bearer auth: `GET /api/drafts`, `GET /api/drafts/{path}`, `GET /api/pages/{path}/diff`, `GET /api/assets/{path}`, and `GET /api/pages?changedOnly=true`. Published page list/read, asset listing, components, search, and SEO audit stay public. OpenAPI and README auth columns updated.
+- **Breaking:** every `/api/*` route (including published page list/read, asset listing, components, search, link check, and SEO audit) requires bearer auth. `/health`, `/status`, and `/openapi.json` stay public; the live site via nginx is unchanged. OpenAPI, README, QUICKSTART, and AGENTS curl examples updated.
 - Preview host (`PREVIEW_HOST`) returns 403 for `/api*`, `/mcp*`, and `/openapi.json` inside cms-api (not only at Caddy), so plugin-only deploys cannot reach the API through the preview hostname. Preview HTML and assets remain unauthenticated.
 - Console CSRF tokens include an issued-at timestamp and expire after `CSRF_TTL_SECONDS` (default 8 hours).
 - cms-api rejects request bodies larger than `MAX_BODY_BYTES` (default 8 MiB) via Content-Length middleware and Bun `maxRequestBodySize`.

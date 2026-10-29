@@ -125,7 +125,7 @@ describe("reserved storage paths", () => {
   });
 
   test("normal page and asset paths still work", async () => {
-    const page = await req("/api/pages/index.html");
+    const page = await req("/api/pages/index.html", { headers: auth });
     expect(page.status).toBe(200);
 
     const write = await req("/api/pages/about.html", {

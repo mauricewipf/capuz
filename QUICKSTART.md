@@ -92,8 +92,8 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml down -v
 With the debug override (or from inside the cms-api container):
 
 ```bash
-# List all pages
-curl http://127.0.0.1:3000/api/pages
+# List all pages (requires auth)
+curl -H "Authorization: Bearer dev-local-key" http://127.0.0.1:3000/api/pages
 
 # Preview host blocks public API (edge hardening)
 curl -sI http://preview.localhost:8080/api/pages | head -3   # expect 403

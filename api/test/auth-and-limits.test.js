@@ -64,9 +64,11 @@ describe("unpublished reads, preview API block, and body limits", () => {
     expect(changed.status).toBe(200);
   });
 
-  test("asset content requires a key; asset listing stays public", async () => {
+  test("asset list and content require a key", async () => {
+    expect((await req("/api/assets")).status).toBe(401);
     expect((await req("/api/assets/assets/site.css")).status).toBe(401);
-    const listed = await req("/api/assets");
+
+    const listed = await req("/api/assets", { headers: auth });
     expect(listed.status).toBe(200);
 
     const asset = await req("/api/assets/assets/site.css", { headers: auth });
@@ -74,9 +76,24 @@ describe("unpublished reads, preview API block, and body limits", () => {
     expect((await asset.json()).path).toBe("assets/site.css");
   });
 
-  test("published page GETs stay public", async () => {
-    expect((await req("/api/pages")).status).toBe(200);
-    expect((await req("/api/pages/index.html")).status).toBe(200);
+  test("all /api GETs require a key; health and status stay public", async () => {
+    for (const path of [
+      "/api/pages",
+      "/api/pages/index.html",
+      "/api/pages/index.html/seo",
+      "/api/search?q=live",
+      "/api/links/check",
+      "/api/components",
+      "/api/components/suggest",
+    ]) {
+      expect((await req(path)).status).toBe(401);
+    }
+
+    expect((await req("/api/pages", { headers: auth })).status).toBe(200);
+    expect((await req("/api/pages/index.html", { headers: auth })).status).toBe(200);
+    expect((await req("/health")).status).toBe(200);
+    expect((await req("/status")).status).toBe(200);
+    expect((await req("/openapi.json")).status).toBe(200);
   });
 
   test("preview host serves pages without auth but blocks API and MCP", async () => {

@@ -71,37 +71,24 @@ app.get("/openapi.json", (c) => c.json(openApiDocument));
 app.all("/mcp", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 app.all("/mcp/*", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 
-app.get(
-  "/api/pages",
-  async (c, next) => {
-    // changedOnly reveals which pages have unpublished work — require a key.
+app.get("/api/pages", requireAuth, async (c) => {
+  try {
+    const detail = c.req.query("detail");
     const changedOnly =
       c.req.query("changedOnly") === "true" ||
       c.req.query("changed_only") === "true";
-    if (changedOnly) {
-      return requireAuth(c, next);
-    }
-    return next();
-  },
-  async (c) => {
-    try {
-      const detail = c.req.query("detail");
-      const changedOnly =
-        c.req.query("changedOnly") === "true" ||
-        c.req.query("changed_only") === "true";
-      // Default to status so unpublished drafts are visible. Use detail=paths for legacy path-only lists.
-      if (detail === "paths") {
-        const pages = await storage.listPages();
-        return c.json({ pages });
-      }
-      const pages = await listPagesWithStatus(storage, { changedOnly });
+    // Default to status so unpublished drafts are visible. Use detail=paths for legacy path-only lists.
+    if (detail === "paths") {
+      const pages = await storage.listPages();
       return c.json({ pages });
-    } catch (error) {
-      const { message, status } = handlePathError(error);
-      return c.json({ error: message }, status);
     }
-  },
-);
+    const pages = await listPagesWithStatus(storage, { changedOnly });
+    return c.json({ pages });
+  } catch (error) {
+    const { message, status } = handlePathError(error);
+    return c.json({ error: message }, status);
+  }
+});
 
 app.get("/api/drafts", requireAuth, async (c) => {
   try {
@@ -113,7 +100,7 @@ app.get("/api/drafts", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/search", async (c) => {
+app.get("/api/search", requireAuth, async (c) => {
   try {
     const query = c.req.query("q") || "";
     const maxResults = Number(c.req.query("limit") || 20);
@@ -125,7 +112,7 @@ app.get("/api/search", async (c) => {
   }
 });
 
-app.get("/api/links/check", async (c) => {
+app.get("/api/links/check", requireAuth, async (c) => {
   try {
     const result = await checkLinks(storage);
     return c.json(result);
@@ -135,7 +122,7 @@ app.get("/api/links/check", async (c) => {
   }
 });
 
-app.get("/api/assets", async (c) => {
+app.get("/api/assets", requireAuth, async (c) => {
   try {
     const prefix = c.req.query("prefix") || "";
     const assets = await listAssets(storage, prefix);
@@ -198,7 +185,7 @@ app.delete("/api/assets/*", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/components", async (c) => {
+app.get("/api/components", requireAuth, async (c) => {
   try {
     const components = await listComponents(storage);
     return c.json({ components });
@@ -208,7 +195,7 @@ app.get("/api/components", async (c) => {
   }
 });
 
-app.get("/api/components/suggest", async (c) => {
+app.get("/api/components/suggest", requireAuth, async (c) => {
   try {
     const minMatches = Number(c.req.query("minMatches") || 2);
     const maxCandidates = Number(c.req.query("maxCandidates") || 20);
@@ -220,7 +207,7 @@ app.get("/api/components/suggest", async (c) => {
   }
 });
 
-app.get("/api/components/*", async (c) => {
+app.get("/api/components/*", requireAuth, async (c) => {
   try {
     const name = pathFromRequest(c, "/api/components");
     const component = await readComponent(storage, name);
@@ -351,7 +338,7 @@ app.get("/api/pages/:path{.+}/diff", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/pages/:path{.+}/seo", async (c) => {
+app.get("/api/pages/:path{.+}/seo", requireAuth, async (c) => {
   const path = nestedPathParam(c);
   try {
     const result = await auditPageSeo(storage, path);
@@ -457,7 +444,7 @@ app.delete("/api/drafts/*", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/pages/*", async (c) => {
+app.get("/api/pages/*", requireAuth, async (c) => {
   const path = c.req.path.replace(/^\/api\/pages\/?/, "");
   try {
     const html = await storage.readPage(path);

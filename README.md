@@ -199,7 +199,7 @@ For Hetzner VPS deploys, see **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)*
 
 ```bash
 curl http://localhost:3000/health
-curl http://localhost:3000/api/pages
+curl -H "Authorization: Bearer $CMS_API_KEY" http://localhost:3000/api/pages
 ```
 
 You should get `{"ok":true}` and a JSON list of pages from the remote site.
@@ -323,29 +323,29 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET | `/health` | — | Minimal health check (`{ok: true}`) |
 | GET | `/status` | — | Version, commit, storage backend, preview URL, uptime |
 | GET | `/openapi.json` | — | OpenAPI spec |
-| GET | `/api/pages` | — | List pages with `published` / `draft` / `modified` status (default) |
+| GET | `/api/pages` | Bearer | List pages with `published` / `draft` / `modified` status (default) |
 | GET | `/api/pages?changedOnly=true` | Bearer | List only draft and modified pages |
-| GET | `/api/pages?detail=paths` | — | Legacy: list published page paths only |
-| GET | `/api/pages?detail=status` | — | Same as default (explicit status) |
-| GET | `/api/pages/{path}` | — | Read published page |
+| GET | `/api/pages?detail=paths` | Bearer | Legacy: list published page paths only |
+| GET | `/api/pages?detail=status` | Bearer | Same as default (explicit status) |
+| GET | `/api/pages/{path}` | Bearer | Read published page |
 | PUT | `/api/pages/{path}` | Bearer | Save draft |
 | POST | `/api/pages/{path}/publish` | Bearer | Publish draft |
 | POST | `/api/pages/{path}/edit` | Bearer | Find/replace patch on draft |
 | GET | `/api/pages/{path}/diff` | Bearer | Diff draft vs published |
-| GET/POST | `/api/pages/{path}/seo` | POST: Bearer | SEO audit / apply metadata to draft |
+| GET/POST | `/api/pages/{path}/seo` | Bearer | SEO audit / apply metadata to draft |
 | POST | `/api/pages/{path}/preview-screenshot` | Bearer | Render preview screenshot |
 | POST | `/api/pages/move` | Bearer | Move page |
 | POST | `/api/pages/rename` | Bearer | Rename page |
 | POST | `/api/pages/copy` | Bearer | Copy page as draft |
 | DELETE | `/api/pages/{path}` | Bearer | Delete published page |
-| GET | `/api/search?q=` | — | Search page HTML |
-| GET | `/api/links/check` | — | Broken link report |
-| GET | `/api/assets` | — | List assets (`assets` + suggested `pageHead` / `pageHeadHtml`) |
+| GET | `/api/search?q=` | Bearer | Search page HTML |
+| GET | `/api/links/check` | Bearer | Broken link report |
+| GET | `/api/assets` | Bearer | List assets (`assets` + suggested `pageHead` / `pageHeadHtml`) |
 | POST | `/api/assets/import-chat` | Bearer | Import chat-attached Open WebUI file into assets (bundled/stack) |
 | GET/PUT/DELETE | `/api/assets/{path}` | Bearer | Read/upload/delete asset |
-| GET | `/api/components` | — | List components |
-| GET | `/api/components/suggest` | — | Suggest components from existing pages |
-| GET/PUT/DELETE | `/api/components/{name}` | PUT/DELETE: Bearer | Read/create/delete component (PUT creates only; 409 if name exists) |
+| GET | `/api/components` | Bearer | List components |
+| GET | `/api/components/suggest` | Bearer | Suggest components from existing pages |
+| GET/PUT/DELETE | `/api/components/{name}` | Bearer | Read/create/delete component (PUT creates only; 409 if name exists) |
 | POST | `/api/components/{name}/insert` | Bearer | Insert component into page draft |
 | POST | `/api/components/{name}/sync` | Bearer | Sync component into tagged page drafts |
 | POST | `/api/sitemap/regenerate` | Bearer | Regenerate `sitemap.xml` draft |

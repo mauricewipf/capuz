@@ -22,8 +22,8 @@ Read `README.md` for plugin install, storage backends, and Open WebUI configurat
 | Integration | Endpoint | Auth |
 |-------------|----------|------|
 | MCP tool server | `POST /mcp` | `Authorization: Bearer <CMS_API_KEY>` |
-| OpenAPI tool server | `GET /openapi.json` | Bearer on write/delete **and** unpublished reads (drafts, diffs, asset content, `changedOnly` lists) |
-| REST API | `/api/*` | Bearer on PUT/POST/DELETE; same unpublished-read GETs as OpenAPI |
+| OpenAPI tool server | `GET /openapi.json` | Bearer on all `/api` operations (spec itself is public) |
+| REST API | `/api/*` | Bearer on every method including GET; `/health`, `/status`, `/openapi.json` stay public |
 
 **MCP tools** (34; see README § MCP tools for the full table): `get_status`, `list_pages`, `list_drafts`, `read_page`, `read_draft`, `write_page`, `edit_page`, `move_page`, `rename_page`, `copy_page`, `search_pages`, `diff_page`, `publish_page`, `unpublish_page`, `discard_draft`, `delete_page`, `list_assets`, `upload_asset`, `read_asset`, `delete_asset`, `import_chat_file`, `list_components`, `read_component`, `write_component`, `delete_component`, `insert_component`, `sync_component`, `suggest_components`, `reverse_engineer`, `audit_seo`, `apply_seo`, `regenerate_sitemap`, `check_links`, `render_preview`
 
@@ -207,7 +207,7 @@ After API changes:
 1. `cd api && bun test`
 2. Rebuild: `docker compose -f docker-compose.yml -f docker-compose.local.yml build cms-api edge-router && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`
 3. `docker compose -f docker-compose.yml -f docker-compose.local.yml exec cms-api wget -qO- http://127.0.0.1:3000/health` → `{"ok":true}`
-4. With debug override (or exec): list pages via `GET /api/pages`
+4. With debug override (or exec): list pages via `GET /api/pages` with bearer `dev-local-key`
 5. Save draft (debug override or exec): `PUT /api/pages/agent-test.html` with bearer `dev-local-key`
 6. Preview at http://preview.localhost:8080/agent-test (draft only until publish)
 7. Publish: `POST /api/pages/agent-test.html/publish`

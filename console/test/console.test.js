@@ -21,6 +21,19 @@ describe("csrf", () => {
     expect(verifyCsrfToken("bad.token")).toBe(false);
     expect(verifyCsrfToken("")).toBe(false);
   });
+
+  test("rejects expired tokens", () => {
+    const issued = Date.now() - 9 * 60 * 60 * 1000;
+    const token = createCsrfToken(issued);
+    expect(verifyCsrfToken(token)).toBe(false);
+    expect(verifyCsrfToken(token, issued + 60_000)).toBe(true);
+  });
+
+  test("rejects future-dated and legacy two-part tokens", () => {
+    const future = createCsrfToken(Date.now() + 60_000);
+    expect(verifyCsrfToken(future)).toBe(false);
+    expect(verifyCsrfToken("aabbccddaabbccddaabbccddaabbccdd.deadbeef")).toBe(false);
+  });
 });
 
 describe("auth", () => {

@@ -24,7 +24,8 @@ export const openApiDocument = {
       bearerAuth: {
         type: "http",
         scheme: "bearer",
-        description: "CMS_API_KEY bearer token required for write and delete operations",
+        description:
+          "CMS_API_KEY bearer token required for write/delete and for unpublished reads (drafts, diffs, asset content, changedOnly lists)",
       },
     },
     schemas: {
@@ -145,13 +146,15 @@ export const openApiDocument = {
             name: "changedOnly",
             in: "query",
             schema: { type: "boolean" },
-            description: "If true, only return draft and modified pages",
+            description:
+              "If true, only return draft and modified pages (requires bearer auth)",
           },
         ],
         responses: {
           "200": {
             description: "List of pages (with status by default)",
           },
+          "401": errorResponse,
         },
       },
     },
@@ -258,6 +261,7 @@ export const openApiDocument = {
       get: {
         summary: "Read asset",
         operationId: "readAsset",
+        security: bearerSecurity,
         parameters: [{ name: "path", in: "path", required: true, schema: { type: "string" } }],
         responses: { "200": { description: "Asset metadata and base64 content" } },
       },
@@ -384,11 +388,17 @@ export const openApiDocument = {
       get: {
         summary: "List draft pages",
         operationId: "listDrafts",
+        security: bearerSecurity,
         responses: { "200": { description: "Draft paths" } },
       },
     },
     "/api/drafts/{path}": {
-      get: { summary: "Read draft", operationId: "readDraft", responses: { "200": { description: "Draft HTML" }, "404": errorResponse } },
+      get: {
+        summary: "Read draft",
+        operationId: "readDraft",
+        security: bearerSecurity,
+        responses: { "200": { description: "Draft HTML" }, "404": errorResponse },
+      },
       put: { summary: "Write draft", operationId: "writeDraft", security: bearerSecurity, responses: { "200": { description: "Draft saved" } } },
       delete: { summary: "Discard draft", operationId: "discardDraft", security: bearerSecurity, responses: { "200": { description: "Draft discarded" } } },
     },
@@ -438,7 +448,12 @@ export const openApiDocument = {
       },
     },
     "/api/pages/{path}/diff": {
-      get: { summary: "Diff draft vs published", operationId: "diffPage", responses: { "200": { description: "Unified diff" } } },
+      get: {
+        summary: "Diff draft vs published",
+        operationId: "diffPage",
+        security: bearerSecurity,
+        responses: { "200": { description: "Unified diff" } },
+      },
     },
     "/api/pages/{path}/seo": {
       get: { summary: "Audit SEO", operationId: "auditSeo", responses: { "200": { description: "SEO audit" } } },

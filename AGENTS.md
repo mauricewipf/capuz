@@ -22,12 +22,12 @@ Read `README.md` for plugin install, storage backends, and Open WebUI configurat
 | Integration | Endpoint | Auth |
 |-------------|----------|------|
 | MCP tool server | `POST /mcp` | `Authorization: Bearer <CMS_API_KEY>` |
-| OpenAPI tool server | `GET /openapi.json` | Bearer on write/delete |
-| REST API | `/api/pages/*` | Bearer on PUT/DELETE |
+| OpenAPI tool server | `GET /openapi.json` | Bearer on write/delete **and** unpublished reads (drafts, diffs, asset content, `changedOnly` lists) |
+| REST API | `/api/*` | Bearer on PUT/POST/DELETE; same unpublished-read GETs as OpenAPI |
 
-**MCP tools:** `get_status`, `list_pages`, `list_drafts`, `read_page`, `read_draft`, `write_page`, `publish_page`, `unpublish_page`, `discard_draft`, `delete_page`
+**MCP tools** (34; see README § MCP tools for the full table): `get_status`, `list_pages`, `list_drafts`, `read_page`, `read_draft`, `write_page`, `edit_page`, `move_page`, `rename_page`, `copy_page`, `search_pages`, `diff_page`, `publish_page`, `unpublish_page`, `discard_draft`, `delete_page`, `list_assets`, `upload_asset`, `read_asset`, `delete_asset`, `import_chat_file`, `list_components`, `read_component`, `write_component`, `delete_component`, `insert_component`, `sync_component`, `suggest_components`, `reverse_engineer`, `audit_seo`, `apply_seo`, `regenerate_sitemap`, `check_links`, `render_preview`
 
-Writes save **drafts** only; call `publish_page` to go live. Preview is served by cms-api when `Host` matches `PREVIEW_HOST`.
+Writes save **drafts** only; call `publish_page` to go live. Preview is served by cms-api when `Host` matches `PREVIEW_HOST` (pages/assets only — `/api`, `/mcp`, and `/openapi.json` return 403 on the preview host even without Caddy).
 
 **Storage backends** (selected via `STORAGE_BACKEND` env var):
 

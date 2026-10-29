@@ -49,7 +49,21 @@ function nestedPathParam(c, name = "path") {
   return c.req.param(name);
 }
 
+/** Default 8 MiB — enough for typical base64 asset uploads; override with MAX_BODY_BYTES. */
+const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 8 * 1024 * 1024);
+
 app.use("*", previewMiddleware());
+
+app.use("*", async (c, next) => {
+  const contentLength = c.req.header("content-length");
+  if (contentLength && Number(contentLength) > MAX_BODY_BYTES) {
+    return c.json(
+      { error: `Request body too large (max ${MAX_BODY_BYTES} bytes)` },
+      413,
+    );
+  }
+  return next();
+});
 
 app.get("/health", (c) => c.json({ ok: true }));
 app.get("/status", (c) => c.json(getStatusInfo()));
@@ -57,26 +71,39 @@ app.get("/openapi.json", (c) => c.json(openApiDocument));
 app.all("/mcp", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 app.all("/mcp/*", requireAuth, async (c) => handleMcpRequest(c.req.raw));
 
-app.get("/api/pages", async (c) => {
-  try {
-    const detail = c.req.query("detail");
+app.get(
+  "/api/pages",
+  async (c, next) => {
+    // changedOnly reveals which pages have unpublished work — require a key.
     const changedOnly =
       c.req.query("changedOnly") === "true" ||
       c.req.query("changed_only") === "true";
-    // Default to status so unpublished drafts are visible. Use detail=paths for legacy path-only lists.
-    if (detail === "paths") {
-      const pages = await storage.listPages();
-      return c.json({ pages });
+    if (changedOnly) {
+      return requireAuth(c, next);
     }
-    const pages = await listPagesWithStatus(storage, { changedOnly });
-    return c.json({ pages });
-  } catch (error) {
-    const { message, status } = handlePathError(error);
-    return c.json({ error: message }, status);
-  }
-});
+    return next();
+  },
+  async (c) => {
+    try {
+      const detail = c.req.query("detail");
+      const changedOnly =
+        c.req.query("changedOnly") === "true" ||
+        c.req.query("changed_only") === "true";
+      // Default to status so unpublished drafts are visible. Use detail=paths for legacy path-only lists.
+      if (detail === "paths") {
+        const pages = await storage.listPages();
+        return c.json({ pages });
+      }
+      const pages = await listPagesWithStatus(storage, { changedOnly });
+      return c.json({ pages });
+    } catch (error) {
+      const { message, status } = handlePathError(error);
+      return c.json({ error: message }, status);
+    }
+  },
+);
 
-app.get("/api/drafts", async (c) => {
+app.get("/api/drafts", requireAuth, async (c) => {
   try {
     const pages = await storage.listDrafts();
     return c.json({ pages });
@@ -135,7 +162,7 @@ app.post("/api/assets/import-chat", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/assets/*", async (c) => {
+app.get("/api/assets/*", requireAuth, async (c) => {
   try {
     const path = pathFromRequest(c, "/api/assets");
     const asset = await readAssetInfo(storage, path);
@@ -313,7 +340,7 @@ app.post("/api/pages/:path{.+}/edit", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/pages/:path{.+}/diff", async (c) => {
+app.get("/api/pages/:path{.+}/diff", requireAuth, async (c) => {
   const path = nestedPathParam(c);
   try {
     const result = await diffPage(storage, path);
@@ -408,7 +435,7 @@ app.post("/api/sitemap/regenerate", requireAuth, async (c) => {
   }
 });
 
-app.get("/api/drafts/*", async (c) => {
+app.get("/api/drafts/*", requireAuth, async (c) => {
   const path = c.req.path.replace(/^\/api\/drafts\/?/, "");
   try {
     const html = await storage.readDraft(path);
@@ -491,5 +518,6 @@ export { app };
 export default {
   port,
   hostname: "0.0.0.0",
+  maxRequestBodySize: Number.isFinite(MAX_BODY_BYTES) ? MAX_BODY_BYTES : 8 * 1024 * 1024,
   fetch: app.fetch,
 };

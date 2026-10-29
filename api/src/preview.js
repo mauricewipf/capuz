@@ -89,9 +89,9 @@ export async function handlePreviewRequest(c) {
   }
 }
 
-function shouldBypassPreview(pathname) {
+/** Paths that must not be served as preview pages and must not fall through to REST/MCP. */
+function isPreviewBlockedControlPath(pathname) {
   return (
-    pathname === "/health" ||
     pathname === "/openapi.json" ||
     pathname === "/api" ||
     pathname.startsWith("/api/") ||
@@ -100,13 +100,22 @@ function shouldBypassPreview(pathname) {
   );
 }
 
+/**
+ * On PREVIEW_HOST, serve draft-or-published pages and site assets only.
+ * /api, /mcp, and /openapi.json return 403 here so plugin-only deploys (no
+ * Caddy) cannot reach the CMS API through the preview hostname. /health still
+ * passes through for probes. Preview HTML itself stays unauthenticated.
+ */
 export function previewMiddleware() {
   return async (c, next) => {
     if (!isPreviewHost(c.req.header("host"))) {
       return next();
     }
     const pathname = new URL(c.req.url).pathname;
-    if (shouldBypassPreview(pathname)) {
+    if (isPreviewBlockedControlPath(pathname)) {
+      return c.json({ error: "API not available on preview host" }, 403);
+    }
+    if (pathname === "/health") {
       return next();
     }
     return handlePreviewRequest(c);

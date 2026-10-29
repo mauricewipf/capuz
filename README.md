@@ -324,14 +324,14 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET | `/status` | — | Version, commit, storage backend, preview URL, uptime |
 | GET | `/openapi.json` | — | OpenAPI spec |
 | GET | `/api/pages` | — | List pages with `published` / `draft` / `modified` status (default) |
-| GET | `/api/pages?changedOnly=true` | — | List only draft and modified pages |
+| GET | `/api/pages?changedOnly=true` | Bearer | List only draft and modified pages |
 | GET | `/api/pages?detail=paths` | — | Legacy: list published page paths only |
 | GET | `/api/pages?detail=status` | — | Same as default (explicit status) |
 | GET | `/api/pages/{path}` | — | Read published page |
 | PUT | `/api/pages/{path}` | Bearer | Save draft |
 | POST | `/api/pages/{path}/publish` | Bearer | Publish draft |
 | POST | `/api/pages/{path}/edit` | Bearer | Find/replace patch on draft |
-| GET | `/api/pages/{path}/diff` | — | Diff draft vs published |
+| GET | `/api/pages/{path}/diff` | Bearer | Diff draft vs published |
 | GET/POST | `/api/pages/{path}/seo` | POST: Bearer | SEO audit / apply metadata to draft |
 | POST | `/api/pages/{path}/preview-screenshot` | Bearer | Render preview screenshot |
 | POST | `/api/pages/move` | Bearer | Move page |
@@ -342,15 +342,15 @@ Alternatively, add the OpenAPI Tool Server using `http://cms-api:3000/openapi.js
 | GET | `/api/links/check` | — | Broken link report |
 | GET | `/api/assets` | — | List assets (`assets` + suggested `pageHead` / `pageHeadHtml`) |
 | POST | `/api/assets/import-chat` | Bearer | Import chat-attached Open WebUI file into assets (bundled/stack) |
-| GET/PUT/DELETE | `/api/assets/{path}` | PUT/DELETE: Bearer | Read/upload/delete asset |
+| GET/PUT/DELETE | `/api/assets/{path}` | Bearer | Read/upload/delete asset |
 | GET | `/api/components` | — | List components |
 | GET | `/api/components/suggest` | — | Suggest components from existing pages |
 | GET/PUT/DELETE | `/api/components/{name}` | PUT/DELETE: Bearer | Read/create/delete component (PUT creates only; 409 if name exists) |
 | POST | `/api/components/{name}/insert` | Bearer | Insert component into page draft |
 | POST | `/api/components/{name}/sync` | Bearer | Sync component into tagged page drafts |
 | POST | `/api/sitemap/regenerate` | Bearer | Regenerate `sitemap.xml` draft |
-| GET | `/api/drafts` | — | List draft paths |
-| GET | `/api/drafts/{path}` | — | Read draft |
+| GET | `/api/drafts` | Bearer | List draft paths |
+| GET | `/api/drafts/{path}` | Bearer | Read draft |
 | PUT | `/api/drafts/{path}` | Bearer | Save draft |
 | POST | `/api/drafts/{path}/publish` | Bearer | Publish draft |
 | DELETE | `/api/drafts/{path}` | Bearer | Discard draft |
@@ -493,6 +493,8 @@ See **[docs/DEPLOY-HETZNER.md](docs/DEPLOY-HETZNER.md)** for server sizing, DNS,
 | `PREVIEW_BASE_URL` | `http://preview.localhost:8080` | Preview links in API responses |
 | `CONSOLE_HOST` | `console.localhost` | CMS Console hostname (multi-service stack) |
 | `CONSOLE_CSRF_SECRET` | — | HMAC secret for console publish/discard CSRF tokens |
+| `CSRF_TTL_SECONDS` | `28800` (8h) | Console CSRF token lifetime |
+| `MAX_BODY_BYTES` | `8388608` (8 MiB) | Max request body size for cms-api (pages and base64 asset uploads) |
 | `CONSOLE_ALLOWED_GROUPS` | — | Optional console group allowlist (empty = any GitHub allowlisted user) |
 | `AUTH_HOST` | — | oauth2-proxy hostname (production multi-service stack) |
 | `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` | — | GitHub OAuth App credentials (production) |

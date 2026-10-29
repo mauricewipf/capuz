@@ -101,7 +101,9 @@ describe("reserved storage paths", () => {
   });
 
   test("asset routes cannot read or write the Open WebUI data dir", async () => {
-    const read = await req("/api/assets/.open-webui/uploads/chat.json");
+    const read = await req("/api/assets/.open-webui/uploads/chat.json", {
+      headers: auth,
+    });
     expect(read.status).toBe(400);
 
     const write = await req("/api/assets/.open-webui/uploads/chat.json", {

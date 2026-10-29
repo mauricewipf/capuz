@@ -93,7 +93,9 @@ describe("CMS API nested page routes", () => {
 
   test("GET diff works for nested impressum/index.html", async () => {
     const res = await fetchApp(
-      new Request("http://localhost/api/pages/impressum/index.html/diff"),
+      new Request("http://localhost/api/pages/impressum/index.html/diff", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }),
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -103,7 +105,11 @@ describe("CMS API nested page routes", () => {
   });
 
   test("GET diff still works for flat index.html", async () => {
-    const res = await fetchApp(new Request("http://localhost/api/pages/index.html/diff"));
+    const res = await fetchApp(
+      new Request("http://localhost/api/pages/index.html/diff", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.path).toBe("index.html");
@@ -112,11 +118,20 @@ describe("CMS API nested page routes", () => {
 
   test("nested diff without draft returns 404, not extension error", async () => {
     const res = await fetchApp(
-      new Request("http://localhost/api/pages/missing/page.html/diff"),
+      new Request("http://localhost/api/pages/missing/page.html/diff", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }),
     );
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.error).toBe("No draft found to diff");
+  });
+
+  test("GET diff without a key is rejected", async () => {
+    const res = await fetchApp(
+      new Request("http://localhost/api/pages/index.html/diff"),
+    );
+    expect(res.status).toBe(401);
   });
 
   test("POST publish accepts nested page path", async () => {

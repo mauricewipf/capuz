@@ -42,6 +42,8 @@ export const config = {
   previewBaseUrl: env("PREVIEW_BASE_URL", "http://preview.localhost:8080").replace(/\/+$/, ""),
   editorUrl: resolveEditorUrl(),
   csrfSecret: env("CONSOLE_CSRF_SECRET", "dev-console-csrf-change-me"),
+  /** Default 8 hours. Tokens older than this fail verification. */
+  csrfTtlMs: envInt("CSRF_TTL_SECONDS", 8 * 60 * 60) * 1000,
   allowedGroups: parseList(env("CONSOLE_ALLOWED_GROUPS", "")),
   authEmailHeader: env("CONSOLE_AUTH_EMAIL_HEADER", "X-Auth-Request-Email"),
   authUserHeader: env("CONSOLE_AUTH_USER_HEADER", "X-Auth-Request-User"),

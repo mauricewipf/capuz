@@ -325,8 +325,10 @@ export function syncComponentInPage(pageHtml, name, componentHtml) {
   const nodes = doc.querySelectorAll(`[data-capuz-component="${name}"]`);
   if (!nodes.length) return { html: pageHtml, updated: false };
 
+  // node-html-parser exposes outerHTML as a getter only; replaceWith parses the
+  // markup and splices the resulting nodes into the parent.
   for (const node of nodes) {
-    node.outerHTML = tagged;
+    node.replaceWith(tagged);
   }
 
   return { html: doc.toString(), updated: true };

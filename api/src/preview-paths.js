@@ -8,10 +8,16 @@ function hasPageExtension(path) {
   return PAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
+function decodePath(uriPath) {
+  try {
+    return decodeURIComponent(uriPath.split("?")[0]);
+  } catch {
+    throw new PathError("Invalid URL encoding", 400);
+  }
+}
+
 function normalizeUriPath(uriPath) {
-  const cleaned = decodeURIComponent(uriPath.split("?")[0])
-    .replace(/^\/+/, "")
-    .trim();
+  const cleaned = decodePath(uriPath).replace(/^\/+/, "").trim();
 
   if (cleaned.includes("\0")) {
     throw new PathError("Invalid path", 400);

@@ -50,16 +50,26 @@ export function isSkippedStorageSegment(name) {
   return isHiddenStorageSegment(name) || name === COMPONENTS_DIR;
 }
 
+/**
+ * Internal storage that page and asset routes must never reach: drafts,
+ * components, and any hidden directory sharing the data root (Open WebUI's
+ * DATA_DIR, .git, …). Hidden segments are also skipped by the listing walkers,
+ * so anything written there would be invisible to list_pages/list_assets.
+ */
 export function isReservedStoragePath(relativePath) {
   const cleaned = relativePath.replace(/^\/+/, "").trim();
   if (!cleaned) return false;
   const normalized = normalize(cleaned).split(sep()).join("/");
-  return (
-    normalized === DRAFTS_DIR ||
-    normalized.startsWith(`${DRAFTS_DIR}/`) ||
-    normalized === COMPONENTS_DIR ||
-    normalized.startsWith(`${COMPONENTS_DIR}/`)
-  );
+  if (normalized.split("/").some(isHiddenStorageSegment)) {
+    return true;
+  }
+  for (const reserved of [DRAFTS_DIR, COMPONENTS_DIR]) {
+    if (!reserved) continue;
+    if (normalized === reserved || normalized.startsWith(`${reserved}/`)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function getPreviewHost() {
@@ -107,6 +117,7 @@ export function normalizePagePath(relativePath) {
   if (normalized.startsWith("..") || normalized.includes(`..${sep()}`)) {
     throw new PathError("Path traversal not allowed", 400);
   }
+  assertStorablePath(normalized);
 
   const ext = extname(normalized).toLowerCase();
   if (!ALLOWED_PAGE_EXTENSIONS.has(ext)) {
@@ -183,6 +194,7 @@ export function normalizeAssetPath(relativePath) {
   if (normalized.startsWith("..") || normalized.includes(`..${sep()}`)) {
     throw new PathError("Path traversal not allowed", 400);
   }
+  assertStorablePath(normalized);
 
   const lower = normalized.toLowerCase();
   const ext = extname(lower);
@@ -206,9 +218,6 @@ export function resolveAssetPath(relativePath) {
   if (rel.startsWith("..") || rel.includes(`..${sep()}`)) {
     throw new PathError("Path outside data root", 400);
   }
-  if (isReservedStoragePath(rel)) {
-    throw new PathError("Path not allowed", 400);
-  }
   return absolute;
 }
 
@@ -217,6 +226,23 @@ export class PathError extends Error {
     super(message);
     this.name = "PathError";
     this.status = status;
+  }
+}
+
+/** Longest file name most filesystems accept; longer names fail with ENAMETOOLONG. */
+const MAX_SEGMENT_BYTES = 255;
+
+function assertStorablePath(normalized) {
+  if (isReservedStoragePath(normalized)) {
+    throw new PathError("Path not allowed: reserved internal directory", 400);
+  }
+  for (const segment of normalized.split(sep())) {
+    if (Buffer.byteLength(segment, "utf8") > MAX_SEGMENT_BYTES) {
+      throw new PathError(
+        `File and directory names must be ${MAX_SEGMENT_BYTES} bytes or fewer`,
+        400,
+      );
+    }
   }
 }
 

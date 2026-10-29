@@ -113,11 +113,10 @@ function registerSuggestComponentsTools(server, storage) {
 
 export function createMcpServer() {
   const storage = getStorage();
-  const server = new McpServer({
-    name: "cms-pages",
-    version: VERSION,
-    instructions: MCP_INSTRUCTIONS,
-  });
+  const server = new McpServer(
+    { name: "cms-pages", version: VERSION },
+    { instructions: MCP_INSTRUCTIONS },
+  );
 
   server.tool(
     "get_status",

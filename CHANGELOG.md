@@ -14,6 +14,15 @@ All notable changes to the Capuz CMS API plugin are documented here.
 
 - CMS Console: Discard is limited to **Changes** (keeps live). Draft-only pages use Delete instead of Discard. Published pages no longer show Diff or Delete.
 - MCP `list_assets` response shape is now `{ assets, pageHead, pageHeadHtml }` (was a bare path array). REST already returned `{ assets }` and gains the same head fields.
+- `CMS_API_KEY` and incoming bearer tokens are trimmed before comparison, so a key read from a secret file with a trailing newline no longer rejects every write. Startup warns when the configured key has surrounding whitespace.
+
+### Fixed
+
+- **Reserved internal paths are no longer reachable through page or asset routes.** Page paths such as `.drafts/x.html` or `.components/footer.html` were accepted by `normalizePagePath`, so a write plus publish could overwrite another page's draft or a component that `/api/components` protects with 409, and delete could remove it. The guard now lives in `normalizePagePath` and `normalizeAssetPath` (not just the `fs` resolver, which left `sftp`, `git`, and `s3` unguarded) and covers the drafts and components trees plus every hidden directory sharing the data root — including Open WebUI's `DATA_DIR` (`.open-webui/`) and `.git/`, which were previously readable without a key over `GET /api/assets` and the preview host, and writable with one.
+- MCP `instructions` are sent as a top-level `initialize` result field instead of nested inside `serverInfo`, so clients again receive the draft-first and "never publish unless asked" guardrails.
+- `sync_component` / `POST /api/components/{name}/sync` no longer fails with 500 `Attempted to assign to readonly property` on pages that contain a tagged component instance — `node-html-parser` exposes `outerHTML` as a getter only, so instances are now replaced with `replaceWith`.
+- Malformed percent-encoding on the preview host (for example `/%ff`) returns 400 instead of 500.
+- Over-long file names return 400 before reaching storage; filesystem errno messages are mapped to generic responses so server paths are no longer disclosed in errors.
 
 ## [0.4.4] - 2026-08-19
 
